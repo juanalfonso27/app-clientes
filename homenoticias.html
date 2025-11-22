@@ -1642,7 +1642,8 @@
                     }
                     renderNewsItems(items);
                     LATEST_NEWS_ITEMS = items.slice();
-                }).catch(() => {
+                }).catch((err) => {
+                    updateStatus('error', '❌ Error leyendo Firebase: ' + (err && err.message ? err.message : 'desconocido'));
                     try {
                         const v = localStorage.getItem(CUSTOM_NEWS_KEY);
                         const items = Array.isArray(JSON.parse(v)) ? JSON.parse(v) : [];
