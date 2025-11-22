@@ -937,915 +937,229 @@
         </button>
     </nav>
 
-    <script>
-        // Funcionalidad de las pestañas con cambio de contenido
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                const tabType = this.getAttribute('data-tab');
-                
-                // Remover active de todas las pestañas
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Ocultar todas las secciones de contenido
-                document.querySelectorAll('.content-section').forEach(section => {
-                    section.classList.remove('active');
-                });
-                
-                // Mostrar la sección correspondiente
-                if (tabType === 'news') {
-                    document.getElementById('newsSection').classList.add('active');
-                    if (typeof loadNewsFromApi === 'function') {
-                        loadNewsFromApi();
-                    }
-                } else if (tabType === 'products') {
-                    document.getElementById('productsSection').classList.add('active');
-                } else if (tabType === 'weather') {
-                    document.getElementById('weatherSection').classList.add('active');
-                    loadWeatherForecast();
-                } else if (tabType === 'market') {
-                    document.getElementById('marketSection').classList.add('active');
-                    loadMarketData();
-                }
+   <!-- Coloca esto ANTES de tu script principal -->
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<script>
+// =============================================
+// CONFIGURACIÓN DE FIREBASE - REEMPLAZA CON TUS DATOS
+// =============================================
+const firebaseConfig = {
+  apiKey: "AIzaSyBGOBLIVvJxHqBhBae-hI1vM_KrzDEdtM0",
+  authDomain: "iasa-app-bfe8b.firebaseapp.com",
+  projectId: "iasa-app-bfe8b",
+  storageBucket: "iasa-app-bfe8b.firebasestorage.app",
+  messagingSenderId: "920148045932",
+  appId: "1:920148045932:web:39e83aae9da23104eb2849",
+  measurementId: "G-E13QW4LCE2"
+};
+
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// =============================================
+// FUNCIÓN PARA OBTENER NOTICIAS DE FIREBASE
+// =============================================
+window.fbListNews = async function() {
+    try {
+        // Cambia 'noticias' por el nombre de tu colección en Firestore
+        const snapshot = await db.collection('noticias')
+            .orderBy('fecha', 'desc') // Ordenar por fecha descendente
+            .limit(20) // Limitar a 20 noticias
+            .get();
+        
+        const news = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            news.push({
+                id: doc.id,
+                title: data.titulo || data.title || '',
+                description: data.descripcion || data.description || data.resumen || '',
+                image: data.imagen || data.image || data.image_url || '',
+                url: data.url || data.link || '#',
+                fecha: data.fecha || null
             });
-        });
-
-        // Productos: búsqueda simple en la cuadrícula
-        (function setupProductSearch(){
-            const input = document.getElementById('productSearchInput');
-            const grid = document.getElementById('productGrid');
-            if (!input || !grid) return;
-
-            input.addEventListener('input', () => {
-                const q = input.value.trim().toLowerCase();
-                const cards = grid.querySelectorAll('.product-card');
-                cards.forEach(card => {
-                    const name = (card.dataset.name || '').toLowerCase();
-                    if (!q || name.includes(q)) {
-                        card.style.display = '';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-            });
-
-            // Click en tarjeta: por ahora solo resalta y podría navegar
-            grid.addEventListener('click', (e) => {
-                const card = e.target.closest('.product-card');
-                if (!card) return;
-                // indicar selección visual temporal
-                grid.querySelectorAll('.product-card').forEach(c => c.style.boxShadow = '0 1px 6px rgba(0,0,0,0.06)');
-                card.style.boxShadow = '0 4px 14px rgba(90,79,207,0.18)';
-                // aquí podríamos navegar a la categoría: window.location.href = 'productos.html?cat='+encodeURIComponent(card.dataset.name)
-            });
-        })();
-
-        // Noticias del agro dinámicas desde un JSON local (sin APIs externas)
-        const LOCAL_AGRO_NEWS = [
-            { title: 'USDA ajusta estimaciones de maíz y mercados reaccionan', description: 'Informe reciente con impacto en precios y expectativas de exportación.', image: 'https://images.unsplash.com/photo-1562751361-d0c4bc3c0d66?w=300&auto=format&fit=crop', url: 'https://www.usda.gov' },
-            { title: 'Soja: mayor demanda de China sostiene precios en la región', description: 'Analistas prevén menos presión en la nueva campaña por demanda externa.', image: 'https://images.unsplash.com/photo-1500939834731-5a9e0bff3f1b?w=300&auto=format&fit=crop', url: 'https://www.fao.org' },
-            { title: 'Tecnologías de riego elevan eficiencia hídrica en fincas familiares', description: 'Casos locales muestran mejora en rendimiento y ahorro de costos.', image: 'https://images.unsplash.com/photo-1509822929063-6b6cfc9b42f2?w=300&auto=format&fit=crop', url: 'https://www.iica.int' },
-            { title: 'Ganadería sostenible: buenas prácticas para mejorar productividad', description: 'Recomendaciones clave para manejo de pasturas y bienestar animal.', image: 'https://images.unsplash.com/photo-1581092334280-684b5f1f5a06?w=300&auto=format&fit=crop', url: 'https://www.example.com/ganaderia-sostenible' },
-            { title: 'Maíz: perspectivas de precios para el Cono Sur', description: 'Factores climáticos y oferta global condicionan la evolución de precios.', image: 'https://images.unsplash.com/photo-1596485430387-6cf3dc1d9fbb?w=300&auto=format&fit=crop', url: 'https://www.example.com/maiz-perspectivas' },
-            { title: 'Bioinsumos: adopción crece en productores hortícolas', description: 'Mayor uso de biológicos por sostenibilidad y resultados en campo.', image: 'https://images.unsplash.com/photo-1516919768374-95f89e2bf7d1?w=300&auto=format&fit=crop', url: 'https://www.example.com/bioinsumos-horticultura' }
-        ];
-
-        function loadAgroNews() {
-            const container = document.getElementById('newsList');
-            if (!container) return;
-            const shuffled = LOCAL_AGRO_NEWS.slice().sort(() => Math.random() - 0.5);
-            const selected = shuffled.slice(0, 5);
-            container.innerHTML = buildNewsHTML(selected);
-            LATEST_NEWS_ITEMS = LOCAL_AGRO_NEWS.slice();
-        }
-
-        // Open-Meteo API
-        // https://open-meteo.com/
-        const WEATHER_API_URL = 'https://api.open-meteo.com/v1/forecast';
-
-        // Función para obtener el icono del clima según el código de Open-Meteo
-        function getWeatherIcon(weatherCode) {
-            // Códigos de Open-Meteo Weather Code (WMO)
-            // 0 = Clear sky, 1-3 = Mainly clear/partly cloudy/overcast
-            // 45-48 = Fog, 51-67 = Drizzle/Rain, 71-77 = Snow, 80-99 = Rain showers/Thunderstorm
-            if (weatherCode >= 95 && weatherCode <= 99) {
-                // Tormenta
-                return `<svg class="icon" viewBox="0 0 24 24">
-                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
-                    <path d="M8 12h8M12 8v8"></path>
-                </svg>`;
-            } else if (weatherCode >= 80 && weatherCode <= 94) {
-                // Lluvia con truenos / Lluvia fuerte
-                return `<svg class="icon" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="4"></circle>
-                    <path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path>
-                    <path d="M8 12h8M12 8v8"></path>
-                </svg>`;
-            } else if (weatherCode >= 51 && weatherCode <= 67) {
-                // Lluvia
-                return `<svg class="icon" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="4"></circle>
-                    <path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path>
-                    <path d="M8 12h8M12 8v8"></path>
-                </svg>`;
-            } else if (weatherCode >= 71 && weatherCode <= 77) {
-                // Nieve
-                return `<svg class="icon" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="4"></circle>
-                    <path d="M8 12h8M12 8v8M6 6l12 12M18 6L6 18"></path>
-                </svg>`;
-            } else if (weatherCode >= 45 && weatherCode <= 48) {
-                // Niebla
-                return `<svg class="icon" viewBox="0 0 24 24">
-                    <path d="M4 12h16M8 8h8M6 16h12" stroke-width="1.5" opacity="0.6"></path>
-                </svg>`;
-            } else if (weatherCode === 0) {
-                // Despejado
-                return `<svg class="icon" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="4"></circle>
-                    <path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path>
-                </svg>`;
-            } else if (weatherCode >= 1 && weatherCode <= 3) {
-                // Parcialmente nublado / Nublado
-                return `<svg class="icon" viewBox="0 0 24 24">
-                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
-                    <circle cx="12" cy="12" r="4"></circle>
-                </svg>`;
-            }
-            // Por defecto, sol
-            return `<svg class="icon" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="4"></circle>
-                <path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path>
-            </svg>`;
-        }
-
-        // Función para obtener la descripción del clima
-        function getWeatherDescription(weatherCode) {
-            const descriptions = {
-                    0: 'Cielo despejado',
-                    1: 'Principalmente despejado',
-                    2: 'Parcialmente nublado',
-                    3: 'Nublado',
-                    45: 'Niebla',
-                    48: 'Niebla helada',
-                    51: 'Llovizna ligera',
-                    53: 'Llovizna moderada',
-                    55: 'Llovizna densa',
-                    56: 'Llovizna helada ligera',
-                    57: 'Llovizna helada densa',
-                    61: 'Lluvia ligera',
-                    63: 'Lluvia moderada',
-                    65: 'Lluvia fuerte',
-                    66: 'Lluvia helada ligera',
-                    67: 'Lluvia helada fuerte',
-                    71: 'Nieve ligera',
-                    73: 'Nieve moderada',
-                    75: 'Nieve fuerte',
-                    77: 'Granizo de nieve',
-                    80: 'Chubascos ligeros',
-                    81: 'Chubascos moderados',
-                    82: 'Chubascos fuertes',
-                    85: 'Chubascos de nieve ligeros',
-                    86: 'Chubascos de nieve fuertes',
-                    95: 'Tormenta',
-                    96: 'Tormenta con granizo leve',
-                    99: 'Tormenta con granizo fuerte'
-                };
-                return descriptions[weatherCode] || 'Condiciones variables';
-        }
-
-        // Función para formatear el nombre del día
-        function getDayName(date, index) {
-            const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-            if (index === 0) return 'Hoy';
-            if (index === 1) return 'Mañana';
-            const dayIndex = date.getDay();
-            return days[dayIndex];
-        }
-
-        // Función para renderizar el pronóstico
-        function renderWeatherForecast(forecastData) {
-            const container = document.getElementById('weatherForecast');
-            
-            if (!forecastData || !forecastData.daily) {
-                container.innerHTML = '<div class="weather-error">No se pudo cargar el pronóstico del tiempo.</div>';
-                return;
-            }
-
-            const daily = forecastData.daily;
-            const today = new Date();
-            
-            let html = '';
-            
-            // Open-Meteo devuelve arrays de datos diarios
-            for (let i = 0; i < Math.min(7, daily.time.length); i++) {
-                // Open-Meteo devuelve fechas como strings ISO (YYYY-MM-DD)
-                const dateStr = daily.time[i];
-                const date = new Date(dateStr + 'T12:00:00'); // Agregar hora para evitar problemas de zona horaria
-                const maxTemp = Math.round(daily.temperature_2m_max[i]);
-                const minTemp = Math.round(daily.temperature_2m_min[i]);
-                const weatherCode = daily.weathercode[i];
-                const dayName = getDayName(date, i);
-                const icon = getWeatherIcon(weatherCode);
-                const description = getWeatherDescription(weatherCode);
-                
-                // Obtener datos adicionales si están disponibles
-                const precipitation = daily.precipitation_sum ? Math.round(daily.precipitation_sum[i] * 10) / 10 : 0;
-                const precipitationProb = daily.precipitation_probability_max ? daily.precipitation_probability_max[i] : 0;
-                const windSpeed = daily.windspeed_10m_max ? Math.round(daily.windspeed_10m_max[i]) : 0;
-                const windDirection = daily.winddirection_10m_dominant ? daily.winddirection_10m_dominant[i] : 0;
-                
-                html += `
-                    <div class="weather-day">
-                        <div class="weather-day-header">
-                            <div class="weather-day-info">
-                                <div class="weather-day-name">${dayName}</div>
-                                <div class="weather-icon">${icon}</div>
-                            </div>
-                            <div class="weather-temp">
-                                <span class="weather-temp-max">${maxTemp}°</span>
-                                <span class="weather-temp-min">${minTemp}°</span>
-                            </div>
-                        </div>
-                        <div class="weather-description">${description}</div>
-                        <div class="weather-details">
-                            <div class="weather-detail-item">
-                                <span class="weather-detail-label">Precipitación</span>
-                                <span class="weather-detail-value">${precipitationProb}%</span>
-                            </div>
-                            <div class="weather-detail-item">
-                                <span class="weather-detail-label">Viento</span>
-                                <span class="weather-detail-value">${windSpeed} km/h</span>
-                            </div>
-                            <div class="weather-detail-item">
-                                <span class="weather-detail-label">Lluvia</span>
-                                <span class="weather-detail-value">${precipitation} mm</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            container.innerHTML = html;
-        }
-
-        // Función para cargar el pronóstico del tiempo
-        function loadWeatherForecast() {
-            const container = document.getElementById('weatherForecast');
-            container.innerHTML = '<div class="weather-loading">Cargando pronóstico del tiempo...</div>';
-
-            // Obtener ubicación del usuario
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lon = position.coords.longitude;
-                        
-                        // Llamar a la API de Open-Meteo (gratuita, sin API key)
-                        // Solicitar más datos: temperatura, código del clima, precipitación, viento
-                        const url = `${WEATHER_API_URL}?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode,precipitation_sum,precipitation_probability_max,windspeed_10m_max,winddirection_10m_dominant&timezone=auto&forecast_days=7`;
-                        
-                        fetch(url)
-                            .then(response => {
-                                                if (!response.ok) {
-                                                    throw new Error('Error al obtener datos del clima');
-                                                }
-                                return response.json();
-                            })
-                            .then(data => {
-                                renderWeatherForecast(data);
-                            })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                container.innerHTML = '<div class="weather-error">Error al cargar el pronóstico del tiempo. Verifique su conexión.</div>';
-                            });
-                    },
-                    (error) => {
-                        console.error('Error de geolocalización:', error);
-                        container.innerHTML = '<div class="weather-error">No se pudo obtener su ubicación. Por favor, permita el acceso a la ubicación.</div>';
-                    }
-                );
-            } else {
-                container.innerHTML = '<div class="weather-error">Geolocalização não é suportada pelo seu navegador.</div>';
-            }
-        }
-
-        // Función para cargar datos del mercado de granos
-        function loadMarketData() {
-            const container = document.getElementById('marketData');
-            container.innerHTML = '<div class="market-loading">Cargando datos del mercado...</div>';
-
-            // Granos principales a mostrar
-            const grains = [
-                { name: 'Soja', symbol: 'SOYBEAN', unit: 'USD/bushel' },
-                { name: 'Milho', symbol: 'CORN', unit: 'USD/bushel' },
-                { name: 'Trigo', symbol: 'WHEAT', unit: 'USD/bushel' },
-                { name: 'Café', symbol: 'COFFEE', unit: 'USD/lb' },
-                { name: 'Açúcar', symbol: 'SUGAR', unit: 'USD/lb' }
-            ];
-
-         
-            Promise.all(grains.map(grain => fetchMarketPrice(grain)))
-                .then(results => {
-                    renderMarketData(results);
-                })
-                .catch(error => {
-                        console.error('Error:', error);
-                        container.innerHTML = '<div class="market-error">Error al cargar los datos del mercado. Intente nuevamente más tarde.</div>';
-                    });
-        }
-
-        // Función para obtener precio de un commodity en tiempo real
-        async function fetchMarketPrice(grain) {
-            // Mapeo de símbolos a códigos de Yahoo Finance
-            const yahooSymbols = {
-                'SOYBEAN': 'ZS=F',  // Soybean Futures
-                'CORN': 'ZC=F',     // Corn Futures
-                'WHEAT': 'ZW=F',    // Wheat Futures
-                'COFFEE': 'KC=F',   // Coffee Futures
-                'SUGAR': 'SB=F'     // Sugar Futures
-            };
-
-                const symbol = yahooSymbols[grain.symbol];
-            if (!symbol) {
-                throw new Error(`Símbolo no encontrado para ${grain.name}`);
-            }
-
-            try {
-                // Usar proxy CORS público para acceder a Yahoo Finance sin API key
-                // Proxies disponibles: allorigins.win, corsproxy.io, etc.
-                const proxies = [
-                    'https://api.allorigins.win/raw?url=',
-                    'https://corsproxy.io/?',
-                    'https://api.codetabs.com/v1/proxy?quest='
-                ];
-                
-                const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
-                
-                // Intentar con cada proxy hasta que uno funcione
-                for (const proxy of proxies) {
-                    try {
-                        const proxyFullUrl = proxy + encodeURIComponent(yahooUrl);
-                        const response = await fetch(proxyFullUrl, {
-                            method: 'GET',
-                            headers: {
-                                'Accept': 'application/json'
-                            }
-                        });
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            
-                            if (data.chart && data.chart.result && data.chart.result[0]) {
-                                const result = data.chart.result[0];
-                                const meta = result.meta;
-                                const indicators = result.indicators;
-                                
-                                if (meta) {
-                                    // Intentar obtener datos de meta primero (más confiable)
-                                    const currentPrice = meta.regularMarketPrice || meta.previousClose || meta.chartPreviousClose;
-                                    const previousPrice = meta.previousClose || meta.chartPreviousClose || currentPrice;
-                                    
-                                    if (currentPrice) {
-                                        const change = currentPrice - previousPrice;
-                                        const changePercent = (change / previousPrice) * 100;
-                                        
-                                        // Intentar obtener datos de indicators si están disponibles
-                                        let high = meta.regularMarketDayHigh || currentPrice;
-                                        let low = meta.regularMarketDayLow || currentPrice;
-                                        let volume = meta.regularMarketVolume || 0;
-                                        
-                                        if (indicators && indicators.quote && indicators.quote[0]) {
-                                            const quote = indicators.quote[0];
-                                            const highs = quote.high.filter(p => p !== null);
-                                            const lows = quote.low.filter(p => p !== null);
-                                            const volumes = quote.volume.filter(v => v !== null);
-                                            
-                                            if (highs.length > 0) high = Math.max(...highs);
-                                            if (lows.length > 0) low = Math.min(...lows);
-                                            if (volumes.length > 0) volume = volumes.reduce((a, b) => a + b, 0);
-                                        }
-                                        
-                                        return {
-                                            name: grain.name,
-                                            symbol: grain.symbol,
-                                            price: parseFloat(currentPrice.toFixed(2)),
-                                            change: parseFloat(change.toFixed(2)),
-                                            changePercent: parseFloat(changePercent.toFixed(2)),
-                                            high: parseFloat(high.toFixed(2)),
-                                            low: parseFloat(low.toFixed(2)),
-                                            volume: Math.floor(volume),
-                                            unit: grain.unit
-                                        };
-                                    }
-                                }
-                            }
-                        }
-                    } catch (proxyError) {
-                        // Continuar con el siguiente proxy
-                        continue;
-                    }
-                }
-                
-                throw new Error('Todos los proxies fallaron');
-            } catch (error) {
-                console.log(`Error al buscar ${grain.name} vía API:`, error.message);
-                
-                // Fallback: usar datos base con variación realista
-                const basePrices = {
-                    'SOYBEAN': { price: 12.50, change: 0.15, high: 12.80, low: 12.20 },
-                    'CORN': { price: 4.80, change: -0.05, high: 4.95, low: 4.65 },
-                    'WHEAT': { price: 6.20, change: 0.10, high: 6.40, low: 6.00 },
-                    'COFFEE': { price: 1.85, change: -0.02, high: 1.90, low: 1.80 },
-                    'SUGAR': { price: 0.22, change: 0.01, high: 0.23, low: 0.21 }
-                };
-
-                const base = basePrices[grain.symbol] || { price: 0, change: 0, high: 0, low: 0 };
-                const now = new Date();
-                const hour = now.getHours();
-                const dayOfWeek = now.getDay();
-                const marketActivity = (hour >= 9 && hour <= 16) ? 1.5 : 0.5;
-                const dayVariation = (dayOfWeek >= 1 && dayOfWeek <= 5) ? 1 : 0.3;
-                
-                const variation = (Math.random() - 0.5) * 0.1 * marketActivity * dayVariation;
-                const changeVariation = (Math.random() - 0.5) * 0.05 * marketActivity * dayVariation;
-                
-                return {
-                    name: grain.name,
-                    symbol: grain.symbol,
-                    price: parseFloat((base.price + variation).toFixed(2)),
-                    change: parseFloat((base.change + changeVariation).toFixed(2)),
-                    changePercent: parseFloat((((base.change + changeVariation) / (base.price + variation)) * 100).toFixed(2)),
-                    high: parseFloat((base.high + Math.random() * 0.1).toFixed(2)),
-                    low: parseFloat((base.low - Math.random() * 0.1).toFixed(2)),
-                    volume: Math.floor(Math.random() * 1000000) + 500000,
-                    unit: grain.unit
-                };
-            }
-        }
-
-        // Función para renderizar los datos del mercado
-        function renderMarketData(marketData) {
-            const container = document.getElementById('marketData');
-            
-            if (!marketData || marketData.length === 0) {
-                container.innerHTML = '<div class="market-error">No se pudieron cargar los datos del mercado.</div>';
-                return;
-            }
-
-            let html = '';
-            
-            marketData.forEach(item => {
-                const isPositive = item.change >= 0;
-                const changeIcon = isPositive ? '↑' : '↓';
-                
-                html += `
-                    <div class="market-item">
-                        <div class="market-item-header">
-                            <div class="market-item-name">${item.name}</div>
-                            <div>
-                                <div class="market-item-price">$${item.price.toFixed(2)}</div>
-                                <div class="market-item-change ${isPositive ? 'positive' : 'negative'}">
-                                    <span>${changeIcon}</span>
-                                    <span>${Math.abs(item.change).toFixed(2)} (${Math.abs(item.changePercent).toFixed(2)}%)</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="market-item-details">
-                            <div class="market-detail-item">
-                                <span class="market-detail-label">Máxima</span>
-                                <span class="market-detail-value">$${item.high.toFixed(2)}</span>
-                            </div>
-                            <div class="market-detail-item">
-                                <span class="market-detail-label">Mínima</span>
-                                <span class="market-detail-value">$${item.low.toFixed(2)}</span>
-                            </div>
-                            <div class="market-detail-item">
-                                <span class="market-detail-label">Volume</span>
-                                <span class="market-detail-value">${item.volume.toLocaleString('pt-BR')}</span>
-                            </div>
-                            <div class="market-detail-item">
-                                <span class="market-detail-label">Unidad</span>
-                                <span class="market-detail-value">${item.unit}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-        }
-
-        // Funcionalidad de navegación inferior
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', function() {
-                const label = this.querySelector('.nav-label');
-
-                // Acción del botón "Entrar"
-                if (label && label.textContent.trim() === 'Entrar') {
-                    window.location.href = 'index.html';
-                    return;
-                }
-
-                // Acción del botón "Mercado" en la navegación inferior:
-                if (label && label.textContent.trim() === 'Mercado') {
-                    // Marcar el nav activo
-                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                    this.classList.add('active');
-
-                    // Desactivar pestañas superiores
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-
-                    // Mostrar sección de mercado y cargar datos
-                    document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
-                    document.getElementById('marketSection').classList.add('active');
-                    if (typeof loadMarketData === 'function') loadMarketData();
-                    return;
-                }
-
-                // Acción del botón "Pedidos" -> abrir página de pedidos
-                if (label && label.textContent.trim() === 'Pedidos') {
-                    window.location.href = 'pedidos.html';
-                    return;
-                }
-
-                // Acción del botón "Comunidad" -> abrir página de comunidad
-                if (label && label.textContent.trim() === 'Comunidad') {
-                    window.location.href = 'comunidad.html';
-                    return;
-                }
-
-                // Comportamiento por defecto para los demás botones
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                this.classList.add('active');
-            });
-        });
-
-        const menuButton = document.querySelector('.menu-icon');
-        const sideMenu = document.getElementById('sideMenu');
-        const menuOverlay = document.getElementById('menuOverlay');
-        const closeMenuButton = document.getElementById('closeMenu');
-
-        function openMenu() {
-            sideMenu.classList.add('open');
-            menuOverlay.classList.add('visible');
-            sideMenu.setAttribute('aria-hidden', 'false');
-        }
-
-        function closeMenu() {
-            sideMenu.classList.remove('open');
-            menuOverlay.classList.remove('visible');
-            sideMenu.setAttribute('aria-hidden', 'true');
-        }
-
-        menuButton.addEventListener('click', openMenu);
-        closeMenuButton.addEventListener('click', closeMenu);
-        menuOverlay.addEventListener('click', closeMenu);
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && sideMenu.classList.contains('open')) {
-                closeMenu();
-            }
-        });
-
-        /* ----------------------------- */
-        /* Integración Apitube (Noticias) */
-        /* ----------------------------- */
-        // Configura aquí tu API key y endpoint. Si el endpoint de Apitube es distinto, reemplázalo por la URL correcta.
-        const APITUBE_API_URL = '/api/agro-news';
-        const CUSTOM_NEWS_KEY = 'custom_news_items';
-        let fbEnabled = !!window.fbListNews;
-
-        let LATEST_NEWS_ITEMS = [];
-        function isThisMonth(dateStr){
-            const d = new Date(dateStr);
-            if (isNaN(d)) return false;
-            const now = new Date();
-            return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-        }
-        function buildNewsHTML(items){
-            return items.map(item => {
-                const title = item.title || item.headline || item.name || 'Sin título';
-                const summary = item.description || item.summary || item.excerpt || '';
-                const image = item.image || item.image_url || item.thumbnail || '';
-                const url = item.url || item.link || '#';
-                return `
-                <div class="news-item">
-                    <img loading="lazy" onerror="this.remove()" src="${image || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'90\' height=\'90\'%3E%3Crect fill=\'%23eaeaea\' width=\'90\' height=\'90\'/%3E%3C/svg%3E'}" alt="" class="news-image">
-                    <div class="news-content">
-                        <a href="${url}" class="news-title" style="text-decoration:none;color:inherit;display:block" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>
-                        <div class="activity-description">${escapeHtml(summary)}</div>
-                    </div>
-                </div>`;
-            }).join('');
-        }
-        function renderNewsItems(items) {
-            const list = document.querySelector('.news-list');
-            if (!items || items.length === 0) {
-                list.innerHTML = '<div class="weather-error">No se encontraron noticias.</div>';
-                return;
-            }
-            list.innerHTML = buildNewsHTML(items);
-            LATEST_NEWS_ITEMS = items.slice();
-        }
-
-        // Helper para escapar texto
-        function escapeHtml(str){ return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-        async function loadNewsFromRSS(){
-            const feeds = [
-                'https://news.un.org/feed/subscribe/es/news/topic/agriculture/rss.xml',
-                'https://news.google.com/rss/search?q=agricultura&hl=es-419&gl=AR&ceid=AR:es-419',
-                'https://news.google.com/rss/search?q=ganader%C3%ADa&hl=es-419&gl=AR&ceid=AR:es-419',
-                'https://news.google.com/rss/search?q=agro&hl=es-419&gl=AR&ceid=AR:es-419',
-                'https://news.google.com/rss/search?q=soja&hl=es-419&gl=AR&ceid=AR:es-419',
-                'https://news.google.com/rss/search?q=ma%C3%ADz&hl=es-419&gl=AR&ceid=AR:es-419'
-            ];
-            try {
-                const results = await Promise.all(feeds.map(async f => {
-                    const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(f));
-                    if (!r.ok) throw new Error('rss');
-                    const j = await r.json();
-                    const doc = new DOMParser().parseFromString(j.contents || '', 'text/xml');
-                    const items = Array.from(doc.querySelectorAll('item')).map(it => {
-                        const title = it.querySelector('title')?.textContent || '';
-                        const link = it.querySelector('link')?.textContent || '#';
-                        const description = it.querySelector('description')?.textContent || '';
-                        const pubDate = it.querySelector('pubDate')?.textContent || '';
-                        const enclosure = it.querySelector('enclosure');
-                        const media = it.getElementsByTagName('media:content')[0];
-                        const image = enclosure?.getAttribute('url') || (media ? media.getAttribute('url') : '') || '';
-                        return { title, url: link, description, pubDate, image };
-                    });
-                    return items;
-                }));
-                const merged = results.flat().filter(x => x && x.title);
-                const dedup = new Map();
-                for (const it of merged) {
-                    const key = (it.url || it.title).trim();
-                    if (!dedup.has(key)) dedup.set(key, it);
-                }
-                const items = Array.from(dedup.values()).sort((a,b)=> new Date(b.pubDate) - new Date(a.pubDate)).slice(0,12);
-                if (items.length) {
-                    renderNewsItems(items);
-                    LATEST_NEWS_ITEMS = items.slice();
-                    return true;
-                }
-                return false;
-            } catch(e) {
-                return false;
-            }
-        }
-
-        // Realiza la petición a Apitube
-        function loadNewsFromApi(){
-            const container = document.querySelector('.news-list');
-            if(!container) return;
-            container.innerHTML = '<div class="weather-loading">Cargando noticias...</div>';
-            if (fbEnabled) {
-                window.fbListNews().then(items => {
-                    if (items.length === 0) {
-                        try {
-                            const v = localStorage.getItem(CUSTOM_NEWS_KEY);
-                            const localItems = Array.isArray(JSON.parse(v)) ? JSON.parse(v) : [];
-                            if (localItems.length) {
-                                renderNewsItems(localItems);
-                                LATEST_NEWS_ITEMS = localItems.slice();
-                                return;
-                            }
-                        } catch(e) {}
-                    }
-                    renderNewsItems(items);
-                    LATEST_NEWS_ITEMS = items.slice();
-                }).catch(() => {
-                    try {
-                        const v = localStorage.getItem(CUSTOM_NEWS_KEY);
-                        const items = Array.isArray(JSON.parse(v)) ? JSON.parse(v) : [];
-                        if (!items.length) {
-                            container.innerHTML = '<div class="weather-error">No hay noticias cargadas.</div>';
-                            LATEST_NEWS_ITEMS = [];
-                            return;
-                        }
-                        renderNewsItems(items);
-                        LATEST_NEWS_ITEMS = items.slice();
-                    } catch(e) {
-                        container.innerHTML = '<div class="weather-error">No hay noticias cargadas.</div>';
-                        LATEST_NEWS_ITEMS = [];
-                    }
-                });
-                return;
-            }
-            try {
-                const v = localStorage.getItem(CUSTOM_NEWS_KEY);
-                const items = Array.isArray(JSON.parse(v)) ? JSON.parse(v) : [];
-                if (!items.length) {
-                    container.innerHTML = '<div class="weather-error">No hay noticias cargadas.</div>';
-                    LATEST_NEWS_ITEMS = [];
-                    return;
-                }
-                renderNewsItems(items);
-                LATEST_NEWS_ITEMS = items.slice();
-            } catch(e) {
-                container.innerHTML = '<div class="weather-error">No hay noticias cargadas.</div>';
-                LATEST_NEWS_ITEMS = [];
-            }
-        }
-
-        // Cargar noticias inicialmente y cuando se active la pestaña Noticias
-        // Llamada inicial para poblar la sección al cargar la página
-        (function initNews(){
-            // Si la sección de noticias está visible por defecto, cargar inmediatamente
-            const newsSection = document.getElementById('newsSection');
-            if(newsSection && newsSection.classList.contains('active')) loadNewsFromApi();
-
-            // Añadir carga cuando se activa la pestaña (la lógica de pestañas ya existe más arriba)
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', function(){
-                    if (this.getAttribute('data-tab') === 'news') {
-                        // pequeña demora para que la transición ocurra primero
-                        setTimeout(loadNewsFromApi, 80);
-                    }
-                });
-            });
-        })();
-
-        // Navegación desde el menú lateral hacia las secciones
-        document.querySelectorAll('.side-menu__item').forEach(item => {
-            item.addEventListener('click', (event) => {
-                event.preventDefault();
-
-                const text = item.textContent.trim();
-
-                // Navegar a página de QR Productos Premiados
-                if (text === 'QR Productos Premiados') {
-                    closeMenu();
-                    window.location.href = 'qr.html';
-                    return;
-                }
-
-                // Navegar al Cuaderno de actividades (otra página)
-                if (text === 'Cuaderno de actividades') {
-                    closeMenu();
-                    window.location.href = 'activities.html';
-                    return;
-                }
-
-                // Navegar a la página de Contacto
-                if (text === 'Contacto') {
-                    closeMenu();
-                    window.location.href = 'contacto.html';
-                    return;
-                }
-
-                // Navegar a la página de Agendar visita
-                if (text === 'Agendar visita') {
-                    closeMenu();
-                    window.location.href = 'visitas.html';
-                    return;
-                }
-                if (text === 'Mis noticias') {
-                    closeMenu();
-                    window.location.href = 'misnoticias.html';
-                    return;
-                }
-
-                // Pestaña Noticias
-                if (text === 'Noticias') {
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    const newsTab = document.querySelector('.tab[data-tab="news"]');
-                    if (newsTab) newsTab.classList.add('active');
-
-                    document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
-                    const newsSection = document.getElementById('newsSection');
-                    if (newsSection) newsSection.classList.add('active');
-
-                    if (typeof loadNewsFromApi === 'function') {
-                        loadNewsFromApi();
-                    }
-                }
-
-                // Pestaña Tiempo
-                if (text === 'Tiempo') {
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    const weatherTab = document.querySelector('.tab[data-tab="weather"]');
-                    if (weatherTab) weatherTab.classList.add('active');
-
-                    document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
-                    const weatherSection = document.getElementById('weatherSection');
-                    if (weatherSection) weatherSection.classList.add('active');
-
-                    if (typeof loadWeatherForecast === 'function') {
-                        loadWeatherForecast();
-                    }
-
-                    // Desplazar suavemente hacia la sección de tiempo
-                    weatherSection?.scrollIntoView({ behavior: 'smooth' });
-                }
-
-                // Sección Mercado
-                if (text === 'Mercado') {
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
-                    const marketSection = document.getElementById('marketSection');
-                    if (marketSection) marketSection.classList.add('active');
-
-                    if (typeof loadMarketData === 'function') {
-                        loadMarketData();
-                    }
-
-                    marketSection?.scrollIntoView({ behavior: 'smooth' });
-                }
-
-                // Navegar a Comunidad (menú lateral)
-                if (text === 'Comunidad') {
-                    closeMenu();
-                    window.location.href = 'comunidad.html';
-                    return;
-                }
-
-                // Cerrar menú después de la navegación
-                closeMenu();
-            });
-        });
-
-        const viewAllNewsLink = document.getElementById('viewAllNewsLink');
-        const newsOverlay = document.getElementById('newsOverlay');
-        const newsModalList = document.getElementById('newsModalList');
-        const closeNews = document.getElementById('closeNews');
-        const imageOverlay = document.getElementById('imageOverlay');
-        const imageOverlayImg = document.getElementById('imageOverlayImg');
-        const newsListEl = document.getElementById('newsList');
-        const itemOverlay = document.getElementById('itemOverlay');
-        const itemOverlayTitle = document.getElementById('itemOverlayTitle');
-        const itemOverlayBody = document.getElementById('itemOverlayBody');
-        const itemOverlayOpenLink = document.getElementById('itemOverlayOpenLink');
-        const closeItem = document.getElementById('closeItem');
-        function openNewsModal(){
-            if (!newsOverlay || !newsModalList) return;
-            const items = Array.isArray(LATEST_NEWS_ITEMS) ? LATEST_NEWS_ITEMS : [];
-            if (items.length === 0) return;
-            newsModalList.innerHTML = buildNewsHTML(items);
-            newsOverlay.classList.add('open');
-        }
-        function openImageModal(src){
-            if (!imageOverlay || !imageOverlayImg) return;
-            imageOverlayImg.src = src;
-            imageOverlay.classList.add('open');
-        }
-        if (viewAllNewsLink) {
-            viewAllNewsLink.addEventListener('click', e => { e.preventDefault(); openNewsModal(); });
-        }
-        if (newsOverlay) {
-            newsOverlay.addEventListener('click', e => { if (e.target === newsOverlay) newsOverlay.classList.remove('open'); });
-        }
-        if (closeNews) {
-            closeNews.addEventListener('click', () => newsOverlay.classList.remove('open'));
-        }
-        if (newsListEl) {
-            newsListEl.addEventListener('click', e => {
-                const item = e.target.closest('.news-item');
-                if (!item) return;
-                const img = item.querySelector('.news-image');
-                const titleEl = item.querySelector('.news-title');
-                const descEl = item.querySelector('.activity-description');
-                const linkHref = titleEl && titleEl.getAttribute('href') ? titleEl.getAttribute('href') : '#';
-                if (e.target.closest('.news-image')) {
-                    e.preventDefault();
-                    openImageModal(img && img.src ? img.src : '');
-                    return;
-                }
-                if (e.target.closest('.news-title')) {
-                    e.preventDefault();
-                }
-                itemOverlayTitle.textContent = titleEl ? titleEl.textContent : '';
-                itemOverlayBody.innerHTML = `${img && img.src ? `<img src="${img.src}" alt="" style="width:100%;border-radius:8px;margin-bottom:12px">` : ''}${descEl ? descEl.textContent : ''}`;
-                if (linkHref && linkHref !== '#') {
-                    itemOverlayOpenLink.style.display = '';
-                    itemOverlayOpenLink.onclick = () => { window.open(linkHref, '_blank', 'noopener'); };
-                } else {
-                    itemOverlayOpenLink.style.display = 'none';
-                    itemOverlayOpenLink.onclick = null;
-                }
-                itemOverlay.classList.add('open');
-            });
-        }
-        if (imageOverlay) {
-            imageOverlay.addEventListener('click', e => { if (e.target === imageOverlay) imageOverlay.classList.remove('open'); });
-        }
-        if (itemOverlay) {
-            itemOverlay.addEventListener('click', e => { if (e.target === itemOverlay) itemOverlay.classList.remove('open'); });
-        }
-        if (closeItem) {
-            closeItem.addEventListener('click', () => itemOverlay.classList.remove('open'));
-        }
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && imageOverlay && imageOverlay.classList.contains('open')) {
-                imageOverlay.classList.remove('open');
-            }
-            if (event.key === 'Escape' && itemOverlay && itemOverlay.classList.contains('open')) {
-                itemOverlay.classList.remove('open');
-            }
         });
         
-    </script>
-</body>
+        console.log('Noticias cargadas de Firebase:', news.length);
+        return news;
+    } catch (error) {
+        console.error('Error al cargar noticias de Firebase:', error);
+        return [];
+    }
+};
+
+// Función auxiliar para agregar noticias (opcional, para testing)
+window.fbAddNews = async function(newsData) {
+    try {
+        const docRef = await db.collection('noticias').add({
+            titulo: newsData.title || newsData.titulo,
+            descripcion: newsData.description || newsData.descripcion,
+            imagen: newsData.image || newsData.imagen,
+            url: newsData.url || '#',
+            fecha: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        console.log('Noticia agregada con ID:', docRef.id);
+        return docRef.id;
+    } catch (error) {
+        console.error('Error al agregar noticia:', error);
+        return null;
+    }
+};
+
+// Función para eliminar una noticia (opcional)
+window.fbDeleteNews = async function(newsId) {
+    try {
+        await db.collection('noticias').doc(newsId).delete();
+        console.log('Noticia eliminada:', newsId);
+        return true;
+    } catch (error) {
+        console.error('Error al eliminar noticia:', error);
+        return false;
+    }
+};
+</script>
+
+<!-- ============================================= -->
+<!-- AHORA VA TU SCRIPT PRINCIPAL (el que ya tienes) -->
+<!-- ============================================= -->
+<script>
+    // Funcionalidad de las pestañas con cambio de contenido
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabType = this.getAttribute('data-tab');
+            
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            if (tabType === 'news') {
+                document.getElementById('newsSection').classList.add('active');
+                if (typeof loadNewsFromApi === 'function') {
+                    loadNewsFromApi();
+                }
+            } else if (tabType === 'products') {
+                document.getElementById('productsSection').classList.add('active');
+            } else if (tabType === 'weather') {
+                document.getElementById('weatherSection').classList.add('active');
+                loadWeatherForecast();
+            } else if (tabType === 'market') {
+                document.getElementById('marketSection').classList.add('active');
+                loadMarketData();
+            }
+        });
+    });
+
+    // Variables globales para noticias
+    const CUSTOM_NEWS_KEY = 'custom_news_items';
+    let fbEnabled = !!window.fbListNews;
+    let LATEST_NEWS_ITEMS = [];
+
+    // Helper para escapar HTML
+    function escapeHtml(str) { 
+        return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); 
+    }
+
+    // Construir HTML de noticias
+    function buildNewsHTML(items) {
+        return items.map(item => {
+            const title = item.title || item.titulo || item.headline || 'Sin título';
+            const summary = item.description || item.descripcion || item.summary || '';
+            const image = item.image || item.imagen || item.image_url || '';
+            const url = item.url || item.link || '#';
+            return `
+            <div class="news-item">
+                <img loading="lazy" onerror="this.style.display='none'" 
+                     src="${image || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'90\' height=\'90\'%3E%3Crect fill=\'%23eaeaea\' width=\'90\' height=\'90\'/%3E%3C/svg%3E'}" 
+                     alt="" class="news-image">
+                <div class="news-content">
+                    <a href="${url}" class="news-title" style="text-decoration:none;color:inherit;display:block" 
+                       target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>
+                    <div class="activity-description">${escapeHtml(summary)}</div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // Renderizar noticias
+    function renderNewsItems(items) {
+        const list = document.querySelector('.news-list') || document.getElementById('newsList');
+        if (!list) return;
+        
+        if (!items || items.length === 0) {
+            list.innerHTML = '<div class="weather-error">No se encontraron noticias.</div>';
+            return;
+        }
+        list.innerHTML = buildNewsHTML(items);
+        LATEST_NEWS_ITEMS = items.slice();
+    }
+
+    // =============================================
+    // FUNCIÓN PRINCIPAL PARA CARGAR NOTICIAS
+    // =============================================
+    async function loadNewsFromApi() {
+        const container = document.querySelector('.news-list') || document.getElementById('newsList');
+        if (!container) return;
+        
+        container.innerHTML = '<div class="weather-loading">Cargando noticias...</div>';
+        
+        // Verificar si Firebase está disponible
+        if (typeof window.fbListNews === 'function') {
+            console.log('Cargando noticias desde Firebase...');
+            try {
+                const items = await window.fbListNews();
+                
+                if (items && items.length > 0) {
+                    renderNewsItems(items);
+                    console.log('Noticias de Firebase renderizadas:', items.length);
+                    return;
+                } else {
+                    console.log('Firebase no retornó noticias, intentando localStorage...');
+                    // Fallback a localStorage
+                    loadFromLocalStorage(container);
+                }
+            } catch (error) {
+                console.error('Error cargando de Firebase:', error);
+                loadFromLocalStorage(container);
+            }
+        } else {
+            console.log('Firebase no disponible, usando localStorage...');
+            loadFromLocalStorage(container);
+        }
+    }
+
+    // Fallback a localStorage
+    function loadFromLocalStorage(container) {
+        try {
+            const stored = localStorage.getItem(CUSTOM_NEWS_KEY);
+            const items = stored ? JSON.parse(stored) : [];
+            
+            if (Array.isArray(items) && items.length > 0) {
+                renderNewsItems(items);
+            } else {
+                container.innerHTML = '<div class="weather-error">No hay noticias disponibles.</div>';
+                LATEST_NEWS_ITEMS = [];
+            }
+        } catch (e) {
+            console.error('Error leyendo localStorage:', e);
+            container.innerHTML = '<div class="weather-error">Error al cargar noticias.</div>';
+            LATEST_NEWS_ITEMS = [];
+        }
+    }
+
+    // Inicializar noticias al cargar
+    (function initNews() {
+        const newsSection = document.getElementById('newsSection');
+        if (newsSection && newsSection.classList.contains('active')) {
+            loadNewsFromApi();
+        }
+    })();
+</script>
 </html>
