@@ -10,10 +10,30 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
         import { initializeFirestore, getFirestore, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
         const PFX = '[HomeNoticias]';
-        const app = initializeApp(window.firebaseConfig);
-        let db;
-        try { db = initializeFirestore(app, { databaseId: 'news' }); console.log(PFX, 'Firestore initialized with DB', 'news'); }
-        catch (e) { console.error(PFX, 'initializeFirestore failed, fallback default', e); db = getFirestore(app); }
+        function updateStatus(type, message) {
+            const el = document.getElementById('firebaseStatus');
+            if (!el) return;
+            el.className = 'status ' + type;
+            el.textContent = message;
+            if (type === 'success') { setTimeout(() => el.style.display = 'none', 3000); }
+        }
+
+        let app, db;
+        try {
+            if (!window.firebaseConfig) throw new Error('firebaseConfig no encontrado');
+            app = initializeApp(window.firebaseConfig);
+            try {
+                db = initializeFirestore(app, { databaseId: 'news' });
+                console.log(PFX, 'Firestore initialized with DB', 'news');
+            } catch (e) {
+                console.warn(PFX, 'initializeFirestore failed, fallback default', e);
+                db = getFirestore(app);
+            }
+            updateStatus('success', '✅ Conectado a Firebase');
+        } catch (e) {
+            console.error(PFX, 'Firebase init error', e);
+            updateStatus('error', '❌ Error conectando a Firebase: ' + e.message);
+        }
         window.fbListNews = async () => {
             console.log(PFX, 'fbListNews start');
             const q = query(collection(db,'news'), orderBy('createdAt','desc'), limit(20));
@@ -45,6 +65,11 @@
             justify-content: space-between;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+
+        .status { margin: 8px 16px; padding: 8px 12px; border-radius: 8px; font-size: 14px; }
+        .status.loading { background:#fffbe6; color:#8a6d3b; border:1px solid #ffecb5; }
+        .status.success { background:#e6ffed; color:#2c7a7b; border:1px solid #b7f7c8; }
+        .status.error { background:#ffe6e6; color:#9b2c2c; border:1px solid #f5b7b7; }
 
         .menu-icon,
         .notification-icon {
@@ -705,6 +730,8 @@
             </svg>
         </button>
     </div>
+
+    <div id="firebaseStatus" class="status loading">Conectando con Firebase...</div>
 
     <div class="menu-overlay" id="menuOverlay"></div>
     <nav class="side-menu" id="sideMenu" aria-hidden="true">
