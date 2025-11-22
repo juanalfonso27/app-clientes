@@ -8,7 +8,7 @@
     <script src="firebase-config.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-        import { initializeFirestore, getFirestore, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
         const PFX = '[HomeNoticias]';
         function updateStatus(type, message) {
             const el = document.getElementById('firebaseStatus');
@@ -22,13 +22,8 @@
         try {
             if (!window.firebaseConfig) throw new Error('firebaseConfig no encontrado');
             app = initializeApp(window.firebaseConfig);
-            try {
-                db = initializeFirestore(app, { databaseId: 'news' });
-                console.log(PFX, 'Firestore initialized with DB', 'news');
-            } catch (e) {
-                console.warn(PFX, 'initializeFirestore failed, fallback default', e);
-                db = getFirestore(app);
-            }
+            db = getFirestore(app);
+            console.log(PFX, 'Firestore inicializado (default)');
             updateStatus('success', '✅ Conectado a Firebase');
         } catch (e) {
             console.error(PFX, 'Firebase init error', e);
