@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendar visita - IASA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background-color: #d4d4d4;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header img {
+            height: 36px;
+            width: auto;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px 16px 32px;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 18px 16px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .form-label span {
+            color: #d32f2f;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 10px 11px;
+            border-radius: 8px;
+            border: 1px solid #d0d0d0;
+            font-size: 14px;
+            outline: none;
+            background-color: #fafafa;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            border-color: #5a4fcf;
+            box-shadow: 0 0 0 2px rgba(90,79,207,0.16);
+            background-color: #ffffff;
+        }
+
+        .form-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .inline-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .inline-group .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .helper-text {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .actions {
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #5a4fcf;
+            color: white;
+            border: none;
+            border-radius: 999px;
+            padding: 11px 16px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 3px 10px rgba(90,79,207,0.4);
+            transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background: #4b40b0;
+            transform: translateY(-1px);
+            box-shadow: 0 5px 16px rgba(90,79,207,0.55);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(90,79,207,0.35);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: none;
+            color: #666;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        @media (min-width: 720px) {
+            .content {
+                padding-top: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header class="header">
+            <img src="logo1.png" alt="IASA logo" loading="lazy">
+        </header>
+
+        <main class="content">
+            <h1 class="title">Agendar visita</h1>
+            <p class="subtitle">Completá los datos para coordinar una visita técnica a tu establecimiento.</p>
+
+            <section class="card" aria-label="Formulario para agendar visita">
+                <form id="visitForm">
+                    <div class="form-group">
+                        <label class="form-label" for="name">Nombre y apellido <span>*</span></label>
+                        <input id="name" name="name" type="text" class="form-input" required placeholder="Ej: Juan Pérez">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="farm">Establecimiento / Campo <span>*</span></label>
+                        <input id="farm" name="farm" type="text" class="form-input" required placeholder="Nombre del campo o establecimiento">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="contact">Contacto <span>*</span></label>
+                        <input id="contact" name="contact" type="text" class="form-input" required placeholder="Teléfono o email">
+                        <p class="helper-text">Indica un teléfono o correo para que podamos comunicarnos.</p>
+                    </div>
+
+                    <div class="inline-group" style="margin-bottom: 14px;">
+                        <div class="form-group">
+                            <label class="form-label" for="date">Fecha sugerida <span>*</span></label>
+                            <input id="date" name="date" type="date" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="time">Horario preferido</label>
+                            <input id="time" name="time" type="time" class="form-input">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="type">Tipo de visita</label>
+                        <select id="type" name="type" class="form-select">
+                            <option value="">Seleccioná una opción</option>
+                            <option value="tecnica">Visita técnica a campo</option>
+                            <option value="comercial">Reunión comercial</option>
+                            <option value="seguimiento">Seguimiento de lote / cultivo</option>
+                            <option value="otra">Otra consulta</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="message">Comentarios adicionales <span>*</span></label>
+                        <textarea id="message" name="message" class="form-textarea" required placeholder="Contanos qué necesitás, superficie aproximada, cultivo, etc."></textarea>
+                        <p class="helper-text">Mientras más detalles compartas, mejor podemos preparar la visita.</p>
+                    </div>
+
+                    <div class="actions">
+                        <button type="submit" class="btn-primary">Enviar solicitud de visita</button>
+                        <button type="button" class="btn-secondary" onclick="history.back()">Volver atrás</button>
+                    </div>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const visitForm = document.getElementById('visitForm');
+
+        visitForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const name = visitForm.name.value.trim();
+            const farm = visitForm.farm.value.trim();
+            const contact = visitForm.contact.value.trim();
+            const date = visitForm.date.value.trim();
+            const message = visitForm.message.value.trim();
+
+            if (!name || !farm || !contact || !date || !message) {
+                alert('Por favor, completá los campos obligatorios (Nombre, Establecimiento, Contacto, Fecha y Comentarios).');
+                return;
+            }
+
+            // Aquí podrías enviar los datos al servidor más adelante (fetch / AJAX)
+            alert('Tu solicitud de visita fue enviada. Nos estaremos comunicando para confirmar fecha y horario.');
+            visitForm.reset();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Cuaderno de actividades</title>
+    <style>
+        :root{--primary:#5a4fcf;--muted:#f5f5f5;--card-bg:#ffffff}
+        *{box-sizing:border-box}
+        body{font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;background:#f2f2f4;margin:0;padding-bottom:80px;color:#222}
+         .header {
+            background-color: #d4d4d4;
+            padding: 12px 16px;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .icon-btn{background:none;border:none;padding:8px;border-radius:8px;cursor:pointer;color:#6b6b6b;display:inline-flex;align-items:center;justify-content:center}
+        .container{max-width:1040px;margin:0 auto;padding:18px}
+        .page-title{font-size:18px;font-weight:700;color:#222;margin-bottom:6px}
+        .page-desc{color:#666;font-size:14px;margin-bottom:14px}
+        .add-btn{display:inline-flex;align-items:center;gap:8px;background:var(--primary);color:#fff;padding:10px 18px;border-radius:22px;border:none;font-weight:700;cursor:pointer}
+        .add-btn:active{transform:translateY(1px)}
+
+        /* Activities responsive grid */
+        .activities-list{margin-top:16px;display:grid;grid-template-columns:1fr;gap:12px}
+        .activity-card{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;background:var(--card-bg);padding:12px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);min-height:64px}
+        .activity-icon{width:48px;height:48px;border-radius:10px;background:#eef2ff;display:flex;align-items:center;justify-content:center;color:var(--primary);flex-shrink:0}
+        .activity-icon svg{width:22px;height:22px;stroke:currentColor;fill:none}
+        .activity-main{flex:1;min-width:0;overflow:hidden}
+        .activity-title{font-weight:700;color:#222;margin-bottom:6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
+        .activity-desc{color:#555;margin-top:6px;font-size:14px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-clamp:2;overflow-wrap:anywhere;word-break:break-word;hyphens:auto}
+        .activity-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:#777;font-size:13px}
+        .meta{display:inline-flex;align-items:center;gap:6px}
+        .meta-icon{width:16px;height:16px;vertical-align:middle;margin-right:6px;display:inline-block;flex-shrink:0}
+        .activity-actions{display:flex;align-items:center;gap:8px}
+        .pill{padding:6px 10px;border-radius:12px;border:1px solid #ddd;font-weight:600;font-size:12px;background:#fff;color:#333}
+        .pill.realizado{background:#fff;color:#2e7d32;border-color:rgba(46,125,50,0.12)}
+        .pill.pendiente{background:#fff;color:#b28700;border-color:rgba(178,136,0,0.12)}
+        .pill.atrasado{background:#fff;color:#d32f2f;border-color:rgba(211,47,47,0.08)}
+        .priority-badge{padding:6px 8px;border-radius:10px;font-weight:700;font-size:12px;color:#fff}
+        .priority-baja{background:#6b6b6b}
+        .priority-media{background:#f59e0b}
+        .priority-alta{background:#d32f2f}
+
+        .logo{display:flex;align-items:center;justify-content:center}
+        .logo img{height:32px;width:auto}
+
+        /* Modal form */
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:none;align-items:center;justify-content:center;padding:16px;z-index:60}
+        .overlay.open{display:flex}
+        .modal{background:#fff;border-radius:12px;padding:16px;max-width:520px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,0.12)}
+        .modal h3{margin:0 0 8px 0}
+        .row{display:flex;gap:8px;flex-wrap:wrap}
+        .field{display:flex;flex-direction:column;margin-bottom:10px}
+        .field label{font-size:13px;color:#555;margin-bottom:6px}
+        .field input,.field select{padding:10px;border-radius:8px;border:1px solid #e6e6e6;font-size:14px}
+        .field textarea{padding:10px;border-radius:8px;border:1px solid #e6e6e6;font-size:14px}
+        .field input,.field select,.field textarea{width:100%}
+        .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+        .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer}
+        .btn.secondary{background:#f5f5f5}
+        .empty{padding:28px;text-align:center;color:#888;background:linear-gradient(180deg,#fff,#fbfbfb);border-radius:10px}
+        .delete-act{width:34px;height:34px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.06);display:inline-flex;align-items:center;justify-content:center;color:#6b6b6b;cursor:pointer;transition:background .12s ease,color .12s ease,transform .08s;box-shadow:0 1px 2px rgba(0,0,0,0.04)}
+        .delete-act:hover{background:#d32f2f;color:#fff;transform:translateY(-2px);box-shadow:0 6px 18px rgba(211,47,47,0.18)}
+        .delete-act svg{width:16px;height:16px;display:block}
+        .delete-act:focus{outline:none;box-shadow:0 0 0 4px rgba(90,79,207,0.12)}
+
+        /* Helpers for modal fields (classes applied in markup) */
+        .field--narrow{flex:0 0 120px;max-width:120px}
+        .field--fixed{flex:0 0 140px;min-width:120px}
+        .field--grow{flex:1;min-width:140px}
+
+        @media(min-width:700px){
+            .activities-list{grid-template-columns:1fr}
+            .activity-card{align-items:flex-start}
+            .activity-desc{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-clamp:2}
+        }
+        /* Mobile fixes */
+        @media(max-width:480px){
+            .container{padding:12px}
+            .header{padding:8px}
+            .logo img{height:28px}
+            .activity-card{grid-template-columns:auto 1fr}
+            .activity-actions{grid-column:1/-1;margin-top:6px}
+            .activity-title{white-space:normal}
+            .activity-desc{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+            .field--narrow,.field--fixed,.field--grow{flex-basis:auto;min-width:0;max-width:100%}
+            .modal{padding:12px;margin:8px}
+            .activities-list{gap:10px}
+        }
+        @media(min-width:1400px){
+            .activities-list{grid-template-columns:repeat(2,1fr)}
+        }
+    </style>
+    <!-- Librería para generar PDF en cliente (jsPDF UMD) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+   <div class="header">
+        <div class="logo">
+            <img src="logo1.png" alt="IASA logo" loading="lazy">
+        </div>       
+        </button>
+    </div>
+    </div>
+
+    <div class="container">
+        <div class="page-title">Cuaderno de actividades</div>
+        <div class="page-desc">Accede y registra aquí tus actividades; compártelas para actualizar a tu equipo.</div>
+
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+        <button id="openAdd" class="add-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Agregar actividad
+        </button>
+
+        </div>
+
+        <div id="activitiesList" class="activities-list">
+            <!-- Activities will be injected here -->
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="overlay" class="overlay" role="dialog" aria-modal="true">
+        <div class="modal">
+            <h3>Agregar actividad</h3>
+            <div class="field">
+                <label for="titleInput">Título</label>
+                <input id="titleInput" placeholder="Ej. Aplicar adubação">
+            </div>
+            <div class="row">
+                <div class="field" style="flex:1">
+                    <label for="dateInput">Fecha</label>
+                    <input id="dateInput" type="date">
+                </div>
+                <div class="field field--narrow">
+                    <label for="timeInput">Hora</label>
+                    <input id="timeInput" type="time">
+                </div>
+            </div>
+            <div class="field">
+                <label for="statusSelect">Estado</label>
+                <select id="statusSelect">
+                    <option value="pendiente">Pendiente</option>
+                    <option value="realizado">Realizado</option>
+                    <option value="atrasado">Atrasado</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="descriptionInput">Descripción</label>
+                <textarea id="descriptionInput" placeholder="Detalles de la actividad" rows="3" style="resize:vertical;padding:10px;border-radius:8px;border:1px solid #e6e6e6;font-size:14px"></textarea>
+            </div>
+            <div class="row">
+                <div class="field field--grow">
+                    <label for="locationInput">Ubicación</label>
+                    <input id="locationInput" placeholder="Ej. Parcelas A - Sector 3">
+                </div>
+                <div class="field field--fixed">
+                    <label for="assigneeInput">Responsable</label>
+                    <input id="assigneeInput" placeholder="Nombre">
+                </div>
+            </div>
+            <div class="field">
+                <label for="prioritySelect">Prioridad</label>
+                <select id="prioritySelect">
+                    <option value="media">Media</option>
+                    <option value="baja">Baja</option>
+                    <option value="alta">Alta</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button id="cancelAdd" class="btn secondary">Cancelar</button>
+                <button id="saveAdd" class="btn" style="background:var(--primary);color:#fff">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Modal (read-only details + file reader) -->
+    <div id="overlayView" class="overlay" role="dialog" aria-modal="true">
+        <div class="modal" style="max-width:640px">
+            <h3 id="viewTitle">Detalle actividad</h3>
+            <div id="viewDesc" style="color:#444;margin-bottom:8px"></div>
+            <div id="viewMeta" style="color:#666;font-size:14px;margin-bottom:8px"></div>
+            <div id="viewExtra" style="margin-bottom:8px"></div>
+            <!-- Eliminado el campo de ruta relativa y el lector de archivos (no utilizado) -->
+            <div class="modal-actions">
+                <button id="closeView" class="btn secondary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Utilidades de almacenamiento simple
+        let CLOCK_ICON = 'reloj.svg'; // valor por defecto
+        async function detectClockIcon(){
+            const candidates = ['iconos/reloj.png','reloj.png','iconos/relog.png','relog.png','reloj.svg'];
+            for(const p of candidates){
+                try{
+                    const r = await fetch(p,{cache:'no-store'});
+                    if(r && r.ok){ CLOCK_ICON = p; return; }
+                }catch(e){ /* ignora */ }
+            }
+        }
+        const STORAGE_KEY = 'app_activities_v1';
+        function loadActivities(){
+            try{const raw=localStorage.getItem(STORAGE_KEY);return raw?JSON.parse(raw):[];}catch(e){return[]}
+        }
+        function saveActivities(arr){localStorage.setItem(STORAGE_KEY,JSON.stringify(arr))}
+
+        // Render
+        const activitiesList = document.getElementById('activitiesList');
+        function renderActivities(){
+            const list = loadActivities();
+                if(!list || list.length===0){
+                    // Mostrar texto mínimo cuando no hay actividades
+                    activitiesList.innerHTML = '<div class="empty">No hay actividades registradas — pulsa "Agregar actividad" para crear una.</div>';
+                    return;
+                }
+            activitiesList.innerHTML = '';
+            list.forEach((act, idx) => {
+                const card = document.createElement('div');
+                card.className = 'activity-card';
+                var html = '';
+                // Icono de compartir: interactivo y accesible (role, tabindex, title, data-index)
+                html += '<div class="activity-icon" role="button" tabindex="0" title="Compartir actividad" data-index="' + idx + '" aria-label="Compartir actividad">'
+                    + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
+                    + '<circle cx="18" cy="5" r="3" stroke="#000" stroke-width="1.8"/>'
+                    + '<circle cx="6" cy="12" r="3" stroke="#000" stroke-width="1.8"/>'
+                    + '<circle cx="18" cy="19" r="3" stroke="#000" stroke-width="1.8"/>'
+                    + '<path d="M8.5 10.5l7-3M8.5 13.5l7 3" stroke="#000" stroke-width="1.8"/>'
+                    + '</svg>'
+                    + '</div>';
+                html += '<div class="activity-main">';
+                html += '<div class="activity-title">' + escapeHtml(act.title) + '</div>';
+                if(act.description) html += '<div class="activity-desc">' + escapeHtml(act.description) + '</div>';
+                html += '<div class="activity-meta">';
+                html += '<span class="meta"><img src="iconos/calendario.png" class="meta-icon" alt="Fecha"><span>' + escapeHtml(act.date) + '</span></span>';
+                html += '<span class="meta"><img src="' + CLOCK_ICON + '" class="meta-icon" alt="Hora"><span>' + escapeHtml(act.time) + '</span></span>';
+                if(act.location) html += '<span class="meta"><img src="iconos/ubicacion.png" class="meta-icon" alt="Ubicación"><span>' + escapeHtml(act.location) + '</span></span>';
+                if(act.assignee) html += '<span class="meta"><img src="iconos/usuario.png" class="meta-icon" alt="Responsable"><span>' + escapeHtml(act.assignee) + '</span></span>';
+                html += '</div>';
+                html += '</div>';
+                html += '<div class="activity-actions">';
+                html += '<div class="pill ' + act.status + '">' + capitalizeStatus(act.status) + '</div>';
+                html += '<div class="priority-badge ' + ('priority-' + (act.priority ? escapeHtml(act.priority) : 'media')) + '">' + (act.priority ? escapeHtml(act.priority.charAt(0).toUpperCase() + act.priority.slice(1)) : 'Media') + '</div>';
+                html += '<button class="delete-act" data-index="' + idx + '" aria-label="Eliminar actividad" title="Eliminar actividad">';
+                html += '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">';
+                html += '<path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12z" fill="currentColor"/>';
+                html += '<path d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/>';
+                html += '</svg>';
+                html += '</button>';
+                html += '</div>';
+                // Añadir data-index al card para identificar la actividad al hacer click
+                card.dataset.index = idx;
+                card.innerHTML = html;
+                activitiesList.appendChild(card);
+            });
+        }
+
+        function capitalizeStatus(s){
+            if(s==='realizado') return 'Realizado';
+            if(s==='pendiente') return 'Pendiente';
+            if(s==='atrasado') return 'Atrasado';
+            return s;
+        }
+
+        function escapeHtml(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+        // Modal controls
+        const openAdd = document.getElementById('openAdd');
+        const overlay = document.getElementById('overlay');
+        const cancelAdd = document.getElementById('cancelAdd');
+        const saveAdd = document.getElementById('saveAdd');
+        const titleInput = document.getElementById('titleInput');
+        const dateInput = document.getElementById('dateInput');
+        const timeInput = document.getElementById('timeInput');
+        const statusSelect = document.getElementById('statusSelect');
+
+        openAdd.addEventListener('click', ()=>{
+            overlay.classList.add('open');
+            titleInput.value=''; dateInput.value=''; timeInput.value=''; statusSelect.value='pendiente';
+        });
+        cancelAdd.addEventListener('click', ()=>overlay.classList.remove('open'));
+        overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.classList.remove('open') });
+
+        saveAdd.addEventListener('click', ()=>{
+                const title = titleInput.value.trim();
+                const date = dateInput.value || new Date().toISOString().slice(0,10);
+                const time = timeInput.value || new Date().toTimeString().slice(0,5);
+                const status = statusSelect.value;
+                const description = document.getElementById('descriptionInput').value.trim();
+                const location = document.getElementById('locationInput').value.trim();
+                const assignee = document.getElementById('assigneeInput').value.trim();
+                const priority = document.getElementById('prioritySelect').value || 'media';
+            if(!title){ alert('Por favor ingrese un título.'); titleInput.focus(); return; }
+                const list = loadActivities();
+                list.unshift({title,date,time,status,description,location,assignee,priority});
+            saveActivities(list);
+            overlay.classList.remove('open');
+            renderActivities();
+        });
+
+
+        // Delegación: eliminar actividad individual al pulsar el tacho
+        activitiesList.addEventListener('click', e => {
+            const btn = e.target.closest('.delete-act');
+            if(!btn) return;
+            const idx = Number(btn.dataset.index);
+            if(Number.isNaN(idx)) return;
+            const list = loadActivities();
+            if(!list || idx < 0 || idx >= list.length) return;
+            if(confirm('¿Eliminar esta actividad?')){
+                list.splice(idx,1);
+                saveActivities(list);
+                renderActivities();
+            }
+        });
+
+        // Delegación: compartir actividad al pulsar el icono de compartir
+        activitiesList.addEventListener('click', e => {
+            const icon = e.target.closest('.activity-icon');
+            if(!icon) return;
+            // Evitar que el click abra la vista detalle
+            e.stopPropagation();
+            const idx = Number(icon.dataset.index || icon.closest('.activity-card')?.dataset.index);
+            if(Number.isNaN(idx)) return;
+            shareActivity(idx);
+        });
+
+        // Soporte por teclado: activar compartir con Enter o Espacio
+        activitiesList.addEventListener('keydown', e => {
+            if(e.key !== 'Enter' && e.key !== ' ') return;
+            const icon = e.target.closest ? e.target.closest('.activity-icon') : null;
+            if(!icon) return;
+            e.preventDefault();
+            const idx = Number(icon.dataset.index || icon.closest('.activity-card')?.dataset.index);
+            if(Number.isNaN(idx)) return;
+            shareActivity(idx);
+        });
+
+        // Función para compartir: genera un PDF con la información en forma de planilla
+        async function shareActivity(idx){
+            const list = loadActivities();
+            if(!list || idx < 0 || idx >= list.length) return;
+            const act = list[idx];
+            const parts = [];
+            if(act.title) parts.push(act.title);
+            if(act.date || act.time) parts.push((act.date || '') + (act.time ? ' ' + act.time : ''));
+            if(act.location) parts.push('Ubicación: ' + act.location);
+            if(act.assignee) parts.push('Responsable: ' + act.assignee);
+            if(act.description) parts.push('\n' + act.description);
+            const text = parts.join('\n');
+
+            // Nombre de archivo seguro
+            const safeName = (act.title || 'actividad').replace(/[\\/:*?"<>|]/g, '_').slice(0,120) || 'actividad';
+            const filename = safeName + '.pdf';
+
+            // Crear PDF usando jsPDF (si está cargado)
+            let pdfBlob;
+            try{
+                const jspdf = window.jspdf;
+                const jsPDF = jspdf && jspdf.jsPDF ? jspdf.jsPDF : (window.jsPDF || null);
+                if(jsPDF){
+                    const doc = new jsPDF({unit:'pt', format:'a4'});
+                    doc.setFontSize(16);
+                    doc.text(act.title || 'Actividad', 40, 60);
+                    doc.setFontSize(11);
+                    let y = 90;
+                    const row = (label, value) => {
+                        doc.setFont(undefined,'bold'); doc.text(label + ':', 40, y);
+                        doc.setFont(undefined,'normal'); doc.text(String(value || ''), 160, y);
+                        y += 18;
+                        if(y > 740){ doc.addPage(); y = 60; }
+                    };
+                    row('Fecha y hora', (act.date || '') + (act.time ? ' ' + act.time : ''));
+                    row('Ubicación', act.location || '');
+                    row('Responsable', act.assignee || '');
+                    row('Estado', capitalizeStatus(act.status));
+                    row('Prioridad', act.priority ? (act.priority.charAt(0).toUpperCase() + act.priority.slice(1)) : 'Media');
+                    if(act.description){
+                        doc.setFont(undefined,'bold'); doc.text('Descripción:', 40, y); y += 14;
+                        doc.setFont(undefined,'normal');
+                        const lines = doc.splitTextToSize(act.description, 480);
+                        doc.text(lines, 40, y);
+                    }
+                    pdfBlob = doc.output('blob');
+                }
+            }catch(err){
+                pdfBlob = null;
+            }
+
+            // Si jsPDF no estuvo disponible o falló, crear PDF ligero mediante Blob con texto (fallback)
+            if(!pdfBlob){
+                pdfBlob = new Blob([text], {type:'application/pdf'});
+            }
+
+            // Intentar compartir el PDF usando la Web Share API con files (soportado en móviles modernos)
+            try{
+                const file = new File([pdfBlob], filename, {type:'application/pdf'});
+                if(navigator.canShare && navigator.canShare({files:[file]})){
+                    await navigator.share({files:[file], title: act.title || 'Actividad', text: act.description || ''}).catch(()=>{});
+                    return;
+                }
+            }catch(e){ /* ignore */ }
+
+            // Si no se puede compartir archivos, ofrecer descarga del PDF
+            try{
+                const url = URL.createObjectURL(pdfBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                alert('Se descargó el PDF de la actividad.');
+                return;
+            }catch(e){ /* ignore */ }
+
+            // Último recurso: copiar texto al portapapeles
+            if(navigator.clipboard && navigator.clipboard.writeText){
+                navigator.clipboard.writeText(text).then(()=>{
+                    alert('Detalles de la actividad copiados al portapapeles');
+                }).catch(()=>{
+                    fallbackCopy(text);
+                });
+                return;
+            }
+
+            fallbackCopy(text);
+        }
+
+        function fallbackCopy(text){
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('aria-hidden','true');
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try{
+                document.execCommand('copy');
+                alert('Detalles de la actividad copiados al portapapeles');
+            }catch(e){
+                prompt('Copiar manualmente:', text);
+            }
+            document.body.removeChild(ta);
+        }
+
+        // Abrir vista detallada al hacer click en la tarjeta (excepto sobre el botón eliminar)
+        activitiesList.addEventListener('click', e => {
+            const del = e.target.closest('.delete-act');
+            if(del) return; // ya manejado
+            const card = e.target.closest('.activity-card');
+            if(!card) return;
+            const idx = Number(card.dataset.index);
+            if(Number.isNaN(idx)) return;
+            openDetailView(idx);
+        });
+
+        // Función para abrir el modal de detalle
+        const overlayView = document.getElementById('overlayView');
+        const viewTitle = document.getElementById('viewTitle');
+        const viewDesc = document.getElementById('viewDesc');
+        const viewMeta = document.getElementById('viewMeta');
+        const viewExtra = document.getElementById('viewExtra');
+        const closeView = document.getElementById('closeView');
+
+        function openDetailView(idx){
+            const list = loadActivities();
+            if(!list || idx<0 || idx>=list.length) return;
+            const act = list[idx];
+            viewTitle.textContent = act.title || 'Actividad';
+            viewDesc.textContent = act.description || '';
+            viewMeta.innerHTML = '<img src="iconos/calendario.png" class="meta-icon" alt="Fecha">' + escapeHtml(act.date) + ' &nbsp; • &nbsp; <img src="' + CLOCK_ICON + '" class="meta-icon" alt="Hora"> ' + escapeHtml(act.time) + (act.location?(' &nbsp; • &nbsp; <img src="iconos/ubicacion.png" class="meta-icon" alt="Ubicación"> '+escapeHtml(act.location)):"") + (act.assignee?(' &nbsp; • &nbsp; <img src="iconos/usuario.png" class="meta-icon" alt="Responsable"> '+escapeHtml(act.assignee)):"");
+            viewExtra.innerHTML = '<span class="pill '+escapeHtml(act.status)+'">'+capitalizeStatus(act.status)+'</span> &nbsp; <span class="priority-badge '+('priority-'+escapeHtml(act.priority||'media'))+'">'+(act.priority?escapeHtml(act.priority.charAt(0).toUpperCase()+act.priority.slice(1)):'Media')+'</span>';
+            overlayView.classList.add('open');
+        }
+
+        closeView.addEventListener('click', ()=>overlayView.classList.remove('open'));
+
+        // Inicializar render sin añadir datos de ejemplo
+        renderActivities();
+
+        // Botón para añadir datos de ejemplo (solo para desarrollo/pruebas)
+        const seedBtn = document.getElementById('seedBtn');
+        function seedExampleData(){
+            const examples = [
+                {title:'Aplicar fertilizante foliar',date:'2025-11-20',time:'09:00',status:'pendiente',description:'Aplicar 100ml por hectárea en parcelas A y B',location:'Parcelas A',assignee:'Carlos',priority:'media'},
+                {title:'Revisión de riego',date:'2025-11-21',time:'07:30',status:'realizado',description:'Comprobar emisores y presión',location:'Sector 3',assignee:'María',priority:'baja'},
+                {title:'Control de plagas - insecticida',date:'2025-11-22',time:'14:00',status:'pendiente',description:'Aplicación localizada en sectores con brotes',location:'Parcelas C',assignee:'Jorge',priority:'alta'}
+            ];
+            const list = loadActivities() || [];
+            // Añadir sin duplicar títulos existentes
+            examples.forEach(ex => { if(!list.some(i=>i.title===ex.title)) list.unshift(ex); });
+            saveActivities(list);
+            renderActivities();
+        }
+        if(seedBtn){seedBtn.addEventListener('click', ()=>{
+            if(confirm('Agregar actividades de ejemplo para revisar el diseño?')) seedExampleData();
+        })}
+        // Detectar icono de reloj disponible y volver a renderizar para usar la ruta correcta
+        detectClockIcon().then(()=>{
+            // re-render para asegurar que los <img> apunten al icono correcto
+            renderActivities();
+        });
+    </script>
+</body>
+</html>

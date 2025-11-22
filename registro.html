@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .register-container {
+            background-color: white;
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .register-header {
+            background-color: #b8b8b8;
+            padding: 12px 20px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .register-content {
+            padding: 40px 30px;
+        }
+
+      
+
+        .title {
+            font-size: 24px;
+            font-weight: 400;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #000;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            color: #333;
+            margin-bottom: 6px;
+            font-weight: 500;
+            position: relative;
+        }
+
+        /* Eliminar líneas decorativas a la izquierda de las etiquetas */
+        .input-group label::before { display: none; }
+
+        /* Campos con borde completo y bordes redondeados */
+        .input-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #d8d8d8;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: border-color 0.18s, box-shadow 0.18s;
+            background-color: #fbfbfb;
+        }
+
+        .input-group input::placeholder { color: #9e9e9e; }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #4da6e8;
+            box-shadow: 0 2px 8px rgba(77,166,232,0.12);
+            background-color: #fff;
+        }
+
+        .save-button {
+            display: block;
+            margin: 30px auto 0;
+            padding: 12px 40px;
+            background-color: #5b4a9f;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .save-button:hover {
+            background-color: #4a3a85;
+        }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: none; align-items: center; justify-content: center; z-index: 2; padding: 20px; }
+        .overlay.open { display: flex; }
+        .modal { background: #fff; border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,0.12); width: 100%; max-width: 520px; padding: 24px; }
+        .modal h3 { font-size: 20px; color: #1a1a1a; margin-bottom: 6px; font-weight: 600; }
+        .modal .sub { font-size: 14px; color: #666; margin-bottom: 16px; }
+        .terms-body { max-height: 50vh; overflow: auto; font-size: 14px; color: #333; line-height: 1.55; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 12px; }
+        .btn { padding: 10px 14px; border-radius: 10px; border: 1.5px solid #e0e0e0; font-size: 14px; cursor: pointer; transition: all 0.2s ease; }
+        .btn.secondary { background: #fff; color: #1a1a1a; }
+        .btn.primary { background: #5b4a9f; color: #fff; border-color: #5b4a9f; }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+     
+        
+        <div class="register-content">
+            <div class="form-box">
+                <h1 class="title">Registro</h1>
+
+                <form>
+                    <div class="input-group">
+                        <label for="nome">Nombre</label>
+                        <input type="text" id="nome" placeholder="Escribe aquí">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="email">Correo electrónico</label>
+                        <input type="email" id="email" placeholder="Escribe aquí">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="profissao">Profesión</label>
+                        <input type="text" id="profissao" placeholder="Escribe aquí">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="empresa">Empresa</label>
+                        <input type="text" id="empresa" placeholder="Escribe aquí">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="senha">Contraseña</label>
+                        <input type="password" id="senha" value="">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="confirmar">Confirmar contraseña</label>
+                        <input type="password" id="confirmar" value="">
+                    </div>
+
+                    <div class="input-group" style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:nowrap">
+                        <input type="checkbox" id="acceptTerms" style="width:18px;height:18px">
+                        <label id="termsLabel" for="acceptTerms" style="margin:0">
+                            Acepto los <a id="termsLink" href="#">Términos y Condiciones</a> y la <a id="privacyLink" href="#">Política de Privacidad</a>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="save-button">Registrarse</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+<div id="termsOverlay" class="overlay" role="dialog" aria-modal="true">
+    <div class="modal">
+        <h3>TÉRMINOS Y CONDICIONES DE USO</h3>
+        <p class="sub">Última actualización: 21/11/2025</p>
+        <div class="terms-body">
+            <p>Bienvenido(a) a IASA App. Al utilizar esta aplicación, usted acepta los presentes Términos y Condiciones. Si no está de acuerdo total o parcialmente, debe dejar de usar la aplicación.</p>
+            <p><strong>DEFINICIONES</strong></p>
+            <ul>
+                <li>“Aplicación” se refiere a IASA App.</li>
+                <li>“Usuario” es toda persona que acceda y utilice la aplicación.</li>
+                <li>“Servicios” son las funciones ofrecidas por la aplicación, incluyendo registro de cuenta, cuaderno de actividades, comunidad y escaneo de códigos QR.</li>
+            </ul>
+            <p><strong>ACEPTACIÓN DE LOS TÉRMINOS</strong><br>El uso de la aplicación implica la aceptación plena y sin reservas de estos Términos y Condiciones.</p>
+            <p><strong>REGISTRO DE USUARIO</strong><br>Para acceder a determinadas funciones, el usuario debe crear una cuenta proporcionando datos como correo electrónico, usuario y contraseña. El usuario se compromete a proporcionar información verdadera y actualizada, mantener en secreto su contraseña y notificar si detecta uso no autorizado de su cuenta.</p>
+            <p><strong>USO DE LA APLICACIÓN</strong><br>El usuario se compromete a utilizar la aplicación de manera legal y responsable. Está prohibido usar la aplicación para actividades ilícitas, publicar contenido ofensivo, discriminatorio, violento, falso o inapropiado, e intentar dañar la aplicación, servidores o bases de datos.</p>
+            <p><strong>CONTENIDO DE LA COMUNIDAD</strong><br>La aplicación puede incluir secciones de interacción entre usuarios. El usuario es responsable del contenido que publique. La administración podrá moderar, editar o eliminar contenido inapropiado y suspender o eliminar cuentas que incumplan estos términos.</p>
+            <p><strong>CUADERNO DE ACTIVIDADES</strong><br>El cuaderno de actividades permite almacenar información del usuario, quien es responsable del contenido que registra.</p>
+            <p><strong>ESCÁNER DE CÓDIGOS QR</strong><br>La aplicación puede permitir el escaneo de códigos QR. El usuario acepta usar esta función de forma legal y no intentar manipular o acceder a contenido no autorizado.</p>
+            <p><strong>PROTECCIÓN DE DATOS</strong><br>La aplicación puede recopilar datos como información de registro, datos de uso dentro de la app. El manejo de datos se detalla en la Política de Privacidad correspondiente.</p>
+            <p><strong>PROPIEDAD INTELECTUAL</strong><br>La aplicación, su código, diseño, textos, imágenes y funcionalidades son propiedad de sus desarrolladores. El usuario no puede copiar, modificar, distribuir o reutilizar la aplicación sin autorización.</p>
+            <p><strong>LIMITACIÓN DE RESPONSABILIDAD</strong><br>La aplicación se ofrece “tal como está”. Los desarrolladores no garantizan que la aplicación funcione sin interrupciones, que no existan errores técnicos o que el servicio sea compatible con todos los dispositivos. El usuario acepta utilizar la aplicación bajo su propia responsabilidad.</p>
+            <p><strong>SUSPENSIÓN DEL SERVICIO</strong><br>Los administradores podrán suspender la aplicación o cuentas de usuarios sin aviso previo en caso de uso indebido, violación de estos términos o por razones técnicas o de mantenimiento.</p>
+            <p><strong>ENLACES EXTERNOS</strong><br>La aplicación puede incluir enlaces a sitios o recursos externos. No nos responsabilizamos por su contenido ni por el uso de los mismos.</p>
+            <p><strong>MODIFICACIÓN DE LOS TÉRMINOS</strong><br>Estos términos pueden actualizarse en cualquier momento. Las modificaciones entrarán en vigor desde su publicación en la aplicación.</p>
+            <p><strong>LEGISLACIÓN APLICABLE</strong><br>Estos términos se rigen por las leyes de la República del Paraguay. Cualquier conflicto será resuelto en los tribunales competentes del país.</p>
+            <p><strong>CONTACTO</strong><br>Para dudas o reclamos, el usuario puede comunicarse a través del soporte disponible dentro de la aplicación. Al crear una cuenta y utilizar IASA App, usted declara haber leído y aceptado estos Términos y Condiciones.</p>
+        </div>
+        <div class="modal-actions">
+            <button id="termsClose" class="btn secondary">Cerrar</button>
+            <button id="termsAccept" class="btn primary">Aceptar</button>
+        </div>
+    </div>
+ </div>
+<div id="privacyOverlay" class="overlay" role="dialog" aria-modal="true">
+    <div class="modal">
+        <h3>Política de Privacidad</h3>
+        <p class="sub">Última actualización: 21/11/2025</p>
+        <div class="terms-body">
+            <p>Esta Política describe cómo IASA App recopila, utiliza y protege tus datos personales.</p>
+            <p><strong>Datos que recopilamos</strong><br>Información de registro (correo, nombre, identificador de usuario), uso de la aplicación (funciones utilizadas, tiempos de acceso) y datos técnicos del dispositivo.</p>
+            <p><strong>Finalidades</strong><br>Proveer y mejorar los servicios, personalizar la experiencia, seguridad, soporte y cumplimiento legal.</p>
+            <p><strong>Compartición</strong><br>No vendemos tus datos. Podemos compartirlos con proveedores que nos ayudan a operar la app (por ejemplo, servicios de autenticación y alojamiento) bajo acuerdos de confidencialidad.</p>
+            <p><strong>Seguridad</strong><br>Aplicamos medidas razonables para proteger tus datos. Sin embargo, ningún sistema es 100% infalible.</p>
+            <p><strong>Retención</strong><br>Conservamos los datos mientras tengas una cuenta activa o según lo exijan las leyes aplicables.</p>
+            <p><strong>Tus derechos</strong><br>Podés solicitar acceso, rectificación o eliminación de tus datos, y oponerte a ciertos tratamientos según la legislación vigente.</p>
+            <p><strong>Cookies y tecnologías similares</strong><br>Podemos usar tecnologías para analizar uso y mejorar el servicio.</p>
+            <p><strong>Contacto</strong><br>Para consultas sobre privacidad, usá los canales de soporte de la aplicación.</p>
+        </div>
+        <div class="modal-actions">
+            <button id="privacyClose" class="btn secondary">Cerrar</button>
+            <button id="privacyAccept" class="btn primary">Aceptar</button>
+        </div>
+    </div>
+ </div>
+<script type="module">
+    import { auth } from './firebase.js';
+    import { createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+    const form = document.querySelector('form');
+    const termsLink = document.getElementById('termsLink');
+    const privacyLink = document.getElementById('privacyLink');
+    const acceptTerms = document.getElementById('acceptTerms');
+    const termsOverlay = document.getElementById('termsOverlay');
+    const termsClose = document.getElementById('termsClose');
+    const termsAccept = document.getElementById('termsAccept');
+    const privacyOverlay = document.getElementById('privacyOverlay');
+    const privacyClose = document.getElementById('privacyClose');
+    const privacyAccept = document.getElementById('privacyAccept');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nomeEl = document.getElementById('nome');
+            const emailEl = document.getElementById('email');
+            const senhaEl = document.getElementById('senha');
+            const confEl = document.getElementById('confirmar');
+            const nome = nomeEl ? nomeEl.value.trim() : '';
+            const email = emailEl ? emailEl.value.trim() : '';
+            const senha = senhaEl ? senhaEl.value : '';
+            const confirmar = confEl ? confEl.value : '';
+            if (!email || !senha) {
+                alert('Completa email y contraseña');
+                return;
+            }
+            if (senha !== confirmar) {
+                alert('Las contraseñas no coinciden');
+                return;
+            }
+            try {
+                if (acceptTerms && !acceptTerms.checked) {
+                    if (termsOverlay) termsOverlay.classList.add('open');
+                    return;
+                }
+                const cred = await createUserWithEmailAndPassword(auth, email, senha);
+                if (nome) {
+                    try { await updateProfile(cred.user, { displayName: nome }); } catch (e) {}
+                }
+                window.location.href = 'onboarding.html';
+            } catch (err) {
+                alert('Error al registrarse: ' + (err && err.message ? err.message : String(err)));
+            }
+        });
+    }
+    
+    if (termsLink && termsOverlay) {
+        termsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            termsOverlay.classList.add('open');
+        });
+    }
+    if (termsOverlay) {
+        termsOverlay.addEventListener('click', (e) => {
+            if (e.target === termsOverlay) termsOverlay.classList.remove('open');
+        });
+    }
+    if (termsClose) {
+        termsClose.addEventListener('click', () => termsOverlay.classList.remove('open'));
+    }
+    if (termsAccept) {
+        termsAccept.addEventListener('click', () => {
+            if (termsOverlay) termsOverlay.classList.remove('open');
+        });
+    }
+    if (privacyLink && privacyOverlay) {
+        privacyLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            privacyOverlay.classList.add('open');
+        });
+    }
+    if (privacyOverlay) {
+        privacyOverlay.addEventListener('click', (e) => {
+            if (e.target === privacyOverlay) privacyOverlay.classList.remove('open');
+        });
+    }
+    if (privacyClose) {
+        privacyClose.addEventListener('click', () => privacyOverlay.classList.remove('open'));
+    }
+    if (privacyAccept) {
+        privacyAccept.addEventListener('click', () => {
+            if (privacyOverlay) privacyOverlay.classList.remove('open');
+        });
+    }
+</script>
+</html>

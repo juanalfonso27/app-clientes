@@ -1,0 +1,14 @@
+{
+  "name": "iasa-proxy",
+  "version": "1.0.0",
+  "description": "Proxy ligero para reenviar peticiones a Apitube desde desarrollo local",
+  "main": "proxy-server.js",
+  "scripts": {
+    "start": "node proxy-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "firebase": "^12.6.0",
+    "node-fetch": "^2.6.7"
+  }
+}

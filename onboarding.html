@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onboarding</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; overflow-x: hidden; }
+        .container { width: 100%; max-width: 420px; background: #fff; }
+        .header { padding: 12px 20px; color: #333; font-size: 14px; background: #b8b8b8; }
+        .content { padding: 40px 30px; }
+        .slide { display: none; }
+        .slide.active { display: block; }
+        .title { font-size: 24px; font-weight: 500; text-align: center; color: #000; margin-bottom: 18px; }
+        .text { font-size: 14px; line-height: 1.5; color: #444; text-align: center; max-width: 320px; margin: 0 auto; }
+        .figure { width: 100%; border-radius: 10px; background: #d4cdd8; display: flex; align-items: center; justify-content: center; margin: 18px 0 22px; padding: 8px; min-height: 120px; }
+        .figure img { max-width: 100%; max-height: 100%; height: auto; width: auto; object-fit: contain; border-radius: 8px; }
+        .icon { width: 64px; height: 64px; border-radius: 12px; background: #9a90a3; }
+        .dots { display: flex; justify-content: center; gap: 8px; margin-top: 22px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #c6c6c6; }
+        .dot.active { background: #6e63f6; }
+        .actions { display: flex; justify-content: space-between; align-items: center; margin-top: 28px; gap: 12px; }
+        .btn { border: none; border-radius: 22px; padding: 12px 18px; font-size: 15px; cursor: pointer; }
+        .btn.secondary { background: #efefef; color: #333; }
+        .btn.primary { background: #6e63f6; color: #fff; }
+        .btn.icon { width: 42px; height: 42px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; background: #efefef; color: #333; }
+        .footer { margin-top: 16px; }
+        .continue-bar { display: none; position: sticky; bottom: 0; background: #fff; padding-top: 8px; }
+        .continue-bar.show { display: block; }
+        .continue-btn { width: 100%; border: none; background: #6e63f6; color: #fff; border-radius: 24px; padding: 14px 18px; font-size: 16px; cursor: pointer; }
+        @media (max-width: 420px) {
+            .content { padding: 32px 24px; }
+            .title { font-size: 22px; }
+            .text { font-size: 13px; }
+            .btn { padding: 11px 16px; font-size: 14px; }
+            .btn.icon { width: 38px; height: 38px; font-size: 16px; }
+            .figure { min-height: 100px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+           <div class="slide active">
+  <h1 class="title">¡Bienvenido/a!</h1>
+  <div class="figure">
+    <img src="logo1.png" alt="IASA logo">
+  </div>
+  <p class="text">
+    Empezá a aprovechar todo lo que tenemos para vos:
+    <br>• Noticias e indicadores actualizados del mercado de granos.
+    <br>• Productos pensados para tu negocio.
+    <br>• Información del clima en tiempo real.
+    <br>• Tus puntuaciones y sorteos exclusivos.
+    <br>• Herramientas para planificar tus actividades.
+  </p>
+</div>
+         <div class="slide">
+  <h1 class="title">Conocé nuestras marcas y servicios</h1>
+  <div class="figure">
+    <img src="logo2.png" alt="IASA marcas">
+  </div>
+  <p class="text">
+    Aliados estratégicos, soluciones confiables.<br>
+    Trabajamos con marcas líderes para acompañarte en cada etapa de tu negocio.
+  </p>
+</div>
+
+            <div class="slide">
+  <h1 class="title">Nuestra historia</h1>
+  <div class="figure">
+    <div class="icon history-icon"></div>
+  </div>
+  <p class="text">
+    🌽🌾 Líderes en soluciones agrícolas en Paraguay.<br>
+    🌱📈 Más de 16 años impulsando innovación, calidad y resultados para el agro.
+  </p>
+</div>
+
+          <div class="slide">
+  <h1 class="title">Qué hacemos</h1>
+  <div class="figure">
+    <div class="icon services-icon"></div>
+  </div>
+  <p class="text">
+    Brindamos asesoramiento especializado, logística eficiente y soporte integral<br>
+    para maximizar los resultados de tu establecimiento agrícola.
+  </p>
+</div>
+
+          <div class="slide">
+  <h1 class="title">Estamos donde nos necesitás</h1>
+  <div class="figure">
+    <div class="icon location-icon"></div>
+  </div>
+  <p class="text">
+    Contamos con presencia nacional para brindarte atención rápida, cercana y personalizada.
+  </p>
+</div>
+
+            <div class="dots" aria-label="Indicadores de progreso"></div>
+            <div class="actions">
+                <button id="prevBtn" class="btn icon" aria-label="Anterior">‹</button>
+                <button id="nextBtn" class="btn primary">Siguiente</button>
+            </div>
+            <div class="footer continue-bar" id="continueBar">
+                <button id="continueBtn" class="continue-btn">Continuar</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const slides = Array.from(document.querySelectorAll('.slide'));
+        const dotsEl = document.querySelector('.dots');
+        const nextBtn = document.getElementById('nextBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const continueBar = document.getElementById('continueBar');
+        const continueBtn = document.getElementById('continueBtn');
+        let index = 0;
+
+        function render() {
+            slides.forEach((s, i) => s.classList.toggle('active', i === index));
+            dotsEl.innerHTML = slides.map((_, i) => `<span class="dot${i===index? ' active':''}"></span>`).join('');
+            prevBtn.disabled = index === 0;
+            nextBtn.style.display = index === slides.length - 1 ? 'none' : 'inline-block';
+            continueBar.classList.toggle('show', index === slides.length - 1);
+            prevBtn.style.display = index === slides.length - 1 ? 'none' : 'inline-flex';
+        }
+        function next() { if (index < slides.length - 1) { index++; render(); } }
+        function prev() { if (index > 0) { index--; render(); } }
+        function finish() { try { localStorage.setItem('onboardingDone', 'true'); } catch (_) {} window.location.href = 'homenoticias.html'; }
+
+        nextBtn.addEventListener('click', next);
+        prevBtn.addEventListener('click', prev);
+        continueBtn.addEventListener('click', finish);
+        render();
+    </script>
+</body>
+</html>

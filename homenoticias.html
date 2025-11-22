@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Noticias</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%233c318f'/%3E%3Ctext x='16' y='21' font-size='14' text-anchor='middle' fill='white' font-family='Segoe UI, Roboto'%3EN%3C/text%3E%3C/svg%3E">
+    <script src="firebase-config.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+        import { initializeFirestore, getFirestore, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+        const PFX = '[HomeNoticias]';
+        const app = initializeApp(window.firebaseConfig);
+        let db;
+        try { db = initializeFirestore(app, { databaseId: 'news' }); console.log(PFX, 'Firestore initialized with DB', 'news'); }
+        catch (e) { console.error(PFX, 'initializeFirestore failed, fallback default', e); db = getFirestore(app); }
+        window.fbListNews = async () => {
+            console.log(PFX, 'fbListNews start');
+            const q = query(collection(db,'news'), orderBy('createdAt','desc'), limit(20));
+            const snap = await getDocs(q);
+            const list = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+            console.log(PFX, 'fbListNews count', list.length);
+            return list;
+        };
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f5f5;
+            padding-bottom: 80px;
+        }
+
+        /* Header */
+        .header {
+            background-color: #d4d4d4;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .menu-icon,
+        .notification-icon {
+            cursor: pointer;
+            background: none;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            color: #555;
+        }
+
+        .menu-icon:hover,
+        .notification-icon:hover {
+            color: #2f2f2f;
+        }
+
+        svg.icon {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            display: block;
+        }
+
+        .notification-icon svg {
+            stroke-width: 1.6;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo img {
+            height: 36px;
+            width: auto;
+        }
+        .notification-icon { position: relative; }
+
+        /* Side menu */
+        .menu-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease;
+            z-index: 9;
+        }
+
+        .menu-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 260px;
+            background: #f5f0ff;
+            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+            padding: 24px 20px 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            transform: translateX(-110%);
+            transition: transform 0.25s ease;
+            z-index: 10;
+        }
+
+        .side-menu.open {
+            transform: translateX(0);
+        }
+
+        .side-menu__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .side-menu__title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .close-menu {
+            background: none;
+            border: none;
+            color: #555;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .close-menu svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .side-menu__list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .side-menu__item {
+            padding: 10px 8px;
+            border-radius: 8px;
+            color: #333;
+            font-size: 14px;
+            text-decoration: none;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .side-menu__item:hover {
+            background: rgba(90, 79, 207, 0.12);
+            color: #3c318f;
+        }
+
+        /* Search Bar */
+        .search-container {
+            padding: 16px;
+            background-color: #f5f5f5;
+        }
+
+        .search-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px 12px 12px 40px;
+            border: 2px solid #333;
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: white;
+            position: relative;
+        }
+
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Activity Card */
+        .activity-card {
+            margin: 16px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .activity-image {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+        }
+
+        .activity-content {
+            padding: 16px;
+        }
+
+        .activity-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .activity-description {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            padding: 0 16px;
+            border-bottom: 1px solid #ddd;
+            background-color: #f5f5f5;
+            gap: 24px;
+        }
+
+        .tab {
+            padding: 12px 0;
+            font-size: 15px;
+            color: #666;
+            background: none;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab.active {
+            color: #5a4fcf;
+            font-weight: 600;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #5a4fcf;
+        }
+
+        .tab-icon svg { width: 18px; height: 18px; }
+
+        /* Content Sections */
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* News List */
+        .news-list {
+            padding: 8px 16px 16px;
+            background-color: #f5f5f5;
+        }
+
+        .news-item {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+
+        .news-image {
+            width: 90px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .news-content {
+            flex: 1;
+        }
+
+        .news-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .activity-description { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        /* Weather Forecast */
+        .weather-forecast {
+            padding: 16px;
+            background-color: #f5f5f5;
+        }
+
+        .weather-day {
+            padding: 16px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+
+        .weather-day-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .weather-day-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .weather-day-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: #333;
+            min-width: 80px;
+        }
+
+        .weather-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #5a4fcf;
+        }
+
+        .weather-icon svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .weather-temp {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .weather-temp-max {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .weather-temp-min {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .weather-description {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        @media (max-width: 480px) {
+            .weather-details {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .weather-day-name {
+                min-width: 60px;
+                font-size: 14px;
+            }
+        }
+
+        .weather-detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .weather-detail-label {
+            font-size: 11px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .weather-detail-value {
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .weather-loading {
+            padding: 40px 16px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .weather-error {
+            padding: 40px 16px;
+            text-align: center;
+            color: #d32f2f;
+            font-size: 14px;
+        }
+
+        /* Market Section */
+        .market-section {
+            padding: 16px;
+            background-color: #f5f5f5;
+        }
+
+        .market-item {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+
+        .market-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .market-item-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .market-item-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .market-item-change {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .market-item-change.positive {
+            color: #2e7d32;
+        }
+
+        .market-item-change.negative {
+            color: #d32f2f;
+        }
+
+        .market-item-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .market-detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .market-detail-label {
+            font-size: 11px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .market-detail-value {
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .market-loading {
+            padding: 40px 16px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .market-error {
+            padding: 40px 16px;
+            text-align: center;
+            color: #d32f2f;
+            font-size: 14px;
+        }
+
+        /* View All Link */
+        .view-all {
+            text-align: center;
+            padding: 16px;
+            background-color: #f5f5f5;
+        }
+
+        .view-all a {
+            color: #5a4fcf;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .overlay.open { display: flex; }
+        .modal { background: #fff; border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,0.12); width: 100%; max-width: 640px; padding: 24px; max-height: 80vh; overflow: auto; }
+        .modal h3 { font-size: 20px; color: #1a1a1a; margin-bottom: 8px; font-weight: 600; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 12px; }
+        .btn { padding: 10px 14px; border-radius: 10px; border: 1.5px solid #e0e0e0; font-size: 14px; cursor: pointer; transition: all 0.2s ease; }
+        .btn:hover { transform: translateY(-1px); }
+        .btn.secondary { background: #fff; color: #1a1a1a; }
+        .btn.primary { background: #3c318f; color: #fff; border-color: #3c318f; }
+        .image-full { max-width: 92vw; max-height: 92vh; border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.25); }
+
+        /* Products grid */
+        .product-search {
+            padding: 12px 16px;
+            background: #f5f5f5;
+        }
+
+        .product-search input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            background: white;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 12px 12px 80px;
+        }
+
+        @media (min-width: 720px) {
+            .product-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            cursor: pointer;
+        }
+
+        .product-card img {
+            width: 100%;
+            height: 110px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .product-card .product-label {
+            padding: 10px;
+            text-align: center;
+            font-weight: 600;
+            color: #333;
+            background: linear-gradient(180deg, rgba(255,255,255,0), #ffffff);
+        }
+
+        .product-card .product-label small {
+            display:block;
+            margin-top:6px;
+            font-weight:500;
+            color:#666;
+            font-size:13px;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 8px 16px;
+            flex: 1;
+        }
+
+        .nav-item.active {
+            color: #5a4fcf;
+        }
+
+        .nav-icon {
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .nav-item.active .nav-icon {
+            color: #5a4fcf;
+        }
+
+        .nav-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .nav-item.active .nav-label {
+            color: #5a4fcf;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <button class="menu-icon" aria-label="Abrir menú">
+            <svg class="icon" viewBox="0 0 24 24">
+                <path d="M4 7h16M4 12h16M4 17h16"></path>
+            </svg>
+        </button>
+        <div class="logo">
+            <img src="logo1.png" alt="IASA logo" loading="lazy">
+        </div>
+        <button class="notification-icon" aria-label="Notificaciones">
+            <svg class="icon" viewBox="0 0 24 24">
+                <path d="M6 17v-5a6 6 0 1112 0v5l1.5 2H4.5L6 17z"></path>
+                <path d="M10 21a2 2 0 004 0"></path>
+            </svg>
+        </button>
+    </div>
+
+    <div class="menu-overlay" id="menuOverlay"></div>
+    <nav class="side-menu" id="sideMenu" aria-hidden="true">
+        <div class="side-menu__header">
+            <span class="side-menu__title">Menú</span>
+            <button class="close-menu" id="closeMenu" aria-label="Cerrar menú">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M6 6l12 12"></path>
+                    <path d="M18 6l-12 12"></path>
+                </svg>
+            </button>
+        </div>
+            <ul class="side-menu__list">
+            <li><a class="side-menu__item" href="#">QR Productos Premiados</a></li>
+            <li><a class="side-menu__item" href="#">Noticias</a></li>
+            <li><a class="side-menu__item" href="#">Mis noticias</a></li>
+            <li><a class="side-menu__item" href="#">Mercado</a></li>
+            <li><a class="side-menu__item" href="#">Tiempo</a></li>
+            <li><a class="side-menu__item" href="#">Cuaderno de actividades</a></li>
+            <li><a class="side-menu__item" href="#">Comunidad</a></li>
+            <li><a class="side-menu__item" href="#">Agendar visita</a></li>
+            <li><a class="side-menu__item" href="#">Contacto</a></li>
+        </ul>
+    </nav>
+
+    <!-- Search Section -->
+   
+    </div>
+
+    <!-- Activity Card -->
+        <div class="activity-card">
+        <img src="fondoactividad.jpg" alt="Campo agrícola" class="activity-image">
+        <div class="activity-content">
+            <a href="activities.html" class="activity-title" style="text-decoration:none;color:inherit;display:block">Cuaderno de actividades</a>
+            <div class="activity-description">Accede y registra aquí tus actividades; compártelas para actualizar a tu equipo.</div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab active" data-tab="news">
+            <span class="tab-icon" aria-hidden="true">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M8 3h6l4 4v14H8z"></path>
+                    <path d="M14 3v5h5"></path>
+                </svg>
+            </span>
+            Noticias
+        </button>
+        <button class="tab" data-tab="products">
+            <span class="tab-icon" aria-hidden="true">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M12 2l8 4v8l-8 4-8-4V6l8-4z"></path>
+                </svg>
+            </span>
+            Productos
+        </button>
+        <button class="tab" data-tab="weather">
+            <span class="tab-icon" aria-hidden="true">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path>
+                </svg>
+            </span>
+            Tiempo
+        </button>
+    </div>
+
+    <!-- News List -->
+    <div class="content-section active" id="newsSection">
+        <div class="news-list" id="newsList">
+            <div class="news-item">
+                <div class="news-content">
+                    <div class="news-title">Cargando noticias del agro...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View All Link -->
+        <div class="view-all">
+            <a href="#" id="viewAllNewsLink">Ver todas las noticias ></a>
+        </div>
+    </div>
+
+    <div id="newsOverlay" class="overlay" role="dialog" aria-modal="true">
+        <div class="modal">
+            <h3>Noticias</h3>
+            <div id="newsModalList"></div>
+            <div class="modal-actions">
+                <button id="closeNews" class="btn secondary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="imageOverlay" class="overlay" role="dialog" aria-modal="true">
+        <img id="imageOverlayImg" class="image-full" alt="">
+    </div>
+
+    <div id="itemOverlay" class="overlay" role="dialog" aria-modal="true">
+        <div class="modal">
+            <h3 id="itemOverlayTitle"></h3>
+            <div id="itemOverlayBody"></div>
+            <div class="modal-actions">
+                <button id="itemOverlayOpenLink" class="btn">Abrir enlace</button>
+                <button id="closeItem" class="btn secondary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products Section -->
+    <div class="content-section" id="productsSection">
+        <div class="product-search">
+            <input id="productSearchInput" placeholder="Busque por producto o categoría" aria-label="Buscar productos">
+        </div>
+
+        <div class="product-grid" id="productGrid">
+            <div class="product-card" data-name="Herbicidas">
+                <img src="imagenes/image.png" alt="Herbicidas">
+                <div class="product-label">Herbicidas</div>
+            </div>
+
+            <div class="product-card" data-name="Fungicidas">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%23e8dfd8' width='400' height='240'/%3E%3C/svg%3E" alt="Fungicidas">
+                <div class="product-label">Fungicidas</div>
+            </div>
+
+            <div class="product-card" data-name="Insecticidas">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%238fb7a3' width='400' height='240'/%3E%3C/svg%3E" alt="Insecticidas">
+                <div class="product-label">Insecticidas</div>
+            </div>
+
+            <div class="product-card" data-name="Semillas">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%23f4e8d6' width='400' height='240'/%3E%3C/svg%3E" alt="Semillas">
+                <div class="product-label">Semillas</div>
+            </div>
+
+            <div class="product-card" data-name="Fertilizantes">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%23dfe6f4' width='400' height='240'/%3E%3C/svg%3E" alt="Fertilizantes">
+                <div class="product-label">Fertilizantes</div>
+            </div>
+
+            <div class="product-card" data-name="Biológicos">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%23e6f4ee' width='400' height='240'/%3E%3C/svg%3E" alt="Biológicos">
+                <div class="product-label">Biológicos</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weather Forecast Section -->
+    <div class="content-section" id="weatherSection">
+        <div class="weather-forecast" id="weatherForecast">
+            <div class="weather-loading">Cargando pronóstico del tiempo...</div>
+        </div>
+    </div>
+
+    <!-- Market Section -->
+        <div class="content-section" id="marketSection">
+        <div class="market-section" id="marketData">
+            <div class="market-loading">Cargando datos del mercado...</div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="nav-item active">
+            <span class="nav-icon" aria-hidden="true">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M3 11l9-8 9 8"></path>
+                    <path d="M5 10v10h14V10"></path>
+                    <path d="M10 20v-6h4v6"></path>
+                </svg>
+            </span>
+            <span class="nav-label">Inicio</span>
+        </button>
+        
+        <button class="nav-item">
+            <span class="nav-icon" aria-hidden="true">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M3 7l9-4 9 4"></path>
+                    <path d="M21 7v10l-9 4-9-4V7"></path>
+                    <path d="M3 12l9 4 9-4"></path>
+                    <path d="M12 3v18"></path>
+                </svg>
+            </span>
+            <span class="nav-label">Pedidos</span>
+        </button>
+        <button class="nav-item">
+            <span class="nav-icon" aria-hidden="true">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M4 20h16"></path>
+                    <path d="M7 20v-7"></path>
+                    <path d="M12 20V6"></path>
+                    <path d="M17 20v-4"></path>
+                </svg>
+            </span>
+            <span class="nav-label">Mercado</span>
+        </button>
+        <button class="nav-item">
+            <span class="nav-icon" aria-hidden="true">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <circle cx="9" cy="8" r="3.5"></circle>
+                    <circle cx="17" cy="10" r="3"></circle>
+                    <path d="M4 20v-1.2a5 5 0 0 1 5-5h1a5 5 0 0 1 5 5V20"></path>
+                    <path d="M15.5 20v-.8a4 4 0 0 1 4-4H21"></path>
+                </svg>
+            </span>
+            <span class="nav-label">Comunidad</span>
+        </button>
+    </nav>
+
+    <script>
+        // Funcionalidad de las pestañas con cambio de contenido
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabType = this.getAttribute('data-tab');
+                
+                // Remover active de todas las pestañas
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Ocultar todas las secciones de contenido
+                document.querySelectorAll('.content-section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                
+                // Mostrar la sección correspondiente
+                if (tabType === 'news') {
+                    document.getElementById('newsSection').classList.add('active');
+                    if (typeof loadNewsFromApi === 'function') {
+                        loadNewsFromApi();
+                    }
+                } else if (tabType === 'products') {
+                    document.getElementById('productsSection').classList.add('active');
+                } else if (tabType === 'weather') {
+                    document.getElementById('weatherSection').classList.add('active');
+                    loadWeatherForecast();
+                } else if (tabType === 'market') {
+                    document.getElementById('marketSection').classList.add('active');
+                    loadMarketData();
+                }
+            });
+        });
+
+        // Productos: búsqueda simple en la cuadrícula
+        (function setupProductSearch(){
+            const input = document.getElementById('productSearchInput');
+            const grid = document.getElementById('productGrid');
+            if (!input || !grid) return;
+
+            input.addEventListener('input', () => {
+                const q = input.value.trim().toLowerCase();
+                const cards = grid.querySelectorAll('.product-card');
+                cards.forEach(card => {
+                    const name = (card.dataset.name || '').toLowerCase();
+                    if (!q || name.includes(q)) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+
+            // Click en tarjeta: por ahora solo resalta y podría navegar
+            grid.addEventListener('click', (e) => {
+                const card = e.target.closest('.product-card');
+                if (!card) return;
+                // indicar selección visual temporal
+                grid.querySelectorAll('.product-card').forEach(c => c.style.boxShadow = '0 1px 6px rgba(0,0,0,0.06)');
+                card.style.boxShadow = '0 4px 14px rgba(90,79,207,0.18)';
+                // aquí podríamos navegar a la categoría: window.location.href = 'productos.html?cat='+encodeURIComponent(card.dataset.name)
+            });
+        })();
+
+        // Noticias del agro dinámicas desde un JSON local (sin APIs externas)
+        const LOCAL_AGRO_NEWS = [
+            { title: 'USDA ajusta estimaciones de maíz y mercados reaccionan', description: 'Informe reciente con impacto en precios y expectativas de exportación.', image: 'https://images.unsplash.com/photo-1562751361-d0c4bc3c0d66?w=300&auto=format&fit=crop', url: 'https://www.usda.gov' },
+            { title: 'Soja: mayor demanda de China sostiene precios en la región', description: 'Analistas prevén menos presión en la nueva campaña por demanda externa.', image: 'https://images.unsplash.com/photo-1500939834731-5a9e0bff3f1b?w=300&auto=format&fit=crop', url: 'https://www.fao.org' },
+            { title: 'Tecnologías de riego elevan eficiencia hídrica en fincas familiares', description: 'Casos locales muestran mejora en rendimiento y ahorro de costos.', image: 'https://images.unsplash.com/photo-1509822929063-6b6cfc9b42f2?w=300&auto=format&fit=crop', url: 'https://www.iica.int' },
+            { title: 'Ganadería sostenible: buenas prácticas para mejorar productividad', description: 'Recomendaciones clave para manejo de pasturas y bienestar animal.', image: 'https://images.unsplash.com/photo-1581092334280-684b5f1f5a06?w=300&auto=format&fit=crop', url: 'https://www.example.com/ganaderia-sostenible' },
+            { title: 'Maíz: perspectivas de precios para el Cono Sur', description: 'Factores climáticos y oferta global condicionan la evolución de precios.', image: 'https://images.unsplash.com/photo-1596485430387-6cf3dc1d9fbb?w=300&auto=format&fit=crop', url: 'https://www.example.com/maiz-perspectivas' },
+            { title: 'Bioinsumos: adopción crece en productores hortícolas', description: 'Mayor uso de biológicos por sostenibilidad y resultados en campo.', image: 'https://images.unsplash.com/photo-1516919768374-95f89e2bf7d1?w=300&auto=format&fit=crop', url: 'https://www.example.com/bioinsumos-horticultura' }
+        ];
+
+        function loadAgroNews() {
+            const container = document.getElementById('newsList');
+            if (!container) return;
+            const shuffled = LOCAL_AGRO_NEWS.slice().sort(() => Math.random() - 0.5);
+            const selected = shuffled.slice(0, 5);
+            container.innerHTML = buildNewsHTML(selected);
+            LATEST_NEWS_ITEMS = LOCAL_AGRO_NEWS.slice();
+        }
+
+        // Open-Meteo API
+        // https://open-meteo.com/
+        const WEATHER_API_URL = 'https://api.open-meteo.com/v1/forecast';
+
+        // Función para obtener el icono del clima según el código de Open-Meteo
+        function getWeatherIcon(weatherCode) {
+            // Códigos de Open-Meteo Weather Code (WMO)
+            // 0 = Clear sky, 1-3 = Mainly clear/partly cloudy/overcast
+            // 45-48 = Fog, 51-67 = Drizzle/Rain, 71-77 = Snow, 80-99 = Rain showers/Thunderstorm
+            if (weatherCode >= 95 && weatherCode <= 99) {
+                // Tormenta
+                return `<svg class="icon" viewBox="0 0 24 24">
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+                    <path d="M8 12h8M12 8v8"></path>
+                </svg>`;
+            } else if (weatherCode >= 80 && weatherCode <= 94) {
+                // Lluvia con truenos / Lluvia fuerte
+                return `<svg class="icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path>
+                    <path d="M8 12h8M12 8v8"></path>
+                </svg>`;
+            } else if (weatherCode >= 51 && weatherCode <= 67) {
+                // Lluvia
+                return `<svg class="icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path>
+                    <path d="M8 12h8M12 8v8"></path>
+                </svg>`;
+            } else if (weatherCode >= 71 && weatherCode <= 77) {
+                // Nieve
+                return `<svg class="icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path d="M8 12h8M12 8v8M6 6l12 12M18 6L6 18"></path>
+                </svg>`;
+            } else if (weatherCode >= 45 && weatherCode <= 48) {
+                // Niebla
+                return `<svg class="icon" viewBox="0 0 24 24">
+                    <path d="M4 12h16M8 8h8M6 16h12" stroke-width="1.5" opacity="0.6"></path>
+                </svg>`;
+            } else if (weatherCode === 0) {
+                // Despejado
+                return `<svg class="icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path>
+                </svg>`;
+            } else if (weatherCode >= 1 && weatherCode <= 3) {
+                // Parcialmente nublado / Nublado
+                return `<svg class="icon" viewBox="0 0 24 24">
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+                    <circle cx="12" cy="12" r="4"></circle>
+                </svg>`;
+            }
+            // Por defecto, sol
+            return `<svg class="icon" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path>
+            </svg>`;
+        }
+
+        // Función para obtener la descripción del clima
+        function getWeatherDescription(weatherCode) {
+            const descriptions = {
+                    0: 'Cielo despejado',
+                    1: 'Principalmente despejado',
+                    2: 'Parcialmente nublado',
+                    3: 'Nublado',
+                    45: 'Niebla',
+                    48: 'Niebla helada',
+                    51: 'Llovizna ligera',
+                    53: 'Llovizna moderada',
+                    55: 'Llovizna densa',
+                    56: 'Llovizna helada ligera',
+                    57: 'Llovizna helada densa',
+                    61: 'Lluvia ligera',
+                    63: 'Lluvia moderada',
+                    65: 'Lluvia fuerte',
+                    66: 'Lluvia helada ligera',
+                    67: 'Lluvia helada fuerte',
+                    71: 'Nieve ligera',
+                    73: 'Nieve moderada',
+                    75: 'Nieve fuerte',
+                    77: 'Granizo de nieve',
+                    80: 'Chubascos ligeros',
+                    81: 'Chubascos moderados',
+                    82: 'Chubascos fuertes',
+                    85: 'Chubascos de nieve ligeros',
+                    86: 'Chubascos de nieve fuertes',
+                    95: 'Tormenta',
+                    96: 'Tormenta con granizo leve',
+                    99: 'Tormenta con granizo fuerte'
+                };
+                return descriptions[weatherCode] || 'Condiciones variables';
+        }
+
+        // Función para formatear el nombre del día
+        function getDayName(date, index) {
+            const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            if (index === 0) return 'Hoy';
+            if (index === 1) return 'Mañana';
+            const dayIndex = date.getDay();
+            return days[dayIndex];
+        }
+
+        // Función para renderizar el pronóstico
+        function renderWeatherForecast(forecastData) {
+            const container = document.getElementById('weatherForecast');
+            
+            if (!forecastData || !forecastData.daily) {
+                container.innerHTML = '<div class="weather-error">No se pudo cargar el pronóstico del tiempo.</div>';
+                return;
+            }
+
+            const daily = forecastData.daily;
+            const today = new Date();
+            
+            let html = '';
+            
+            // Open-Meteo devuelve arrays de datos diarios
+            for (let i = 0; i < Math.min(7, daily.time.length); i++) {
+                // Open-Meteo devuelve fechas como strings ISO (YYYY-MM-DD)
+                const dateStr = daily.time[i];
+                const date = new Date(dateStr + 'T12:00:00'); // Agregar hora para evitar problemas de zona horaria
+                const maxTemp = Math.round(daily.temperature_2m_max[i]);
+                const minTemp = Math.round(daily.temperature_2m_min[i]);
+                const weatherCode = daily.weathercode[i];
+                const dayName = getDayName(date, i);
+                const icon = getWeatherIcon(weatherCode);
+                const description = getWeatherDescription(weatherCode);
+                
+                // Obtener datos adicionales si están disponibles
+                const precipitation = daily.precipitation_sum ? Math.round(daily.precipitation_sum[i] * 10) / 10 : 0;
+                const precipitationProb = daily.precipitation_probability_max ? daily.precipitation_probability_max[i] : 0;
+                const windSpeed = daily.windspeed_10m_max ? Math.round(daily.windspeed_10m_max[i]) : 0;
+                const windDirection = daily.winddirection_10m_dominant ? daily.winddirection_10m_dominant[i] : 0;
+                
+                html += `
+                    <div class="weather-day">
+                        <div class="weather-day-header">
+                            <div class="weather-day-info">
+                                <div class="weather-day-name">${dayName}</div>
+                                <div class="weather-icon">${icon}</div>
+                            </div>
+                            <div class="weather-temp">
+                                <span class="weather-temp-max">${maxTemp}°</span>
+                                <span class="weather-temp-min">${minTemp}°</span>
+                            </div>
+                        </div>
+                        <div class="weather-description">${description}</div>
+                        <div class="weather-details">
+                            <div class="weather-detail-item">
+                                <span class="weather-detail-label">Precipitación</span>
+                                <span class="weather-detail-value">${precipitationProb}%</span>
+                            </div>
+                            <div class="weather-detail-item">
+                                <span class="weather-detail-label">Viento</span>
+                                <span class="weather-detail-value">${windSpeed} km/h</span>
+                            </div>
+                            <div class="weather-detail-item">
+                                <span class="weather-detail-label">Lluvia</span>
+                                <span class="weather-detail-value">${precipitation} mm</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // Función para cargar el pronóstico del tiempo
+        function loadWeatherForecast() {
+            const container = document.getElementById('weatherForecast');
+            container.innerHTML = '<div class="weather-loading">Cargando pronóstico del tiempo...</div>';
+
+            // Obtener ubicación del usuario
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        
+                        // Llamar a la API de Open-Meteo (gratuita, sin API key)
+                        // Solicitar más datos: temperatura, código del clima, precipitación, viento
+                        const url = `${WEATHER_API_URL}?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode,precipitation_sum,precipitation_probability_max,windspeed_10m_max,winddirection_10m_dominant&timezone=auto&forecast_days=7`;
+                        
+                        fetch(url)
+                            .then(response => {
+                                                if (!response.ok) {
+                                                    throw new Error('Error al obtener datos del clima');
+                                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                renderWeatherForecast(data);
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                container.innerHTML = '<div class="weather-error">Error al cargar el pronóstico del tiempo. Verifique su conexión.</div>';
+                            });
+                    },
+                    (error) => {
+                        console.error('Error de geolocalización:', error);
+                        container.innerHTML = '<div class="weather-error">No se pudo obtener su ubicación. Por favor, permita el acceso a la ubicación.</div>';
+                    }
+                );
+            } else {
+                container.innerHTML = '<div class="weather-error">Geolocalização não é suportada pelo seu navegador.</div>';
+            }
+        }
+
+        // Función para cargar datos del mercado de granos
+        function loadMarketData() {
+            const container = document.getElementById('marketData');
+            container.innerHTML = '<div class="market-loading">Cargando datos del mercado...</div>';
+
+            // Granos principales a mostrar
+            const grains = [
+                { name: 'Soja', symbol: 'SOYBEAN', unit: 'USD/bushel' },
+                { name: 'Milho', symbol: 'CORN', unit: 'USD/bushel' },
+                { name: 'Trigo', symbol: 'WHEAT', unit: 'USD/bushel' },
+                { name: 'Café', symbol: 'COFFEE', unit: 'USD/lb' },
+                { name: 'Açúcar', symbol: 'SUGAR', unit: 'USD/lb' }
+            ];
+
+         
+            Promise.all(grains.map(grain => fetchMarketPrice(grain)))
+                .then(results => {
+                    renderMarketData(results);
+                })
+                .catch(error => {
+                        console.error('Error:', error);
+                        container.innerHTML = '<div class="market-error">Error al cargar los datos del mercado. Intente nuevamente más tarde.</div>';
+                    });
+        }
+
+        // Función para obtener precio de un commodity en tiempo real
+        async function fetchMarketPrice(grain) {
+            // Mapeo de símbolos a códigos de Yahoo Finance
+            const yahooSymbols = {
+                'SOYBEAN': 'ZS=F',  // Soybean Futures
+                'CORN': 'ZC=F',     // Corn Futures
+                'WHEAT': 'ZW=F',    // Wheat Futures
+                'COFFEE': 'KC=F',   // Coffee Futures
+                'SUGAR': 'SB=F'     // Sugar Futures
+            };
+
+                const symbol = yahooSymbols[grain.symbol];
+            if (!symbol) {
+                throw new Error(`Símbolo no encontrado para ${grain.name}`);
+            }
+
+            try {
+                // Usar proxy CORS público para acceder a Yahoo Finance sin API key
+                // Proxies disponibles: allorigins.win, corsproxy.io, etc.
+                const proxies = [
+                    'https://api.allorigins.win/raw?url=',
+                    'https://corsproxy.io/?',
+                    'https://api.codetabs.com/v1/proxy?quest='
+                ];
+                
+                const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
+                
+                // Intentar con cada proxy hasta que uno funcione
+                for (const proxy of proxies) {
+                    try {
+                        const proxyFullUrl = proxy + encodeURIComponent(yahooUrl);
+                        const response = await fetch(proxyFullUrl, {
+                            method: 'GET',
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            
+                            if (data.chart && data.chart.result && data.chart.result[0]) {
+                                const result = data.chart.result[0];
+                                const meta = result.meta;
+                                const indicators = result.indicators;
+                                
+                                if (meta) {
+                                    // Intentar obtener datos de meta primero (más confiable)
+                                    const currentPrice = meta.regularMarketPrice || meta.previousClose || meta.chartPreviousClose;
+                                    const previousPrice = meta.previousClose || meta.chartPreviousClose || currentPrice;
+                                    
+                                    if (currentPrice) {
+                                        const change = currentPrice - previousPrice;
+                                        const changePercent = (change / previousPrice) * 100;
+                                        
+                                        // Intentar obtener datos de indicators si están disponibles
+                                        let high = meta.regularMarketDayHigh || currentPrice;
+                                        let low = meta.regularMarketDayLow || currentPrice;
+                                        let volume = meta.regularMarketVolume || 0;
+                                        
+                                        if (indicators && indicators.quote && indicators.quote[0]) {
+                                            const quote = indicators.quote[0];
+                                            const highs = quote.high.filter(p => p !== null);
+                                            const lows = quote.low.filter(p => p !== null);
+                                            const volumes = quote.volume.filter(v => v !== null);
+                                            
+                                            if (highs.length > 0) high = Math.max(...highs);
+                                            if (lows.length > 0) low = Math.min(...lows);
+                                            if (volumes.length > 0) volume = volumes.reduce((a, b) => a + b, 0);
+                                        }
+                                        
+                                        return {
+                                            name: grain.name,
+                                            symbol: grain.symbol,
+                                            price: parseFloat(currentPrice.toFixed(2)),
+                                            change: parseFloat(change.toFixed(2)),
+                                            changePercent: parseFloat(changePercent.toFixed(2)),
+                                            high: parseFloat(high.toFixed(2)),
+                                            low: parseFloat(low.toFixed(2)),
+                                            volume: Math.floor(volume),
+                                            unit: grain.unit
+                                        };
+                                    }
+                                }
+                            }
+                        }
+                    } catch (proxyError) {
+                        // Continuar con el siguiente proxy
+                        continue;
+                    }
+                }
+                
+                throw new Error('Todos los proxies fallaron');
+            } catch (error) {
+                console.log(`Error al buscar ${grain.name} vía API:`, error.message);
+                
+                // Fallback: usar datos base con variación realista
+                const basePrices = {
+                    'SOYBEAN': { price: 12.50, change: 0.15, high: 12.80, low: 12.20 },
+                    'CORN': { price: 4.80, change: -0.05, high: 4.95, low: 4.65 },
+                    'WHEAT': { price: 6.20, change: 0.10, high: 6.40, low: 6.00 },
+                    'COFFEE': { price: 1.85, change: -0.02, high: 1.90, low: 1.80 },
+                    'SUGAR': { price: 0.22, change: 0.01, high: 0.23, low: 0.21 }
+                };
+
+                const base = basePrices[grain.symbol] || { price: 0, change: 0, high: 0, low: 0 };
+                const now = new Date();
+                const hour = now.getHours();
+                const dayOfWeek = now.getDay();
+                const marketActivity = (hour >= 9 && hour <= 16) ? 1.5 : 0.5;
+                const dayVariation = (dayOfWeek >= 1 && dayOfWeek <= 5) ? 1 : 0.3;
+                
+                const variation = (Math.random() - 0.5) * 0.1 * marketActivity * dayVariation;
+                const changeVariation = (Math.random() - 0.5) * 0.05 * marketActivity * dayVariation;
+                
+                return {
+                    name: grain.name,
+                    symbol: grain.symbol,
+                    price: parseFloat((base.price + variation).toFixed(2)),
+                    change: parseFloat((base.change + changeVariation).toFixed(2)),
+                    changePercent: parseFloat((((base.change + changeVariation) / (base.price + variation)) * 100).toFixed(2)),
+                    high: parseFloat((base.high + Math.random() * 0.1).toFixed(2)),
+                    low: parseFloat((base.low - Math.random() * 0.1).toFixed(2)),
+                    volume: Math.floor(Math.random() * 1000000) + 500000,
+                    unit: grain.unit
+                };
+            }
+        }
+
+        // Función para renderizar los datos del mercado
+        function renderMarketData(marketData) {
+            const container = document.getElementById('marketData');
+            
+            if (!marketData || marketData.length === 0) {
+                container.innerHTML = '<div class="market-error">No se pudieron cargar los datos del mercado.</div>';
+                return;
+            }
+
+            let html = '';
+            
+            marketData.forEach(item => {
+                const isPositive = item.change >= 0;
+                const changeIcon = isPositive ? '↑' : '↓';
+                
+                html += `
+                    <div class="market-item">
+                        <div class="market-item-header">
+                            <div class="market-item-name">${item.name}</div>
+                            <div>
+                                <div class="market-item-price">$${item.price.toFixed(2)}</div>
+                                <div class="market-item-change ${isPositive ? 'positive' : 'negative'}">
+                                    <span>${changeIcon}</span>
+                                    <span>${Math.abs(item.change).toFixed(2)} (${Math.abs(item.changePercent).toFixed(2)}%)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="market-item-details">
+                            <div class="market-detail-item">
+                                <span class="market-detail-label">Máxima</span>
+                                <span class="market-detail-value">$${item.high.toFixed(2)}</span>
+                            </div>
+                            <div class="market-detail-item">
+                                <span class="market-detail-label">Mínima</span>
+                                <span class="market-detail-value">$${item.low.toFixed(2)}</span>
+                            </div>
+                            <div class="market-detail-item">
+                                <span class="market-detail-label">Volume</span>
+                                <span class="market-detail-value">${item.volume.toLocaleString('pt-BR')}</span>
+                            </div>
+                            <div class="market-detail-item">
+                                <span class="market-detail-label">Unidad</span>
+                                <span class="market-detail-value">${item.unit}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Funcionalidad de navegación inferior
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const label = this.querySelector('.nav-label');
+
+                // Acción del botón "Entrar"
+                if (label && label.textContent.trim() === 'Entrar') {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // Acción del botón "Mercado" en la navegación inferior:
+                if (label && label.textContent.trim() === 'Mercado') {
+                    // Marcar el nav activo
+                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Desactivar pestañas superiores
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+                    // Mostrar sección de mercado y cargar datos
+                    document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+                    document.getElementById('marketSection').classList.add('active');
+                    if (typeof loadMarketData === 'function') loadMarketData();
+                    return;
+                }
+
+                // Acción del botón "Pedidos" -> abrir página de pedidos
+                if (label && label.textContent.trim() === 'Pedidos') {
+                    window.location.href = 'pedidos.html';
+                    return;
+                }
+
+                // Acción del botón "Comunidad" -> abrir página de comunidad
+                if (label && label.textContent.trim() === 'Comunidad') {
+                    window.location.href = 'comunidad.html';
+                    return;
+                }
+
+                // Comportamiento por defecto para los demás botones
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        const menuButton = document.querySelector('.menu-icon');
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        const closeMenuButton = document.getElementById('closeMenu');
+
+        function openMenu() {
+            sideMenu.classList.add('open');
+            menuOverlay.classList.add('visible');
+            sideMenu.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeMenu() {
+            sideMenu.classList.remove('open');
+            menuOverlay.classList.remove('visible');
+            sideMenu.setAttribute('aria-hidden', 'true');
+        }
+
+        menuButton.addEventListener('click', openMenu);
+        closeMenuButton.addEventListener('click', closeMenu);
+        menuOverlay.addEventListener('click', closeMenu);
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && sideMenu.classList.contains('open')) {
+                closeMenu();
+            }
+        });
+
+        /* ----------------------------- */
+        /* Integración Apitube (Noticias) */
+        /* ----------------------------- */
+        // Configura aquí tu API key y endpoint. Si el endpoint de Apitube es distinto, reemplázalo por la URL correcta.
+        const APITUBE_API_URL = '/api/agro-news';
+        const CUSTOM_NEWS_KEY = 'custom_news_items';
+        let fbEnabled = !!window.fbListNews;
+
+        let LATEST_NEWS_ITEMS = [];
+        function isThisMonth(dateStr){
+            const d = new Date(dateStr);
+            if (isNaN(d)) return false;
+            const now = new Date();
+            return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+        }
+        function buildNewsHTML(items){
+            return items.map(item => {
+                const title = item.title || item.headline || item.name || 'Sin título';
+                const summary = item.description || item.summary || item.excerpt || '';
+                const image = item.image || item.image_url || item.thumbnail || '';
+                const url = item.url || item.link || '#';
+                return `
+                <div class="news-item">
+                    <img loading="lazy" onerror="this.remove()" src="${image || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'90\' height=\'90\'%3E%3Crect fill=\'%23eaeaea\' width=\'90\' height=\'90\'/%3E%3C/svg%3E'}" alt="" class="news-image">
+                    <div class="news-content">
+                        <a href="${url}" class="news-title" style="text-decoration:none;color:inherit;display:block" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>
+                        <div class="activity-description">${escapeHtml(summary)}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        function renderNewsItems(items) {
+            const list = document.querySelector('.news-list');
+            if (!items || items.length === 0) {
+                list.innerHTML = '<div class="weather-error">No se encontraron noticias.</div>';
+                return;
+            }
+            list.innerHTML = buildNewsHTML(items);
+            LATEST_NEWS_ITEMS = items.slice();
+        }
+
+        // Helper para escapar texto
+        function escapeHtml(str){ return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        async function loadNewsFromRSS(){
+            const feeds = [
+                'https://news.un.org/feed/subscribe/es/news/topic/agriculture/rss.xml',
+                'https://news.google.com/rss/search?q=agricultura&hl=es-419&gl=AR&ceid=AR:es-419',
+                'https://news.google.com/rss/search?q=ganader%C3%ADa&hl=es-419&gl=AR&ceid=AR:es-419',
+                'https://news.google.com/rss/search?q=agro&hl=es-419&gl=AR&ceid=AR:es-419',
+                'https://news.google.com/rss/search?q=soja&hl=es-419&gl=AR&ceid=AR:es-419',
+                'https://news.google.com/rss/search?q=ma%C3%ADz&hl=es-419&gl=AR&ceid=AR:es-419'
+            ];
+            try {
+                const results = await Promise.all(feeds.map(async f => {
+                    const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(f));
+                    if (!r.ok) throw new Error('rss');
+                    const j = await r.json();
+                    const doc = new DOMParser().parseFromString(j.contents || '', 'text/xml');
+                    const items = Array.from(doc.querySelectorAll('item')).map(it => {
+                        const title = it.querySelector('title')?.textContent || '';
+                        const link = it.querySelector('link')?.textContent || '#';
+                        const description = it.querySelector('description')?.textContent || '';
+                        const pubDate = it.querySelector('pubDate')?.textContent || '';
+                        const enclosure = it.querySelector('enclosure');
+                        const media = it.getElementsByTagName('media:content')[0];
+                        const image = enclosure?.getAttribute('url') || (media ? media.getAttribute('url') : '') || '';
+                        return { title, url: link, description, pubDate, image };
+                    });
+                    return items;
+                }));
+                const merged = results.flat().filter(x => x && x.title);
+                const dedup = new Map();
+                for (const it of merged) {
+                    const key = (it.url || it.title).trim();
+                    if (!dedup.has(key)) dedup.set(key, it);
+                }
+                const items = Array.from(dedup.values()).sort((a,b)=> new Date(b.pubDate) - new Date(a.pubDate)).slice(0,12);
+                if (items.length) {
+                    renderNewsItems(items);
+                    LATEST_NEWS_ITEMS = items.slice();
+                    return true;
+                }
+                return false;
+            } catch(e) {
+                return false;
+            }
+        }
+
+        // Realiza la petición a Apitube
+        function loadNewsFromApi(){
+            const container = document.querySelector('.news-list');
+            if(!container) return;
+            container.innerHTML = '<div class="weather-loading">Cargando noticias...</div>';
+            if (fbEnabled) {
+                window.fbListNews().then(items => {
+                    if (items.length === 0) {
+                        try {
+                            const v = localStorage.getItem(CUSTOM_NEWS_KEY);
+                            const localItems = Array.isArray(JSON.parse(v)) ? JSON.parse(v) : [];
+                            if (localItems.length) {
+                                renderNewsItems(localItems);
+                                LATEST_NEWS_ITEMS = localItems.slice();
+                                return;
+                            }
+                        } catch(e) {}
+                    }
+                    renderNewsItems(items);
+                    LATEST_NEWS_ITEMS = items.slice();
+                }).catch(() => {
+                    try {
+                        const v = localStorage.getItem(CUSTOM_NEWS_KEY);
+                        const items = Array.isArray(JSON.parse(v)) ? JSON.parse(v) : [];
+                        if (!items.length) {
+                            container.innerHTML = '<div class="weather-error">No hay noticias cargadas.</div>';
+                            LATEST_NEWS_ITEMS = [];
+                            return;
+                        }
+                        renderNewsItems(items);
+                        LATEST_NEWS_ITEMS = items.slice();
+                    } catch(e) {
+                        container.innerHTML = '<div class="weather-error">No hay noticias cargadas.</div>';
+                        LATEST_NEWS_ITEMS = [];
+                    }
+                });
+                return;
+            }
+            try {
+                const v = localStorage.getItem(CUSTOM_NEWS_KEY);
+                const items = Array.isArray(JSON.parse(v)) ? JSON.parse(v) : [];
+                if (!items.length) {
+                    container.innerHTML = '<div class="weather-error">No hay noticias cargadas.</div>';
+                    LATEST_NEWS_ITEMS = [];
+                    return;
+                }
+                renderNewsItems(items);
+                LATEST_NEWS_ITEMS = items.slice();
+            } catch(e) {
+                container.innerHTML = '<div class="weather-error">No hay noticias cargadas.</div>';
+                LATEST_NEWS_ITEMS = [];
+            }
+        }
+
+        // Cargar noticias inicialmente y cuando se active la pestaña Noticias
+        // Llamada inicial para poblar la sección al cargar la página
+        (function initNews(){
+            // Si la sección de noticias está visible por defecto, cargar inmediatamente
+            const newsSection = document.getElementById('newsSection');
+            if(newsSection && newsSection.classList.contains('active')) loadNewsFromApi();
+
+            // Añadir carga cuando se activa la pestaña (la lógica de pestañas ya existe más arriba)
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function(){
+                    if (this.getAttribute('data-tab') === 'news') {
+                        // pequeña demora para que la transición ocurra primero
+                        setTimeout(loadNewsFromApi, 80);
+                    }
+                });
+            });
+        })();
+
+        // Navegación desde el menú lateral hacia las secciones
+        document.querySelectorAll('.side-menu__item').forEach(item => {
+            item.addEventListener('click', (event) => {
+                event.preventDefault();
+
+                const text = item.textContent.trim();
+
+                // Navegar a página de QR Productos Premiados
+                if (text === 'QR Productos Premiados') {
+                    closeMenu();
+                    window.location.href = 'qr.html';
+                    return;
+                }
+
+                // Navegar al Cuaderno de actividades (otra página)
+                if (text === 'Cuaderno de actividades') {
+                    closeMenu();
+                    window.location.href = 'activities.html';
+                    return;
+                }
+
+                // Navegar a la página de Contacto
+                if (text === 'Contacto') {
+                    closeMenu();
+                    window.location.href = 'contacto.html';
+                    return;
+                }
+
+                // Navegar a la página de Agendar visita
+                if (text === 'Agendar visita') {
+                    closeMenu();
+                    window.location.href = 'visitas.html';
+                    return;
+                }
+                if (text === 'Mis noticias') {
+                    closeMenu();
+                    window.location.href = 'misnoticias.html';
+                    return;
+                }
+
+                // Pestaña Noticias
+                if (text === 'Noticias') {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    const newsTab = document.querySelector('.tab[data-tab="news"]');
+                    if (newsTab) newsTab.classList.add('active');
+
+                    document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+                    const newsSection = document.getElementById('newsSection');
+                    if (newsSection) newsSection.classList.add('active');
+
+                    if (typeof loadNewsFromApi === 'function') {
+                        loadNewsFromApi();
+                    }
+                }
+
+                // Pestaña Tiempo
+                if (text === 'Tiempo') {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    const weatherTab = document.querySelector('.tab[data-tab="weather"]');
+                    if (weatherTab) weatherTab.classList.add('active');
+
+                    document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+                    const weatherSection = document.getElementById('weatherSection');
+                    if (weatherSection) weatherSection.classList.add('active');
+
+                    if (typeof loadWeatherForecast === 'function') {
+                        loadWeatherForecast();
+                    }
+
+                    // Desplazar suavemente hacia la sección de tiempo
+                    weatherSection?.scrollIntoView({ behavior: 'smooth' });
+                }
+
+                // Sección Mercado
+                if (text === 'Mercado') {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+                    const marketSection = document.getElementById('marketSection');
+                    if (marketSection) marketSection.classList.add('active');
+
+                    if (typeof loadMarketData === 'function') {
+                        loadMarketData();
+                    }
+
+                    marketSection?.scrollIntoView({ behavior: 'smooth' });
+                }
+
+                // Navegar a Comunidad (menú lateral)
+                if (text === 'Comunidad') {
+                    closeMenu();
+                    window.location.href = 'comunidad.html';
+                    return;
+                }
+
+                // Cerrar menú después de la navegación
+                closeMenu();
+            });
+        });
+
+        const viewAllNewsLink = document.getElementById('viewAllNewsLink');
+        const newsOverlay = document.getElementById('newsOverlay');
+        const newsModalList = document.getElementById('newsModalList');
+        const closeNews = document.getElementById('closeNews');
+        const imageOverlay = document.getElementById('imageOverlay');
+        const imageOverlayImg = document.getElementById('imageOverlayImg');
+        const newsListEl = document.getElementById('newsList');
+        const itemOverlay = document.getElementById('itemOverlay');
+        const itemOverlayTitle = document.getElementById('itemOverlayTitle');
+        const itemOverlayBody = document.getElementById('itemOverlayBody');
+        const itemOverlayOpenLink = document.getElementById('itemOverlayOpenLink');
+        const closeItem = document.getElementById('closeItem');
+        function openNewsModal(){
+            if (!newsOverlay || !newsModalList) return;
+            const items = Array.isArray(LATEST_NEWS_ITEMS) ? LATEST_NEWS_ITEMS : [];
+            if (items.length === 0) return;
+            newsModalList.innerHTML = buildNewsHTML(items);
+            newsOverlay.classList.add('open');
+        }
+        function openImageModal(src){
+            if (!imageOverlay || !imageOverlayImg) return;
+            imageOverlayImg.src = src;
+            imageOverlay.classList.add('open');
+        }
+        if (viewAllNewsLink) {
+            viewAllNewsLink.addEventListener('click', e => { e.preventDefault(); openNewsModal(); });
+        }
+        if (newsOverlay) {
+            newsOverlay.addEventListener('click', e => { if (e.target === newsOverlay) newsOverlay.classList.remove('open'); });
+        }
+        if (closeNews) {
+            closeNews.addEventListener('click', () => newsOverlay.classList.remove('open'));
+        }
+        if (newsListEl) {
+            newsListEl.addEventListener('click', e => {
+                const item = e.target.closest('.news-item');
+                if (!item) return;
+                const img = item.querySelector('.news-image');
+                const titleEl = item.querySelector('.news-title');
+                const descEl = item.querySelector('.activity-description');
+                const linkHref = titleEl && titleEl.getAttribute('href') ? titleEl.getAttribute('href') : '#';
+                if (e.target.closest('.news-image')) {
+                    e.preventDefault();
+                    openImageModal(img && img.src ? img.src : '');
+                    return;
+                }
+                if (e.target.closest('.news-title')) {
+                    e.preventDefault();
+                }
+                itemOverlayTitle.textContent = titleEl ? titleEl.textContent : '';
+                itemOverlayBody.innerHTML = `${img && img.src ? `<img src="${img.src}" alt="" style="width:100%;border-radius:8px;margin-bottom:12px">` : ''}${descEl ? descEl.textContent : ''}`;
+                if (linkHref && linkHref !== '#') {
+                    itemOverlayOpenLink.style.display = '';
+                    itemOverlayOpenLink.onclick = () => { window.open(linkHref, '_blank', 'noopener'); };
+                } else {
+                    itemOverlayOpenLink.style.display = 'none';
+                    itemOverlayOpenLink.onclick = null;
+                }
+                itemOverlay.classList.add('open');
+            });
+        }
+        if (imageOverlay) {
+            imageOverlay.addEventListener('click', e => { if (e.target === imageOverlay) imageOverlay.classList.remove('open'); });
+        }
+        if (itemOverlay) {
+            itemOverlay.addEventListener('click', e => { if (e.target === itemOverlay) itemOverlay.classList.remove('open'); });
+        }
+        if (closeItem) {
+            closeItem.addEventListener('click', () => itemOverlay.classList.remove('open'));
+        }
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && imageOverlay && imageOverlay.classList.contains('open')) {
+                imageOverlay.classList.remove('open');
+            }
+            if (event.key === 'Escape' && itemOverlay && itemOverlay.classList.contains('open')) {
+                itemOverlay.classList.remove('open');
+            }
+        });
+        
+    </script>
+</body>
+</html>

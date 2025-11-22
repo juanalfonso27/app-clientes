@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Productos Premiados - IASA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background-color: #d4d4d4;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header img {
+            height: 36px;
+            width: auto;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px 16px 32px;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 14px;
+        }
+
+        .info-card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 16px 14px 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 16px;
+        }
+
+        .info-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .info-list {
+            font-size: 14px;
+            color: #555;
+            margin-left: 16px;
+            margin-bottom: 8px;
+        }
+
+        .scanner-card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 16px 14px 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .btn-primary {
+            background: #5a4fcf;
+            color: white;
+            border: none;
+            border-radius: 999px;
+            padding: 11px 16px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 3px 10px rgba(90,79,207,0.4);
+            transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .btn-primary:hover {
+            background: #4b40b0;
+            transform: translateY(-1px);
+            box-shadow: 0 5px 16px rgba(90,79,207,0.55);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(90,79,207,0.35);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: none;
+            color: #666;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 6px;
+        }
+
+        .scanner-container {
+            margin-top: 14px;
+        }
+
+        .scanner-status {
+            font-size: 13px;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        #qr-reader {
+            width: 100%;
+        }
+
+        .result-card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 40px 18px 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            text-align: center;
+            margin-top: 18px;
+        }
+
+        .result-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .result-text {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 22px;
+        }
+
+        @media (min-width: 720px) {
+            .content {
+                padding-top: 32px;
+            }
+        }
+    </style>
+
+    <!-- Librería html5-qrcode desde CDN para escanear QR -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+    <div class="page">
+        <header class="header">
+            <img src="logo1.png" alt="IASA logo" loading="lazy">
+        </header>
+
+        <main class="content">
+            <h1 class="title">QR Productos Premiados</h1>
+            <p class="subtitle">Escaneá el código QR de los productos participantes y sumá chances de ganar premios.</p>
+
+            <section class="info-card" aria-label="Información sobre premios">
+                <div class="info-title">¿Cómo funcionan los QR premiados?</div>
+                <ul class="info-list">
+                    <li>Cada producto participante trae un QR único.</li>
+                    <li>Al escanearlo, se registra tu participación en la campaña.</li>
+                    <li>Cuantos más QR escanees, más probabilidades tenés de ganar.</li>
+                </ul>
+                <p style="font-size:13px;color:#777;">Asegurate de permitir el acceso a la cámara y apuntar al código en buena iluminación.</p>
+            </section>
+
+            <section class="scanner-card" aria-label="Escáner de código QR" id="scannerCard">
+                <h2 class="info-title" style="margin-bottom:6px;">Escanear código QR</h2>
+                <p style="font-size:13px;color:#666;">Cuando estés listo, activá la cámara y acercá el QR del producto.</p>
+
+                <button id="startScannerBtn" class="btn-primary">Habilitar cámara y escanear</button>
+                <button type="button" class="btn-secondary" onclick="history.back()">Volver atrás</button>
+
+                <div class="scanner-container" id="scannerContainer" style="display:none;">
+                    <div id="qr-reader"></div>
+                    <div id="scannerStatus" class="scanner-status">Apuntá la cámara al código QR del producto.</div>
+                </div>
+            </section>
+
+            <section class="result-card" id="resultCard" style="display:none;" aria-label="Resultado del escaneo">
+                <h2 class="result-title" id="resultTitle">No fue desta vez!</h2>
+                <p class="result-text" id="resultText">Continue participando de la promoción QR premiado para seguir sumando chances.</p>
+                <button id="seeProductBtn" class="btn-primary">Ver información del producto</button>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('startScannerBtn');
+        const scannerContainer = document.getElementById('scannerContainer');
+        const statusEl = document.getElementById('scannerStatus');
+        const scannerCard = document.getElementById('scannerCard');
+        const resultCard = document.getElementById('resultCard');
+        const seeProductBtn = document.getElementById('seeProductBtn');
+
+        let html5QrCode = null;
+        let scannerRunning = false;
+        let lastDecodedText = '';
+
+        function isUrl(text) {
+            try {
+                const url = new URL(text);
+                return url.protocol === 'http:' || url.protocol === 'https:';
+            } catch {
+                return false;
+            }
+        }
+
+        function onScanSuccess(decodedText) {
+            // Cuando se lee un QR correctamente
+            scannerRunning = false;
+            if (html5QrCode) {
+                html5QrCode.stop().catch(() => {});
+            }
+            lastDecodedText = decodedText;
+
+            // Ocultar escáner y mostrar pantalla de resultado
+            scannerContainer.style.display = 'none';
+            scannerCard.style.display = 'none';
+            resultCard.style.display = 'block';
+        }
+
+        function onScanFailure() {
+            // Errores de lectura se ignoran para no molestar al usuario
+        }
+
+        startBtn.addEventListener('click', () => {
+            if (scannerRunning) {
+                return;
+            }
+
+            if (!window.Html5Qrcode) {
+                alert('No se pudo cargar el lector de QR. Verificá tu conexión.');
+                return;
+            }
+
+            scannerContainer.style.display = 'block';
+            statusEl.textContent = 'Iniciando cámara...';
+
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+            html5QrCode = new Html5Qrcode('qr-reader');
+            scannerRunning = true;
+
+            html5QrCode.start(
+                { facingMode: 'environment' },
+                config,
+                onScanSuccess,
+                onScanFailure
+            ).then(() => {
+                statusEl.textContent = 'Cámara activa. Apuntá al código QR del producto.';
+            }).catch(err => {
+                scannerRunning = false;
+                statusEl.textContent = 'No se pudo iniciar la cámara. Verificá permisos o probá con otro navegador.';
+                console.error('Error al iniciar lector QR:', err);
+            });
+        });
+
+        seeProductBtn.addEventListener('click', () => {
+            if (!lastDecodedText) return;
+
+            // Si el QR es una URL, vamos directo a esa URL
+            if (isUrl(lastDecodedText)) {
+                window.location.href = lastDecodedText;
+                return;
+            }
+
+            // Si no es URL, mandar a una página interna con el código como parámetro
+            const encoded = encodeURIComponent(lastDecodedText);
+            window.location.href = 'producto.html?code=' + encoded;
+        });
+    </script>
+</body>
+</html>

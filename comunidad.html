@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Comunidad Agrícola - Comparte y aprende</title>
+  <meta name="description" content="Plataforma comunitaria para agricultores. Comparte experiencias, aprende de otros y conecta con la comunidad agrícola local.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+         --bg: #f5f5f5;
+      --card-bg: #ffffff;
+      --foreground: #1f1f1f;
+      --muted: #666666;
+      --primary: #6b4dbf;
+      --primary-hover: #5a3ea8;
+      --border: #e0e0e0;
+      --border-light: #f0f0f0;
+      --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--foreground);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+    
+    /* Header */
+    header {
+      margin-bottom: 2rem;
+      padding: 0 0.5rem;
+    }
+    
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .header-icon {
+      font-size: 1.5rem;
+      color: var(--foreground);
+    }
+    
+    .header-text h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--foreground);
+      margin: 0;
+      text-align: left;
+    }
+    
+    .header-text p {
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin: 0.25rem 0 0 0;
+    }
+    
+    /* Card base */
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+    
+    /* Form */
+    .form-header {
+      font-size: 0.875rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      font-weight: 400;
+    }
+    
+    .form-field {
+      margin-bottom: 1rem;
+    }
+    
+    label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 0.375rem;
+      display: block;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      transition: border-color 0.2s;
+      background: white;
+    }
+    
+    input[type="text"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    
+    .char-count {
+      font-size: 0.75rem;
+      text-align: right;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+    
+    .char-count.warning {
+      color: #f59e0b;
+    }
+    
+    .char-count.danger {
+      color: #ef4444;
+    }
+    
+    /* Photo section */
+    .photo-section {
+      margin-bottom: 1rem;
+    }
+    
+    .photo-content {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    
+    .file-label {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      color: var(--foreground);
+    }
+    
+    .file-label:hover {
+      background: var(--bg);
+    }
+    
+    input[type="file"] {
+      display: none;
+    }
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-card);
+      border-radius: 12px;
+      padding: 1rem;
+      width: 100%;
+      max-width: 520px;
+    }
+    .modal-title {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .modal video {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #000;
+      aspect-ratio: 16/9;
+      margin-bottom: 0.75rem;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+    
+    .preview-wrapper {
+      position: relative;
+    }
+    
+    .preview {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    
+    .preview-remove {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 22px;
+      height: 22px;
+      background: #ef4444;
+      color: white;
+      border: 2px solid white;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      line-height: 1;
+    }
+    
+    .photo-hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+    
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    
+    .btn {
+      padding: 0.625rem 1.25rem;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      font-family: inherit;
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+    
+    .btn-secondary {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    
+    .btn-secondary:hover {
+      background: var(--bg);
+    }
+    
+    .btn-danger {
+      background: transparent;
+      color: var(--muted);
+      padding: 0.375rem;
+      font-size: 0.875rem;
+      border-radius: 4px;
+    }
+    
+    .btn-danger:hover {
+      background: var(--bg);
+    }
+    
+    /* Feed */
+    .feed-section {
+      margin-top: 2rem;
+    }
+    
+    .feed {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    /* Post */
+    .post {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--border);
+    }
+    
+    .post-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    .post-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 1.125rem;
+      flex-shrink: 0;
+      text-transform: uppercase;
+    }
+    
+    .post-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .post-name {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--foreground);
+      margin: 0 0 0.125rem 0;
+    }
+    
+    .post-location {
+      font-size: 0.8125rem;
+      color: var(--muted);
+      margin: 0;
+    }
+    
+    .post-menu {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0.25rem;
+      font-size: 1.25rem;
+      line-height: 1;
+      border-radius: 4px;
+    }
+    
+    .post-menu:hover {
+      background: var(--bg);
+    }
+    .post-delete {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.875rem;
+      border-radius: 4px;
+    }
+    .post-delete:hover {
+      background: var(--bg);
+      color: #b91c1c;
+    }
+    
+    .post-image-wrapper {
+      width: 100%;
+      aspect-ratio: 16/9;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--border-light);
+      margin-bottom: 0.75rem;
+    }
+    
+    .post-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .post-message {
+      color: var(--foreground);
+      line-height: 1.5;
+      font-size: 0.875rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      margin-bottom: 0.75rem;
+    }
+    
+    .post-time {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    
+    .post-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    /* Empty state */
+    .empty-state {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 3rem 2rem;
+      text-align: center;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--border);
+    }
+    
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    
+    .empty-state h3 {
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+      color: var(--foreground);
+      font-weight: 600;
+    }
+    
+    .empty-state p {
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+    
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: var(--foreground);
+      color: white;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      font-size: 0.875rem;
+      animation: slideIn 0.2s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    .hidden { display: none; }
+    
+    /* Responsive */
+    @media (max-width: 640px) {
+      .container {
+        padding: 1rem;
+      }
+      
+      .photo-content {
+        flex-direction: column;
+      }
+      
+      .toast {
+        left: 1rem;
+        right: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-content">
+          <div style="display:flex; align-items:center; gap:0.75rem;">
+            <span class="header-icon"></span>
+            <div class="header-text">
+              <h1>Comunidad</h1>
+            </div>
+          </div>
+      </div>
+      <p class="header-text">Comparte una publicación con tu red</p>
+      <div style="margin-top:0.75rem;">
+        <button id="btnCompartir" class="btn btn-primary">Compartir</button>
+      </div>
+    </header>
+    
+
+    <div class="card hidden" id="shareCard">
+      <div class="form-header">Escribe aqui</div>
+
+      <div class="form-field">
+        <label for="name">Nombre</label>
+        <input id="name" type="text" placeholder="Tu nombre" maxlength="50">
+      </div>
+
+      <div class="form-field">
+        <label for="location">Localidad</label>
+        <input id="location" type="text" placeholder="Ciudad / Departamento" maxlength="50">
+      </div>
+
+      <div class="form-field">
+        <label for="message">Descripción</label>
+        <textarea id="message" placeholder="Escribe tu mensaje..." maxlength="500"></textarea>
+        <div class="char-count" id="charCount">0 / 500</div>
+      </div>
+
+      <div class="photo-section">
+        <div class="photo-content">
+          <label for="photo" class="file-label">Subir imagen</label>
+          <input id="photo" type="file" accept="image/*" capture="environment">
+          <button id="openCamera" type="button" class="file-label">Tomar foto</button>
+          <div id="previewWrapper" class="preview-wrapper" style="display:none">
+            <img id="photoPreview" class="preview" alt="Vista previa" src="">
+            <button id="removePreview" class="preview-remove">✕</button>
+          </div>
+        </div>
+        <p class="photo-hint">Máx. 2MB.</p>
+      </div>
+
+      <div class="btn-group">
+        <button id="submitPost" class="btn btn-primary">Publicar</button>
+        <button id="clearForm" class="btn btn-secondary">Limpiar</button>
+      </div>
+    </div>
+
+    <div class="feed-section">
+      <div id="feed" class="feed">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">🌱</div>
+          <h3>No hay publicaciones</h3>
+          <p>Sé el primero en compartir</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="cameraModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-title">Cámara</div>
+      <video id="cameraVideo" autoplay playsinline></video>
+      <div class="modal-actions">
+        <button id="capturePhoto" class="btn btn-primary" type="button">Capturar</button>
+        <button id="closeCamera" class="btn btn-secondary" type="button">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const STORAGE_KEY = 'iasa_community_posts_v1';
+
+// Utilidades
+function readPosts() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function writePosts(arr) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+}
+
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+function escapeHtml(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function formatDate(timestamp) {
+  const d = new Date(timestamp);
+  const now = new Date();
+  const diff = now - d;
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (mins < 1) return 'Ahora';
+  if (mins < 60) return `Hace ${mins}m`;
+  if (hours < 24) return `Hace ${hours}h`;
+  if (days < 7) return `Hace ${days}d`;
+  return d.toLocaleDateString('es');
+}
+
+function deletePost(id) {
+  if (!confirm('¿Eliminar esta publicación?')) return;
+  const posts = readPosts().filter(p => p.id !== id);
+  writePosts(posts);
+  renderPosts();
+  showToast('✓ Publicación eliminada');
+}
+
+function renderPosts() {
+  const feed = document.getElementById('feed');
+  const emptyState = document.getElementById('emptyState');
+  const posts = readPosts();
+
+  if (!posts.length) {
+    emptyState.style.display = 'block';
+    feed.innerHTML = '';
+    feed.appendChild(emptyState);
+    return;
+  }
+
+  emptyState.style.display = 'none';
+  feed.innerHTML = '';
+
+  posts.slice().reverse().forEach(p => {
+    const post = document.createElement('div');
+    post.className = 'post';
+
+    const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
+    const displayName = p.name || 'Anónimo';
+    const displayLocation = p.location || 'Sin ubicación';
+
+    const imageHtml = p.image
+      ? `<div class="post-image-wrapper">
+           <img src="${p.image}" class="post-image" alt="Imagen">
+         </div>`
+      : '';
+
+    post.innerHTML = `
+      <div class="post-header">
+        <div class="post-avatar">${initial}</div>
+        <div class="post-info">
+          <h3 class="post-name">${escapeHtml(displayName)}</h3>
+          <p class="post-location">${escapeHtml(displayLocation)}</p>
+        </div>
+        <button class="post-delete" onclick="deletePost('${p.id}')">Eliminar</button>
+      </div>
+      ${imageHtml}
+      <p class="post-message">${escapeHtml(p.message || 'Sin descripción')}</p>
+      <div class="post-time">${formatDate(p.timestamp || Date.now())}</div>
+    `;
+
+    feed.appendChild(post);
+  });
+}
+
+// Inicialización
+(function init() {
+  const photo = document.getElementById('photo');
+  const preview = document.getElementById('photoPreview');
+  const previewWrapper = document.getElementById('previewWrapper');
+  const removePreview = document.getElementById('removePreview');
+  const openCamera = document.getElementById('openCamera');
+  const cameraModal = document.getElementById('cameraModal');
+  const cameraVideo = document.getElementById('cameraVideo');
+  const capturePhoto = document.getElementById('capturePhoto');
+  const closeCamera = document.getElementById('closeCamera');
+  const message = document.getElementById('message');
+  const charCount = document.getElementById('charCount');
+  let lastImage = null;
+  let cameraStream = null;
+
+  // Botón Compartir: muestra/oculta la card del formulario
+  const btnCompartir = document.getElementById('btnCompartir');
+  let sharingEnabled = false;
+
+  function setFieldsVisible(visible) {
+    const card = document.getElementById('shareCard');
+    if (!card) return;
+    card.style.display = visible ? 'block' : 'none';
+    if (btnCompartir) btnCompartir.textContent = visible ? 'Cancelar' : 'Compartir';
+    if (visible) document.getElementById('name').focus();
+  }
+
+  if (btnCompartir) {
+    btnCompartir.addEventListener('click', () => {
+      sharingEnabled = !sharingEnabled;
+      setFieldsVisible(sharingEnabled);
+      showToast(sharingEnabled ? 'Ahora puedes cargar los datos a compartir' : 'Compartir cancelado');
+    });
+  }
+  // Contador de caracteres
+  message.addEventListener('input', () => {
+    const len = message.value.length;
+    charCount.textContent = `${len} / 500`;
+    charCount.className = 'char-count';
+    if (len > 400) charCount.classList.add('warning');
+    if (len > 480) charCount.classList.add('danger');
+  });
+
+  // Preview de imagen
+  photo.addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) {
+      previewWrapper.style.display = 'none';
+      lastImage = null;
+      return;
+    }
+    if (f.size > 2_000_000) {
+      showToast('⚠️ La imagen supera 2MB');
+      photo.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      lastImage = ev.target.result;
+      preview.src = lastImage;
+      previewWrapper.style.display = 'block';
+    };
+    reader.readAsDataURL(f);
+  });
+
+  // Remover preview
+  removePreview.addEventListener('click', () => {
+    previewWrapper.style.display = 'none';
+    lastImage = null;
+    photo.value = '';
+  });
+
+  function stopCamera() {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+      cameraStream = null;
+    }
+    cameraModal.classList.add('hidden');
+  }
+
+  openCamera.addEventListener('click', async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      cameraStream = stream;
+      cameraVideo.srcObject = stream;
+      cameraModal.classList.remove('hidden');
+    } catch (e) {
+      showToast('⚠️ No se pudo abrir la cámara');
+    }
+  });
+
+  capturePhoto.addEventListener('click', () => {
+    if (!cameraStream) return;
+    const track = cameraStream.getVideoTracks()[0];
+    const settings = track.getSettings();
+    const canvas = document.createElement('canvas');
+    const w = settings.width || 1280;
+    const h = settings.height || 720;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(cameraVideo, 0, 0, w, h);
+    lastImage = canvas.toDataURL('image/jpeg', 0.9);
+    preview.src = lastImage;
+    previewWrapper.style.display = 'block';
+    stopCamera();
+  });
+
+  closeCamera.addEventListener('click', () => {
+    stopCamera();
+  });
+
+  // Submit
+  document.getElementById('submitPost').addEventListener('click', () => {
+    const name = document.getElementById('name').value.trim();
+    const location = document.getElementById('location').value.trim();
+    const msg = message.value.trim();
+
+    if (!msg && !lastImage) {
+      showToast('⚠️ Escribe un mensaje o sube una imagen');
+      return;
+    }
+
+    const posts = readPosts();
+    const post = {
+      id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+      name,
+      location,
+      message: msg,
+      image: lastImage,
+      timestamp: Date.now()
+    };
+    posts.push(post);
+    writePosts(posts);
+
+    // Limpiar formulario
+    document.getElementById('name').value = '';
+    document.getElementById('location').value = '';
+    message.value = '';
+    photo.value = '';
+    previewWrapper.style.display = 'none';
+    lastImage = null;
+    charCount.textContent = '0 / 500';
+    charCount.className = 'char-count';
+
+    renderPosts();
+    showToast('✓ Publicación creada');
+
+    // Scroll al feed
+    setTimeout(() => {
+      document.getElementById('feed').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  });
+
+  // Limpiar
+  document.getElementById('clearForm').addEventListener('click', () => {
+    if (confirm('¿Limpiar el formulario?')) {
+      document.getElementById('name').value = '';
+      document.getElementById('location').value = '';
+      message.value = '';
+      photo.value = '';
+      previewWrapper.style.display = 'none';
+      lastImage = null;
+      charCount.textContent = '0 / 500';
+      charCount.className = 'char-count';
+      showToast('Formulario limpiado');
+    }
+  });
+
+  // Renderizar posts iniciales
+  renderPosts();
+})();
+</script>
+</body>
+</html>
