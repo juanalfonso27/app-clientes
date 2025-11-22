@@ -51,24 +51,12 @@
             newsListContainer.innerHTML = '<p>Cargando noticias...</p>';
             try {
                 const news = await window.fbListNews();
-                newsListContainer.innerHTML = ''; // Limpiar el mensaje de carga
                 if (news.length === 0) {
                     newsListContainer.innerHTML = '<p>No hay noticias disponibles.</p>';
+                    LATEST_NEWS_ITEMS = [];
                     return;
                 }
-                news.forEach(newsItem => {
-                    const newsElement = `
-                        <div class="news-item">
-                            <img src="${newsItem.image}" alt="${newsItem.title}" class="news-image">
-                            <div class="news-content">
-                                <h3 class="news-title">${newsItem.title}</h3>
-                                <p class="activity-description">${newsItem.description}</p>
-                                <a href="${newsItem.url}" target="_blank" rel="noopener noreferrer">Leer más</a>
-                            </div>
-                        </div>
-                    `;
-                    newsListContainer.innerHTML += newsElement;
-                });
+                renderNewsItems(news);
             } catch (error) {
                 console.error(PFX, 'Error loading news:', error);
                 newsListContainer.innerHTML = '<p>Error al cargar las noticias.</p>';
@@ -106,7 +94,7 @@
             await seedNewsIfEmpty();
             let snap = { docs: [] }; // Inicializar con un array vacío para evitar errores si todo falla
             try {
-                const q = query(collection(db,'news'), orderBy('createdAt','desc'), limit(20));
+                const q = query(collection(db,'news'), orderBy('createdAt','desc'));
                 snap = await getDocs(q);
                 console.log(PFX, 'Consulta con orderBy exitosa.');
             } catch(e) {
@@ -1884,33 +1872,38 @@
         if (closeNews) {
             closeNews.addEventListener('click', () => newsOverlay.classList.remove('open'));
         }
+        function handleNewsItemClick(e) {
+            const item = e.target.closest('.news-item');
+            if (!item) return;
+            const img = item.querySelector('.news-image');
+            const titleEl = item.querySelector('.news-title');
+            const descEl = item.querySelector('.activity-description');
+            const linkHref = titleEl && titleEl.getAttribute('href') ? titleEl.getAttribute('href') : '#';
+            if (e.target.closest('.news-image')) {
+                e.preventDefault();
+                openImageModal(img && img.src ? img.src : '');
+                return;
+            }
+            if (e.target.closest('.news-title')) {
+                e.preventDefault();
+            }
+            itemOverlayTitle.textContent = titleEl ? titleEl.textContent : '';
+            itemOverlayBody.innerHTML = `${img && img.src ? `<img src="${img.src}" alt="" style="width:100%;border-radius:8px;margin-bottom:12px">` : ''}${descEl ? descEl.textContent : ''}`;
+            if (linkHref && linkHref !== '#') {
+                itemOverlayOpenLink.style.display = '';
+                itemOverlayOpenLink.onclick = () => { window.open(linkHref, '_blank', 'noopener'); };
+            } else {
+                itemOverlayOpenLink.style.display = 'none';
+                itemOverlayOpenLink.onclick = null;
+            }
+            itemOverlay.classList.add('open');
+        }
+
         if (newsListEl) {
-            newsListEl.addEventListener('click', e => {
-                const item = e.target.closest('.news-item');
-                if (!item) return;
-                const img = item.querySelector('.news-image');
-                const titleEl = item.querySelector('.news-title');
-                const descEl = item.querySelector('.activity-description');
-                const linkHref = titleEl && titleEl.getAttribute('href') ? titleEl.getAttribute('href') : '#';
-                if (e.target.closest('.news-image')) {
-                    e.preventDefault();
-                    openImageModal(img && img.src ? img.src : '');
-                    return;
-                }
-                if (e.target.closest('.news-title')) {
-                    e.preventDefault();
-                }
-                itemOverlayTitle.textContent = titleEl ? titleEl.textContent : '';
-                itemOverlayBody.innerHTML = `${img && img.src ? `<img src="${img.src}" alt="" style="width:100%;border-radius:8px;margin-bottom:12px">` : ''}${descEl ? descEl.textContent : ''}`;
-                if (linkHref && linkHref !== '#') {
-                    itemOverlayOpenLink.style.display = '';
-                    itemOverlayOpenLink.onclick = () => { window.open(linkHref, '_blank', 'noopener'); };
-                } else {
-                    itemOverlayOpenLink.style.display = 'none';
-                    itemOverlayOpenLink.onclick = null;
-                }
-                itemOverlay.classList.add('open');
-            });
+            newsListEl.addEventListener('click', handleNewsItemClick);
+        }
+        if (newsModalList) {
+            newsModalList.addEventListener('click', handleNewsItemClick);
         }
         if (imageOverlay) {
             imageOverlay.addEventListener('click', e => { if (e.target === imageOverlay) imageOverlay.classList.remove('open'); });
