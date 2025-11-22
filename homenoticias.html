@@ -8,6 +8,7 @@
     <script src="firebase-config.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
         import { getFirestore, collection, getDocs, query, orderBy, limit, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
         const PFX = '[HomeNoticias]';
         function updateStatus(type, message) {
@@ -18,13 +19,24 @@
             if (type === 'success') { setTimeout(() => el.style.display = 'none', 3000); }
         }
 
-        let app, db;
+        let app, db, auth;
         try {
             if (!window.firebaseConfig) throw new Error('firebaseConfig no encontrado');
             app = initializeApp(window.firebaseConfig);
             db = getFirestore(app);
             console.log(PFX, 'Firestore inicializado (default)');
             updateStatus('success', '✅ Conectado a Firebase');
+            auth = getAuth(app);
+            try { await signInAnonymously(auth); } catch(e) {}
+            // Una vez que el estado de autenticación cambie (o se establezca inicialmente),
+            // cargamos las noticias si la sección de noticias está activa.
+            onAuthStateChanged(auth, (user) => {
+                console.log(PFX, 'Estado de autenticación cambiado. Usuario:', user ? user.uid : 'ninguno');
+                const newsSection = document.getElementById('newsSection');
+                if(newsSection && newsSection.classList.contains('active')) {
+                    setTimeout(loadNewsFromApi, 50); // Pequeña demora para asegurar que el DOM esté listo
+                }
+            });
         } catch (e) {
             console.error(PFX, 'Firebase init error', e);
             updateStatus('error', '❌ Error conectando a Firebase: ' + e.message);
@@ -56,10 +68,28 @@
 
         window.fbListNews = async () => {
             console.log(PFX, 'fbListNews start');
+
             await seedNewsIfEmpty();
-            const q = query(collection(db,'news'), orderBy('createdAt','desc'), limit(20));
-            const snap = await getDocs(q);
+            let snap = { docs: [] }; // Inicializar con un array vacío para evitar errores si todo falla
+            try {
+                const q = query(collection(db,'news'), orderBy('createdAt','desc'), limit(20));
+                snap = await getDocs(q);
+                console.log(PFX, 'Consulta con orderBy exitosa.');
+            } catch(e) {
+                console.error(PFX, 'Error en consulta con orderBy:', e.message);
+                try {
+                    snap = await getDocs(collection(db,'news'));
+                    console.log(PFX, 'Consulta sin orderBy exitosa.');
+                } catch (e2) {
+                    console.error(PFX, 'Error en consulta sin orderBy:', e2.message);
+                }
+            }
             const list = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+            list.sort((a,b) => {
+                const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+                const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+                return tb - ta;
+            });
             console.log(PFX, 'fbListNews count', list.length);
             return list;
         };
@@ -1676,15 +1706,12 @@
         // Cargar noticias inicialmente y cuando se active la pestaña Noticias
         // Llamada inicial para poblar la sección al cargar la página
         (function initNews(){
-            // Si la sección de noticias está visible por defecto, cargar inmediatamente
             const newsSection = document.getElementById('newsSection');
-            if(newsSection && newsSection.classList.contains('active')) loadNewsFromApi();
-
-            // Añadir carga cuando se activa la pestaña (la lógica de pestañas ya existe más arriba)
+            // La carga inicial de noticias se maneja en el onAuthStateChanged para asegurar que Firebase Auth esté listo.
+            // Aquí solo se maneja la lógica de las pestañas.
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', function(){
                     if (this.getAttribute('data-tab') === 'news') {
-                        // pequeña demora para que la transición ocurra primero
                         setTimeout(loadNewsFromApi, 80);
                     }
                 });
