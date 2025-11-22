@@ -32,10 +32,9 @@
             // cargamos las noticias si la sección de noticias está activa.
             onAuthStateChanged(auth, (user) => {
                 console.log(PFX, 'Estado de autenticación cambiado. Usuario:', user ? user.uid : 'ninguno');
-                const newsSection = document.getElementById('newsSection');
-                if(newsSection && newsSection.classList.contains('active')) {
-                    setTimeout(loadNewsFromApi, 50); // Pequeña demora para asegurar que el DOM esté listo
-                }
+                // Llamar a loadNewsFromApi directamente, ya que queremos que las noticias se muestren siempre.
+                // La función loadNewsFromApi ya se encarga de verificar si la sección de noticias existe.
+                setTimeout(loadNewsFromApi, 50); // Pequeña demora para asegurar que el DOM esté listo
             });
         } catch (e) {
             console.error(PFX, 'Firebase init error', e);
