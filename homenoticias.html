@@ -40,6 +40,41 @@
             console.error(PFX, 'Firebase init error', e);
             updateStatus('error', '❌ Error conectando a Firebase: ' + e.message);
         }
+
+        async function loadNewsFromApi() {
+            console.log(PFX, 'loadNewsFromApi called');
+            const newsListContainer = document.querySelector('.news-list');
+            if (!newsListContainer) {
+                console.warn(PFX, 'No .news-list container found');
+                return;
+            }
+            newsListContainer.innerHTML = '<p>Cargando noticias...</p>';
+            try {
+                const news = await window.fbListNews();
+                newsListContainer.innerHTML = ''; // Limpiar el mensaje de carga
+                if (news.length === 0) {
+                    newsListContainer.innerHTML = '<p>No hay noticias disponibles.</p>';
+                    return;
+                }
+                news.forEach(newsItem => {
+                    const newsElement = `
+                        <div class="news-item">
+                            <img src="${newsItem.image}" alt="${newsItem.title}" class="news-image">
+                            <div class="news-content">
+                                <h3 class="news-title">${newsItem.title}</h3>
+                                <p class="activity-description">${newsItem.description}</p>
+                                <a href="${newsItem.url}" target="_blank" rel="noopener noreferrer">Leer más</a>
+                            </div>
+                        </div>
+                    `;
+                    newsListContainer.innerHTML += newsElement;
+                });
+            } catch (error) {
+                console.error(PFX, 'Error loading news:', error);
+                newsListContainer.innerHTML = '<p>Error al cargar las noticias.</p>';
+            }
+        }
+
         async function seedNewsIfEmpty(){
             try {
                 const s = await getDocs(query(collection(db,'news'), limit(1)));
