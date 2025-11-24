@@ -1,10 +1,13 @@
-const CACHE_NAME = 'comunidad-cache-v1';
+const CACHE_NAME = 'app-cache-v1';
 const urlsToCache = [
+  '/', // Para la ruta raíz
+  '/index.html',
   '/comunidad.html',
   '/firebase-config.js',
-  // Puedes agregar aquí los íconos que definas en manifest.json
-  // '/icons/icon-192x192.png',
-  // '/icons/icon-512x512.png'
+  '/firebase.js',
+  '/manifest.json',
+  // Asegúrate de que la ruta a tus íconos sea correcta
+  '/icons/icon-192x192.png'
 ];
 
 // Evento de instalación: se abre el caché y se guardan los archivos del app-shell.
