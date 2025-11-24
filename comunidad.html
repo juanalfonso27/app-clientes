@@ -522,16 +522,6 @@
       <div class="form-header">Escribe aqui</div>
 
       <div class="form-field">
-        <label for="name">Nombre</label>
-        <input id="name" type="text" placeholder="Tu nombre" maxlength="50">
-      </div>
-
-      <div class="form-field">
-        <label for="location">Localidad</label>
-        <input id="location" type="text" placeholder="Ciudad / Departamento" maxlength="50">
-      </div>
-
-      <div class="form-field">
         <label for="message">Descripción</label>
         <textarea id="message" placeholder="Escribe tu mensaje..." maxlength="500"></textarea>
         <div class="char-count" id="charCount">0 / 500</div>
@@ -592,6 +582,7 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 
 let currentUser = null;
+let currentUserProfile = null; // Para guardar los datos del perfil de Firestore
 
 // Utilidades
 async function readPosts() {
@@ -602,12 +593,24 @@ async function readPosts() {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
-async function deletePost(id) {
+async function deletePost(button, id) {
     if (!currentUser) {
         showToast('⚠️ Debes iniciar sesión para eliminar.');
         return;
     }
-    if (!confirm('¿Eliminar esta publicación?')) return;
+
+    // Usamos un confirm del navegador, es simple y efectivo.
+    if (!confirm('¿Estás seguro de que deseas eliminar esta publicación? Esta acción no se puede deshacer.')) return;
+
+    const postElement = button.closest('.post');
+    const originalButtonText = button.textContent;
+
+    // --- INICIO: Feedback visual de carga ---
+    button.disabled = true;
+    button.textContent = 'Eliminando...';
+    if (postElement) {
+        postElement.style.opacity = '0.5';
+    }
 
     try {
         const postRef = doc(db, 'community_posts', id);
@@ -639,6 +642,13 @@ async function deletePost(id) {
     } catch (error) {
         console.error(PFX, 'Error al eliminar:', error);
         showToast('❌ Error al eliminar la publicación.');
+    } finally {
+        // --- FIN: Restaurar el estado del botón y la publicación ---
+        button.disabled = false;
+        button.textContent = originalButtonText;
+        if (postElement) {
+            postElement.style.opacity = '1';
+        }
     }
 }
 
@@ -679,52 +689,60 @@ window.deletePost = deletePost; // Exponer la función globalmente para el `oncl
 
 function renderPosts() {
   const feed = document.getElementById('feed');
-  const emptyState = document.getElementById('emptyState');
+  let emptyState = document.getElementById('emptyState');
+
+  // Limpiar solo las publicaciones anteriores, no el emptyState
+  feed.querySelectorAll('.post').forEach(p => p.remove());
   
+  // Si emptyState no existe (porque fue borrado en un render anterior), lo creamos.
+  if (!emptyState) {
+    emptyState = document.createElement('div');
+    emptyState.className = 'empty-state';
+    emptyState.id = 'emptyState';
+    emptyState.innerHTML = `<div class="empty-icon">🌱</div><h3>Cargando...</h3><p>Cargando publicaciones...</p>`;
+    feed.appendChild(emptyState);
+  }
+
   emptyState.style.display = 'block';
   emptyState.querySelector('p').textContent = 'Cargando publicaciones...';
-  feed.innerHTML = '';
-  feed.appendChild(emptyState);
 
   readPosts().then(posts => {
     if (!posts.length) {
+        emptyState.style.display = 'block';
         emptyState.querySelector('p').textContent = 'Sé el primero en compartir';
         return;
     }
 
     emptyState.style.display = 'none';
-    feed.innerHTML = '';
 
     posts.forEach(p => {
-    const post = document.createElement('div');
-    post.className = 'post';
+        const post = document.createElement('div');
+        post.className = 'post';
 
-    const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
-    const displayName = p.name || 'Anónimo';
-    const displayLocation = p.location || 'Sin ubicación';
+        const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
+        const displayName = p.name || 'Anónimo';
+        const displayLocation = p.location || 'Sin ubicación';
 
-    const imageHtml = p.image
-      ? `<div class="post-image-wrapper">
-           <img src="${p.image}" class="post-image" alt="Imagen">
-         </div>`
-      : '';
+        const imageHtml = p.image
+          ? `<div class="post-image-wrapper"><img src="${p.image}" class="post-image" alt="Imagen"></div>`
+          : '';
 
-    post.innerHTML = `
-      <div class="post-header">
-        <div class="post-avatar">${initial}</div>
-        <div class="post-info">
-          <h3 class="post-name">${escapeHtml(displayName)}</h3>
-          <p class="post-location">${escapeHtml(displayLocation)}</p>
-        </div>
-        ${currentUser && p.authorId === currentUser.uid ? `<button class="post-delete" onclick="deletePost('${p.id}')">Eliminar</button>` : ''}
-      </div>
-      ${imageHtml}
-      <p class="post-message">${escapeHtml(p.message || 'Sin descripción')}</p>
-      <div class="post-time">${formatDate(p.createdAt)}</div>
-    `;
+        post.innerHTML = `
+          <div class="post-header">
+            <div class="post-avatar">${initial}</div>
+            <div class="post-info">
+              <h3 class="post-name">${escapeHtml(displayName)}</h3>
+              <p class="post-location">${escapeHtml(displayLocation)}</p>
+            </div>
+            ${currentUser && p.authorId === currentUser.uid ? `<button class="post-delete" onclick="deletePost(this, '${p.id}')">Eliminar</button>` : ''}
+          </div>
+          ${imageHtml}
+          <p class="post-message">${escapeHtml(p.message || 'Sin descripción')}</p>
+          <div class="post-time">${formatDate(p.createdAt)}</div>
+        `;
 
-    feed.appendChild(post);
-  });
+        feed.appendChild(post);
+    });
   }).catch(err => {
       console.error(PFX, "Error al renderizar posts:", err);
       emptyState.querySelector('p').textContent = 'Error al cargar publicaciones.';
@@ -732,7 +750,7 @@ function renderPosts() {
 }
 
 // Inicialización
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   const photo = document.getElementById('photo');
   const preview = document.getElementById('photoPreview');
   const previewWrapper = document.getElementById('previewWrapper');
@@ -747,13 +765,23 @@ onAuthStateChanged(auth, (user) => {
   let lastImage = null;
   let cameraStream = null;
   
-  if (user) {
-      currentUser = user;
-      console.log(PFX, 'Usuario autenticado:', user.uid);
-      document.getElementById('name').value = user.displayName || '';
-  } else {
-      window.location.href = 'index.html';
-  }
+    if (user) {
+        currentUser = user;
+        console.log(PFX, 'Usuario autenticado:', user.uid);
+
+        // --- ¡NUEVO! Cargar perfil del usuario desde Firestore ---
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+            currentUserProfile = userDocSnap.data();
+            console.log(PFX, 'Perfil de usuario cargado:', currentUserProfile);
+        } else {
+            // Fallback si no hay perfil en Firestore (usa datos de Auth)
+            currentUserProfile = { name: user.displayName || 'Anónimo', location: '' };
+        }
+    } else {
+        window.location.href = 'index.html';
+    }
 
   // Botón Compartir: muestra/oculta la card del formulario
   const btnCompartir = document.getElementById('btnCompartir');
@@ -764,7 +792,7 @@ onAuthStateChanged(auth, (user) => {
     if (!card) return;
     card.style.display = visible ? 'block' : 'none';
     if (btnCompartir) btnCompartir.textContent = visible ? 'Cancelar' : 'Compartir';
-    if (visible) document.getElementById('name').focus();
+    if (visible) document.getElementById('message').focus();
   }
 
   if (btnCompartir) {
@@ -854,8 +882,6 @@ onAuthStateChanged(auth, (user) => {
 
   // Submit
   document.getElementById('submitPost').addEventListener('click', async () => {
-    const name = document.getElementById('name').value.trim();
-    const location = document.getElementById('location').value.trim();
     const msg = message.value.trim();
 
     if (!currentUser) {
@@ -887,8 +913,8 @@ onAuthStateChanged(auth, (user) => {
 
     const post = {
       authorId: currentUser.uid,
-      name: name || currentUser.displayName || 'Anónimo',
-      location: location,
+      name: currentUserProfile?.name || currentUser.displayName || 'Anónimo',
+      location: currentUserProfile?.location || '', // Usar la ubicación del perfil
       message: msg,
       image: imageUrl,
       storagePath: storagePath,
@@ -910,7 +936,6 @@ onAuthStateChanged(auth, (user) => {
 
   // Limpiar
   document.getElementById('clearForm').addEventListener('click', () => {
-      document.getElementById('location').value = '';
       message.value = '';
       photo.value = '';
       previewWrapper.style.display = 'none';

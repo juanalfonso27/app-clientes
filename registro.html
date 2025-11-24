@@ -146,6 +146,11 @@
                     </div>
 
                     <div class="input-group">
+                        <label for="location">Localidad</label>
+                        <input type="text" id="location" placeholder="Escribe aquí">
+                    </div>
+
+                    <div class="input-group">
                         <label for="senha">Contraseña</label>
                         <input type="password" id="senha" value="">
                     </div>
@@ -176,9 +181,9 @@
             <p>Bienvenido(a) a IASA App. Al utilizar esta aplicación, usted acepta los presentes Términos y Condiciones. Si no está de acuerdo total o parcialmente, debe dejar de usar la aplicación.</p>
             <p><strong>DEFINICIONES</strong></p>
             <ul>
-                <li>“Aplicación” se refiere a IASA App.</li>
-                <li>“Usuario” es toda persona que acceda y utilice la aplicación.</li>
-                <li>“Servicios” son las funciones ofrecidas por la aplicación, incluyendo registro de cuenta, cuaderno de actividades, comunidad y escaneo de códigos QR.</li>
+                <li>"Aplicación" se refiere a IASA App.</li>
+                <li>"Usuario" es toda persona que acceda y utilice la aplicación.</li>
+                <li>"Servicios" son las funciones ofrecidas por la aplicación, incluyendo registro de cuenta, cuaderno de actividades, comunidad y escaneo de códigos QR.</li>
             </ul>
             <p><strong>ACEPTACIÓN DE LOS TÉRMINOS</strong><br>El uso de la aplicación implica la aceptación plena y sin reservas de estos Términos y Condiciones.</p>
             <p><strong>REGISTRO DE USUARIO</strong><br>Para acceder a determinadas funciones, el usuario debe crear una cuenta proporcionando datos como correo electrónico, usuario y contraseña. El usuario se compromete a proporcionar información verdadera y actualizada, mantener en secreto su contraseña y notificar si detecta uso no autorizado de su cuenta.</p>
@@ -188,7 +193,7 @@
             <p><strong>ESCÁNER DE CÓDIGOS QR</strong><br>La aplicación puede permitir el escaneo de códigos QR. El usuario acepta usar esta función de forma legal y no intentar manipular o acceder a contenido no autorizado.</p>
             <p><strong>PROTECCIÓN DE DATOS</strong><br>La aplicación puede recopilar datos como información de registro, datos de uso dentro de la app. El manejo de datos se detalla en la Política de Privacidad correspondiente.</p>
             <p><strong>PROPIEDAD INTELECTUAL</strong><br>La aplicación, su código, diseño, textos, imágenes y funcionalidades son propiedad de sus desarrolladores. El usuario no puede copiar, modificar, distribuir o reutilizar la aplicación sin autorización.</p>
-            <p><strong>LIMITACIÓN DE RESPONSABILIDAD</strong><br>La aplicación se ofrece “tal como está”. Los desarrolladores no garantizan que la aplicación funcione sin interrupciones, que no existan errores técnicos o que el servicio sea compatible con todos los dispositivos. El usuario acepta utilizar la aplicación bajo su propia responsabilidad.</p>
+            <p><strong>LIMITACIÓN DE RESPONSABILIDAD</strong><br>La aplicación se ofrece "tal como está". Los desarrolladores no garantizan que la aplicación funcione sin interrupciones, que no existan errores técnicos o que el servicio sea compatible con todos los dispositivos. El usuario acepta utilizar la aplicación bajo su propia responsabilidad.</p>
             <p><strong>SUSPENSIÓN DEL SERVICIO</strong><br>Los administradores podrán suspender la aplicación o cuentas de usuarios sin aviso previo en caso de uso indebido, violación de estos términos o por razones técnicas o de mantenimiento.</p>
             <p><strong>ENLACES EXTERNOS</strong><br>La aplicación puede incluir enlaces a sitios o recursos externos. No nos responsabilizamos por su contenido ni por el uso de los mismos.</p>
             <p><strong>MODIFICACIÓN DE LOS TÉRMINOS</strong><br>Estos términos pueden actualizarse en cualquier momento. Las modificaciones entrarán en vigor desde su publicación en la aplicación.</p>
@@ -241,6 +246,7 @@
     const privacyOverlay = document.getElementById('privacyOverlay');
     const privacyClose = document.getElementById('privacyClose');
     const privacyAccept = document.getElementById('privacyAccept');
+    
     if (form) {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -250,10 +256,13 @@
             const confEl = document.getElementById('confirmar');
             const profissaoEl = document.getElementById('profissao');
             const empresaEl = document.getElementById('empresa');
+            const locationEl = document.getElementById('location');
+            
             const nome = nomeEl ? nomeEl.value.trim() : '';
             const email = emailEl ? emailEl.value.trim() : '';
             const senha = senhaEl ? senhaEl.value : '';
             const confirmar = confEl ? confEl.value : '';
+            
             if (!email || !senha) {
                 alert('Completa email y contraseña');
                 return;
@@ -262,31 +271,47 @@
                 alert('Las contraseñas no coinciden');
                 return;
             }
+            
             try {
                 if (acceptTerms && !acceptTerms.checked) {
                     if (termsOverlay) termsOverlay.classList.add('open');
                     return;
                 }
+                
                 const cred = await createUserWithEmailAndPassword(auth, email, senha);
+                
                 if (nome) {
                     try { await updateProfile(cred.user, { displayName: nome }); } catch (e) {}
                 }
 
-                // Guardar datos adicionales en Firestore
+                // Esperar a que el usuario esté completamente autenticado
+                await new Promise(resolve => {
+                    const unsubscribe = auth.onAuthStateChanged(user => {
+                        if (user && user.uid === cred.user.uid) {
+                            unsubscribe();
+                            resolve();
+                        }
+                    });
+                });
+
+                // Ahora guardar datos adicionales en Firestore
                 try {
                     const userDocRef = doc(db, 'users', cred.user.uid);
                     await setDoc(userDocRef, {
-                        uid: cred.user.uid,
                         name: nome,
-                        email: email,
-                        profession: profissaoEl ? profissaoEl.value.trim() : '',
-                        company: empresaEl ? empresaEl.value.trim() : '',
+                        email: cred.user.email,
+                        profession: profissaoEl?.value.trim() || '',
+                        company: empresaEl?.value.trim() || '',
+                        location: locationEl?.value.trim() || '',
                         createdAt: serverTimestamp()
-                    });
+                    }, { merge: false });
+                    
+                    // Redirigir SOLO DESPUÉS de que todo se haya guardado correctamente
+                    window.location.href = 'onboarding.html';
                 } catch (firestoreError) {
                     console.error("Error guardando datos adicionales en Firestore:", firestoreError);
+                    alert('Se creó tu usuario, pero hubo un error al guardar tus datos de perfil. Por favor, contacta a soporte.');
                 }
-                window.location.href = 'onboarding.html';
             } catch (err) {
                 alert('Error al registrarse: ' + (err && err.message ? err.message : String(err)));
             }
