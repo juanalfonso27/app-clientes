@@ -346,6 +346,15 @@
       font-size: 1.125rem;
       flex-shrink: 0;
       text-transform: uppercase;
+      overflow: hidden; /* Para que la imagen no se salga del círculo */
+    }
+
+    .post-avatar-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      background-color: var(--border-light);
     }
     
     .post-info {
@@ -722,14 +731,20 @@ function renderPosts() {
         const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
         const displayName = p.name || 'Anónimo';
         const displayLocation = p.location || 'Sin ubicación';
+        const photoURL = p.photoURL;
 
         const imageHtml = p.image
           ? `<div class="post-image-wrapper"><img src="${p.image}" class="post-image" alt="Imagen"></div>`
           : '';
+        
+        const avatarHtml = photoURL
+          ? `<div class="post-avatar"><img src="${escapeHtml(photoURL)}" class="post-avatar-img" alt="Avatar de ${escapeHtml(displayName)}"></div>`
+          : `<div class="post-avatar">${initial}</div>`;
+
 
         post.innerHTML = `
           <div class="post-header">
-            <div class="post-avatar">${initial}</div>
+            ${avatarHtml}
             <div class="post-info">
               <h3 class="post-name">${escapeHtml(displayName)}</h3>
               <p class="post-location">${escapeHtml(displayLocation)}</p>
@@ -914,6 +929,7 @@ onAuthStateChanged(auth, async (user) => {
     const post = {
       authorId: currentUser.uid,
       name: currentUserProfile?.name || currentUser.displayName || 'Anónimo',
+      photoURL: currentUserProfile?.photoURL || '', // ¡Añadido! Guardamos la foto del perfil.
       location: currentUserProfile?.location || '', // Usar la ubicación del perfil
       message: msg,
       image: imageUrl,

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil</title>
+    <style>
+        :root { --primary: #5a4fcf; --primary-hover: #4b40b0; --border: #d0d0d0; --bg-light: #fafafa; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; color: #333; }
+        .page { min-height: 100vh; display: flex; flex-direction: column; }
+        .header { background-color: #d4d4d4; padding: 12px 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header img { height: 36px; width: auto; }
+        .content { flex: 1; padding: 20px 16px 32px; max-width: 480px; margin: 0 auto; width: 100%; }
+        .title { font-size: 22px; font-weight: 700; margin-bottom: 20px; text-align: center; }
+        .card { background: #ffffff; border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        
+        .profile-pic-section { text-align: center; margin-bottom: 24px; }
+        .avatar-wrapper { position: relative; width: 100px; height: 100px; margin: 0 auto 12px; }
+        #avatar { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background-color: #e0e0e0; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+        #uploadLabel { position: absolute; bottom: 0; right: 0; background: var(--primary); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+        #uploadLabel svg { width: 16px; height: 16px; }
+        #photoInput { display: none; }
+
+        .form-group { margin-bottom: 14px; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+        .form-input { width: 100%; padding: 10px 11px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; outline: none; background-color: var(--bg-light); transition: border-color 0.15s, box-shadow 0.15s; }
+        .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(90,79,207,0.16); background-color: #ffffff; }
+        .form-input:disabled { background-color: #e9ecef; cursor: not-allowed; }
+
+        .actions { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .btn { border: none; border-radius: 999px; padding: 11px 16px; font-size: 15px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s; width: 100%; }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 3px 10px rgba(90,79,207,0.4); }
+        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        .btn-danger { background: #e53e3e; color: white; }
+        .btn-danger:hover { background: #c53030; }
+        .spinner { border: 2px solid rgba(255,255,255,0.3); border-left-color: #fff; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #1a1a1a; color: #fff; padding: 12px 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; font-size: 14px; display: none; }
+        .toast.success { background: #2e7d32; }
+        .toast.error { background: #c62828; }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header class="header">
+            <a href="homenoticias.html"><img src="logo1.png" alt="IASA logo" loading="lazy"></a>
+        </header>
+
+        <main class="content">
+            <h1 class="title">Mi Perfil</h1>
+
+            <section class="card">
+                <form id="profileForm">
+                    <div class="profile-pic-section">
+                        <div class="avatar-wrapper">
+                            <img id="avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cccccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Foto de perfil">
+                            <label for="photoInput" id="uploadLabel" title="Cambiar foto">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                            </label>
+                            <input type="file" id="photoInput" accept="image/*">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="name">Nombre y apellido</label>
+                        <input id="name" type="text" class="form-input" placeholder="Tu nombre">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="email">Correo electrónico</label>
+                        <input id="email" type="email" class="form-input" disabled>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="profession">Profesión</label>
+                        <input id="profession" type="text" class="form-input" placeholder="Ej: Ing. Agrónomo">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="company">Empresa</label>
+                        <input id="company" type="text" class="form-input" placeholder="Nombre de tu empresa">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="location">Localidad</label>
+                        <input id="location" type="text" class="form-input" placeholder="Ej: Santa Rita, Alto Paraná">
+                    </div>
+
+                    <div class="actions">
+                        <button type="submit" class="btn btn-primary" id="saveButton">
+                            Guardar Cambios
+                            <div class="spinner" id="loadingSpinner"></div>
+                        </button>
+                        <button type="button" class="btn btn-danger" id="logoutButton">Cerrar Sesión</button>
+                    </div>
+                </form>
+            </section>
+        </main>
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, updateProfile, signOut } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+    import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
+
+    // Copia la configuración de firebase.js o impórtala si la tienes en un archivo de config global
+    const firebaseConfig = {
+        apiKey: "AIzaSyBGOBLIVvJxHqBhBae-hI1vM_KrzDEdtM0",
+        authDomain: "iasa-app-bfe8b.firebaseapp.com",
+        projectId: "iasa-app-bfe8b",
+        storageBucket: "iasa-app-bfe8b.firebasestorage.app",
+        messagingSenderId: "920148045932",
+        appId: "1:920148045932:web:39e83aae9da23104eb2849",
+        measurementId: "G-E13QW4LCE2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    const form = document.getElementById('profileForm');
+    const avatar = document.getElementById('avatar');
+    const photoInput = document.getElementById('photoInput');
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    const professionInput = document.getElementById('profession');
+    const companyInput = document.getElementById('company');
+    const locationInput = document.getElementById('location');
+    const saveButton = document.getElementById('saveButton');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const logoutButton = document.getElementById('logoutButton');
+
+    let currentUser = null;
+    let newAvatarDataUrl = null;
+
+    // --- Autenticación y carga de datos ---
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUser = user;
+            emailInput.value = user.email || '';
+            
+            // Cargar datos del perfil desde Firestore
+            const userDocRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(userDocRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                nameInput.value = data.name || user.displayName || '';
+                professionInput.value = data.profession || '';
+                companyInput.value = data.company || '';
+                locationInput.value = data.location || '';
+                if (data.photoURL) {
+                    avatar.src = data.photoURL;
+                } else if (user.photoURL) {
+                    avatar.src = user.photoURL;
+                }
+            } else {
+                // Si no hay documento en Firestore, usar datos de Auth
+                nameInput.value = user.displayName || '';
+                if (user.photoURL) {
+                    avatar.src = user.photoURL;
+                }
+            }
+        } else {
+            // Si no hay usuario, redirigir al login
+            window.location.href = 'index.html';
+        }
+    });
+
+    // --- Manejo de la foto de perfil ---
+    photoInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Comprimir y convertir a Data URL
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            const rawDataUrl = event.target.result;
+            newAvatarDataUrl = await compressDataUrl(rawDataUrl, 400, 0.85);
+            avatar.src = newAvatarDataUrl;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // --- Guardar cambios ---
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!currentUser) return;
+
+        saveButton.disabled = true;
+        loadingSpinner.style.display = 'inline-block';
+
+        try {
+            const name = nameInput.value.trim();
+            let photoURL = currentUser.photoURL; // Mantener la URL actual por defecto
+
+            // 1. Si hay una nueva foto, subirla a Storage
+            if (newAvatarDataUrl) {
+                const storagePath = `profile_pictures/${currentUser.uid}.jpg`;
+                const imageRef = ref(storage, storagePath);
+                await uploadString(imageRef, newAvatarDataUrl, 'data_url');
+                photoURL = await getDownloadURL(imageRef);
+            }
+
+            // 2. Actualizar el perfil de Firebase Auth (nombre y foto)
+            await updateProfile(currentUser, {
+                displayName: name,
+                photoURL: photoURL
+            });
+
+            // 3. Actualizar/Crear el documento en Firestore
+            const userDocRef = doc(db, "users", currentUser.uid);
+            await setDoc(userDocRef, {
+                name: name,
+                email: currentUser.email,
+                photoURL: photoURL,
+                profession: professionInput.value.trim(),
+                company: companyInput.value.trim(),
+                location: locationInput.value.trim()
+            }, { merge: true }); // merge: true para no sobreescribir campos existentes como createdAt
+
+            showToast('Perfil actualizado con éxito', 'success');
+            newAvatarDataUrl = null; // Resetear para no volver a subir
+
+        } catch (error) {
+            console.error("Error al actualizar perfil:", error);
+            showToast('Error al guardar: ' + error.message, 'error');
+        } finally {
+            saveButton.disabled = false;
+            loadingSpinner.style.display = 'none';
+        }
+    });
+
+    // --- Cerrar Sesión ---
+    logoutButton.addEventListener('click', async () => {
+        if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+            try {
+                await signOut(auth);
+                window.location.href = 'index.html';
+            } catch (error) {
+                showToast('Error al cerrar sesión', 'error');
+            }
+        }
+    });
+
+    // --- Utilidades ---
+    let toastEl = null;
+    function showToast(message, type = 'success') {
+        if (!toastEl) {
+            toastEl = document.createElement('div');
+            document.body.appendChild(toastEl);
+        }
+        toastEl.className = 'toast ' + type;
+        toastEl.textContent = message;
+        toastEl.style.display = 'block';
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => { toastEl.style.display = 'none'; }, 4000);
+    }
+
+    function compressDataUrl(dataUrl, maxW, quality) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                let w = img.width, h = img.height;
+                if (w > maxW) { const r = maxW / w; w = Math.round(w * r); h = Math.round(h * r); }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.src = dataUrl;
+        });
+    }
+</script>
+</body>
+</html>
