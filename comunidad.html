@@ -6,6 +6,8 @@
   <title>Comunidad Agrícola - Comparte y aprende</title>
   <meta name="description" content="Plataforma comunitaria para agricultores. Comparte experiencias, aprende de otros y conecta con la comunidad agrícola local.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <!-- Configuración de Firebase -->
+  <script src="firebase-config.js"></script>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -576,77 +578,124 @@
     </div>
   </div>
 
-<script>
-const STORAGE_KEY = 'iasa_community_posts_v1';
+<script type="module">
+// --- Integración con Firebase ---
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+import { getFirestore, collection, query, orderBy, getDocs, addDoc, deleteDoc, doc, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
+
+const PFX = '[Comunidad]';
+const app = initializeApp(window.firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+let currentUser = null;
 
 // Utilidades
-function readPosts() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  } catch (e) {
-    return [];
-  }
+async function readPosts() {
+    console.log(PFX, 'Cargando publicaciones desde Firestore...');
+    const postsRef = collection(db, 'community_posts');
+    const q = query(postsRef, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
-function writePosts(arr) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+async function deletePost(id) {
+    if (!currentUser) {
+        showToast('⚠️ Debes iniciar sesión para eliminar.');
+        return;
+    }
+    if (!confirm('¿Eliminar esta publicación?')) return;
+
+    try {
+        const postRef = doc(db, 'community_posts', id);
+        const postSnap = await getDoc(postRef);
+
+        if (!postSnap.exists()) {
+            showToast('⚠️ La publicación ya no existe.');
+            return;
+        }
+
+        const postData = postSnap.data();
+
+        // Solo el autor puede eliminar
+        if (postData.authorId !== currentUser.uid) {
+            showToast('❌ No puedes eliminar publicaciones de otros usuarios.');
+            return;
+        }
+
+        // Si hay imagen, eliminarla de Storage
+        if (postData.storagePath) {
+            console.log(PFX, 'Eliminando imagen de Storage:', postData.storagePath);
+            const imageRef = ref(storage, postData.storagePath);
+            await deleteObject(imageRef).catch(e => console.warn(PFX, 'Error al eliminar imagen:', e));
+        }
+
+        await deleteDoc(postRef);
+        renderPosts();
+        showToast('✓ Publicación eliminada');
+    } catch (error) {
+        console.error(PFX, 'Error al eliminar:', error);
+        showToast('❌ Error al eliminar la publicación.');
+    }
 }
 
-function showToast(msg) {
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
-}
+window.deletePost = deletePost; // Exponer la función globalmente para el `onclick`
 
-function escapeHtml(s) {
-  return String(s || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+    function showToast(msg) {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
 
-function formatDate(timestamp) {
-  const d = new Date(timestamp);
-  const now = new Date();
-  const diff = now - d;
-  const mins = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
+    function escapeHtml(s) {
+      return String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
 
-  if (mins < 1) return 'Ahora';
-  if (mins < 60) return `Hace ${mins}m`;
-  if (hours < 24) return `Hace ${hours}h`;
-  if (days < 7) return `Hace ${days}d`;
-  return d.toLocaleDateString('es');
-}
+    function formatDate(timestamp) {
+        if (!timestamp) return '';
+        // Firestore timestamp a Date
+        const d = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        const now = new Date();
+        const diff = now - d;
+        const mins = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
 
-function deletePost(id) {
-  if (!confirm('¿Eliminar esta publicación?')) return;
-  const posts = readPosts().filter(p => p.id !== id);
-  writePosts(posts);
-  renderPosts();
-  showToast('✓ Publicación eliminada');
-}
+        if (mins < 1) return 'Ahora';
+        if (mins < 60) return `Hace ${mins}m`;
+        if (hours < 24) return `Hace ${hours}h`;
+        if (days < 7) return `Hace ${days}d`;
+        return d.toLocaleDateString('es');
+    }
 
 function renderPosts() {
   const feed = document.getElementById('feed');
   const emptyState = document.getElementById('emptyState');
-  const posts = readPosts();
-
-  if (!posts.length) {
-    emptyState.style.display = 'block';
-    feed.innerHTML = '';
-    feed.appendChild(emptyState);
-    return;
-  }
-
-  emptyState.style.display = 'none';
+  
+  emptyState.style.display = 'block';
+  emptyState.querySelector('p').textContent = 'Cargando publicaciones...';
   feed.innerHTML = '';
+  feed.appendChild(emptyState);
 
-  posts.slice().reverse().forEach(p => {
+  readPosts().then(posts => {
+    if (!posts.length) {
+        emptyState.querySelector('p').textContent = 'Sé el primero en compartir';
+        return;
+    }
+
+    emptyState.style.display = 'none';
+    feed.innerHTML = '';
+
+    posts.forEach(p => {
     const post = document.createElement('div');
     post.className = 'post';
 
@@ -667,19 +716,23 @@ function renderPosts() {
           <h3 class="post-name">${escapeHtml(displayName)}</h3>
           <p class="post-location">${escapeHtml(displayLocation)}</p>
         </div>
-        <button class="post-delete" onclick="deletePost('${p.id}')">Eliminar</button>
+        ${currentUser && p.authorId === currentUser.uid ? `<button class="post-delete" onclick="deletePost('${p.id}')">Eliminar</button>` : ''}
       </div>
       ${imageHtml}
       <p class="post-message">${escapeHtml(p.message || 'Sin descripción')}</p>
-      <div class="post-time">${formatDate(p.timestamp || Date.now())}</div>
+      <div class="post-time">${formatDate(p.createdAt)}</div>
     `;
 
     feed.appendChild(post);
   });
+  }).catch(err => {
+      console.error(PFX, "Error al renderizar posts:", err);
+      emptyState.querySelector('p').textContent = 'Error al cargar publicaciones.';
+  });
 }
 
 // Inicialización
-(function init() {
+onAuthStateChanged(auth, (user) => {
   const photo = document.getElementById('photo');
   const preview = document.getElementById('photoPreview');
   const previewWrapper = document.getElementById('previewWrapper');
@@ -693,6 +746,14 @@ function renderPosts() {
   const charCount = document.getElementById('charCount');
   let lastImage = null;
   let cameraStream = null;
+  
+  if (user) {
+      currentUser = user;
+      console.log(PFX, 'Usuario autenticado:', user.uid);
+      document.getElementById('name').value = user.displayName || '';
+  } else {
+      window.location.href = 'index.html';
+  }
 
   // Botón Compartir: muestra/oculta la card del formulario
   const btnCompartir = document.getElementById('btnCompartir');
@@ -792,38 +853,50 @@ function renderPosts() {
   });
 
   // Submit
-  document.getElementById('submitPost').addEventListener('click', () => {
+  document.getElementById('submitPost').addEventListener('click', async () => {
     const name = document.getElementById('name').value.trim();
     const location = document.getElementById('location').value.trim();
     const msg = message.value.trim();
 
+    if (!currentUser) {
+        showToast('⚠️ Debes iniciar sesión para publicar.');
+        return;
+    }
     if (!msg && !lastImage) {
       showToast('⚠️ Escribe un mensaje o sube una imagen');
       return;
     }
 
-    const posts = readPosts();
+    let imageUrl = '';
+    let storagePath = '';
+
+    if (lastImage) {
+        const path = `community_images/${currentUser.uid}/${Date.now()}.jpg`;
+        const imageRef = ref(storage, path);
+        try {
+            await uploadString(imageRef, lastImage, 'data_url');
+            imageUrl = await getDownloadURL(imageRef);
+            storagePath = path;
+            console.log(PFX, 'Imagen subida:', imageUrl);
+        } catch (error) {
+            console.error(PFX, 'Error al subir imagen:', error);
+            showToast('❌ Error al subir la imagen.');
+            return;
+        }
+    }
+
     const post = {
-      id: Date.now().toString(36) + Math.random().toString(36).substr(2),
-      name,
-      location,
+      authorId: currentUser.uid,
+      name: name || currentUser.displayName || 'Anónimo',
+      location: location,
       message: msg,
-      image: lastImage,
-      timestamp: Date.now()
+      image: imageUrl,
+      storagePath: storagePath,
+      createdAt: serverTimestamp()
     };
-    posts.push(post);
-    writePosts(posts);
 
-    // Limpiar formulario
-    document.getElementById('name').value = '';
-    document.getElementById('location').value = '';
-    message.value = '';
-    photo.value = '';
-    previewWrapper.style.display = 'none';
-    lastImage = null;
-    charCount.textContent = '0 / 500';
-    charCount.className = 'char-count';
-
+    await addDoc(collection(db, 'community_posts'), post);
+    
     renderPosts();
     showToast('✓ Publicación creada');
 
@@ -831,12 +904,12 @@ function renderPosts() {
     setTimeout(() => {
       document.getElementById('feed').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
+    
+    document.getElementById('clearForm').click(); // Simula click en limpiar
   });
 
   // Limpiar
   document.getElementById('clearForm').addEventListener('click', () => {
-    if (confirm('¿Limpiar el formulario?')) {
-      document.getElementById('name').value = '';
       document.getElementById('location').value = '';
       message.value = '';
       photo.value = '';
@@ -845,12 +918,11 @@ function renderPosts() {
       charCount.textContent = '0 / 500';
       charCount.className = 'char-count';
       showToast('Formulario limpiado');
-    }
   });
 
   // Renderizar posts iniciales
   renderPosts();
-})();
+});
 </script>
 </body>
 </html>
