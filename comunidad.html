@@ -6,13 +6,12 @@
   <title>Comunidad Agrícola - Comparte y aprende</title>
   <meta name="description" content="Plataforma comunitaria para agricultores. Comparte experiencias, aprende de otros y conecta con la comunidad agrícola local.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <!-- Configuración de Firebase -->
   <script src="firebase-config.js"></script>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-         --bg: #f5f5f5;
+      --bg: #f5f5f5;
       --card-bg: #ffffff;
       --foreground: #1f1f1f;
       --muted: #666666;
@@ -272,6 +271,9 @@
       font-size: 0.875rem;
       cursor: pointer;
       transition: opacity 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       font-family: inherit;
     }
     
@@ -346,7 +348,7 @@
       font-size: 1.125rem;
       flex-shrink: 0;
       text-transform: uppercase;
-      overflow: hidden; /* Para que la imagen no se salga del círculo */
+      overflow: hidden; 
     }
 
     .post-avatar-img {
@@ -375,20 +377,6 @@
       margin: 0;
     }
     
-    .post-menu {
-      background: none;
-      border: none;
-      color: var(--muted);
-      cursor: pointer;
-      padding: 0.25rem;
-      font-size: 1.25rem;
-      line-height: 1;
-      border-radius: 4px;
-    }
-    
-    .post-menu:hover {
-      background: var(--bg);
-    }
     .post-delete {
       background: none;
       border: none;
@@ -431,11 +419,6 @@
       font-size: 0.75rem;
       color: var(--muted);
       margin-bottom: 0.5rem;
-    }
-    
-    .post-actions {
-      display: flex;
-      gap: 0.5rem;
     }
     
     /* Empty state */
@@ -481,31 +464,56 @@
     }
     
     @keyframes slideIn {
-      from {
-        transform: translateY(20px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
-    .hidden { display: none; }
+    
+    /* --- PANTALLA DE CARGA --- */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.3s;
+    }
+    
+    .loader-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+    
+    .loading-text {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--primary);
+      letter-spacing: 0.5px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* IMPORTANTE: Esta clase oculta los elementos */
+    .hidden { display: none !important; }
     
     /* Responsive */
     @media (max-width: 640px) {
-      .container {
-        padding: 1rem;
-      }
-      
-      .photo-content {
-        flex-direction: column;
-      }
-      
-      .toast {
-        left: 1rem;
-        right: 1rem;
-      }
+      .container { padding: 1rem; }
+      .photo-content { flex-direction: column; }
+      .toast { left: 1rem; right: 1rem; }
     }
   </style>
 </head>
@@ -526,7 +534,6 @@
       </div>
     </header>
     
-
     <div class="card hidden" id="shareCard">
       <div class="form-header">Escribe aqui</div>
 
@@ -550,7 +557,9 @@
       </div>
 
       <div class="btn-group">
-        <button id="submitPost" class="btn btn-primary">Publicar</button>
+        <button id="submitPost" class="btn btn-primary">
+          <span class="btn-text">Publicar</span>
+        </button>
         <button id="clearForm" class="btn btn-secondary">Limpiar</button>
       </div>
     </div>
@@ -577,6 +586,11 @@
     </div>
   </div>
 
+  <div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="loader-spinner"></div>
+    <div class="loading-text">Publicando...</div>
+  </div>
+
 <script type="module">
 // --- Integración con Firebase ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
@@ -591,11 +605,12 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 
 let currentUser = null;
-let currentUserProfile = null; // Para guardar los datos del perfil de Firestore
+let currentUserProfile = null;
 
-// Utilidades
+// Referencia al overlay de carga
+const loadingOverlay = document.getElementById('loadingOverlay');
+
 async function readPosts() {
-    // console.log(PFX, 'Cargando publicaciones desde Firestore...');
     const postsRef = collection(db, 'community_posts');
     const q = query(postsRef, orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
@@ -608,13 +623,11 @@ async function deletePost(button, id) {
         return;
     }
 
-    // Usamos un confirm del navegador, es simple y efectivo.
     if (!confirm('¿Estás seguro de que deseas eliminar esta publicación? Esta acción no se puede deshacer.')) return;
 
     const postElement = button.closest('.post');
     const originalButtonText = button.textContent;
 
-    // --- INICIO: Feedback visual de carga ---
     button.disabled = true;
     button.textContent = 'Eliminando...';
     if (postElement) {
@@ -632,15 +645,12 @@ async function deletePost(button, id) {
 
         const postData = postSnap.data();
 
-        // Solo el autor puede eliminar
         if (postData.authorId !== currentUser.uid) {
             showToast('❌ No puedes eliminar publicaciones de otros usuarios.');
             return;
         }
 
-        // Si hay imagen, eliminarla de Storage
         if (postData.storagePath) {
-            console.log(PFX, 'Eliminando imagen de Storage:', postData.storagePath);
             const imageRef = ref(storage, postData.storagePath);
             await deleteObject(imageRef).catch(e => console.warn(PFX, 'Error al eliminar imagen:', e));
         }
@@ -652,7 +662,6 @@ async function deletePost(button, id) {
         console.error(PFX, 'Error al eliminar:', error);
         showToast('❌ Error al eliminar la publicación.');
     } finally {
-        // --- FIN: Restaurar el estado del botón y la publicación ---
         button.disabled = false;
         button.textContent = originalButtonText;
         if (postElement) {
@@ -661,7 +670,7 @@ async function deletePost(button, id) {
     }
 }
 
-window.deletePost = deletePost; // Exponer la función globalmente para el `onclick`
+window.deletePost = deletePost;
 
     function showToast(msg) {
       const toast = document.createElement('div');
@@ -681,7 +690,6 @@ window.deletePost = deletePost; // Exponer la función globalmente para el `oncl
 
     function formatDate(timestamp) {
         if (!timestamp) return '';
-        // Firestore timestamp a Date
         const d = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
         const now = new Date();
         const diff = now - d;
@@ -700,10 +708,8 @@ function renderPosts() {
   const feed = document.getElementById('feed');
   let emptyState = document.getElementById('emptyState');
 
-  // Limpiar solo las publicaciones anteriores, no el emptyState
   feed.querySelectorAll('.post').forEach(p => p.remove());
   
-  // Si emptyState no existe (porque fue borrado en un render anterior), lo creamos.
   if (!emptyState) {
     emptyState = document.createElement('div');
     emptyState.className = 'empty-state';
@@ -764,7 +770,6 @@ function renderPosts() {
   });
 }
 
-// Inicialización
 onAuthStateChanged(auth, async (user) => {
   const photo = document.getElementById('photo');
   const preview = document.getElementById('photoPreview');
@@ -782,32 +787,34 @@ onAuthStateChanged(auth, async (user) => {
   
     if (user) {
         currentUser = user;
-        // console.log(PFX, 'Usuario autenticado:', user.uid);
-
-        // --- ¡NUEVO! Cargar perfil del usuario desde Firestore ---
         const userDocRef = doc(db, 'users', user.uid);
         const userDocSnap = await getDoc(userDocRef);
         if (userDocSnap.exists()) {
             currentUserProfile = userDocSnap.data();
-            // console.log(PFX, 'Perfil de usuario cargado:', currentUserProfile);
         } else {
-            // Fallback si no hay perfil en Firestore (usa datos de Auth)
             currentUserProfile = { name: user.displayName || 'Anónimo', location: '' };
         }
     } else {
         window.location.href = 'index.html';
     }
 
-  // Botón Compartir: muestra/oculta la card del formulario
   const btnCompartir = document.getElementById('btnCompartir');
   let sharingEnabled = false;
 
+  // --- CORRECCIÓN AQUÍ: Usar classList en vez de style.display ---
   function setFieldsVisible(visible) {
     const card = document.getElementById('shareCard');
     if (!card) return;
-    card.style.display = visible ? 'block' : 'none';
+    
+    // Cambiamos de style.display a classList para que funcione con la clase .hidden
+    if (visible) {
+        card.classList.remove('hidden');
+        document.getElementById('message').focus();
+    } else {
+        card.classList.add('hidden');
+    }
+    
     if (btnCompartir) btnCompartir.textContent = visible ? 'Cancelar' : 'Compartir';
-    if (visible) document.getElementById('message').focus();
   }
 
   if (btnCompartir) {
@@ -817,7 +824,7 @@ onAuthStateChanged(auth, async (user) => {
       showToast(sharingEnabled ? 'Ahora puedes cargar los datos a compartir' : 'Compartir cancelado');
     });
   }
-  // Contador de caracteres
+
   message.addEventListener('input', () => {
     const len = message.value.length;
     charCount.textContent = `${len} / 500`;
@@ -826,7 +833,6 @@ onAuthStateChanged(auth, async (user) => {
     if (len > 480) charCount.classList.add('danger');
   });
 
-  // Preview de imagen
   photo.addEventListener('change', (e) => {
     const f = e.target.files && e.target.files[0];
     if (!f) {
@@ -848,7 +854,6 @@ onAuthStateChanged(auth, async (user) => {
     reader.readAsDataURL(f);
   });
 
-  // Remover preview
   removePreview.addEventListener('click', () => {
     previewWrapper.style.display = 'none';
     lastImage = null;
@@ -895,62 +900,72 @@ onAuthStateChanged(auth, async (user) => {
     stopCamera();
   });
 
-  // Submit
+  // Logica de Publicación
   document.getElementById('submitPost').addEventListener('click', async () => {
     const msg = message.value.trim();
+    const submitBtn = document.getElementById('submitPost');
 
     if (!currentUser) {
         showToast('⚠️ Debes iniciar sesión para publicar.');
         return;
     }
     if (!msg && !lastImage) {
-      showToast('⚠️ Escribe un mensaje o sube una imagen');
-      return;
+        showToast('⚠️ Escribe un mensaje o sube una imagen');
+        return;
     }
 
-    let imageUrl = '';
-    let storagePath = '';
+    submitBtn.disabled = true;
+    loadingOverlay.classList.remove('hidden'); 
 
-    if (lastImage) {
-        const path = `community_images/${currentUser.uid}/${Date.now()}.jpg`;
-        const imageRef = ref(storage, path);
-        try {
-            await uploadString(imageRef, lastImage, 'data_url');
-            imageUrl = await getDownloadURL(imageRef);
-            storagePath = path;
-            // console.log(PFX, 'Imagen subida:', imageUrl);
-        } catch (error) {
-            console.error(PFX, 'Error al subir imagen:', error);
-            showToast('❌ Error al subir la imagen.');
-            return;
+    try {
+        let imageUrl = '';
+        let storagePath = '';
+
+        if (lastImage) {
+            const path = `community_images/${currentUser.uid}/${Date.now()}.jpg`;
+            const imageRef = ref(storage, path);
+            try {
+                await uploadString(imageRef, lastImage, 'data_url');
+                imageUrl = await getDownloadURL(imageRef);
+                storagePath = path;
+            } catch (error) {
+                console.error(PFX, 'Error al subir imagen:', error);
+                showToast('❌ Error al subir la imagen.');
+                return; 
+            }
         }
+
+        const post = {
+          authorId: currentUser.uid,
+          name: currentUserProfile?.name || currentUser.displayName || 'Anónimo',
+          photoURL: currentUserProfile?.photoURL || '',
+          location: currentUserProfile?.location || '',
+          message: msg,
+          image: imageUrl,
+          storagePath: storagePath,
+          createdAt: serverTimestamp()
+        };
+
+        await addDoc(collection(db, 'community_posts'), post);
+        
+        renderPosts();
+        showToast('✓ Publicación creada');
+
+        setTimeout(() => {
+          document.getElementById('feed').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+        
+        document.getElementById('clearForm').click();
+
+    } catch (error) {
+        console.error(PFX, 'Error al crear la publicación:', error);
+        showToast('❌ No se pudo crear la publicación.');
+    } finally {
+        submitBtn.disabled = false;
+        loadingOverlay.classList.add('hidden'); 
     }
-
-    const post = {
-      authorId: currentUser.uid,
-      name: currentUserProfile?.name || currentUser.displayName || 'Anónimo',
-      photoURL: currentUserProfile?.photoURL || '', // ¡Añadido! Guardamos la foto del perfil.
-      location: currentUserProfile?.location || '', // Usar la ubicación del perfil
-      message: msg,
-      image: imageUrl,
-      storagePath: storagePath,
-      createdAt: serverTimestamp()
-    };
-
-    await addDoc(collection(db, 'community_posts'), post);
-    
-    renderPosts();
-    showToast('✓ Publicación creada');
-
-    // Scroll al feed
-    setTimeout(() => {
-      document.getElementById('feed').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-    
-    document.getElementById('clearForm').click(); // Simula click en limpiar
   });
 
-  // Limpiar
   document.getElementById('clearForm').addEventListener('click', () => {
       message.value = '';
       photo.value = '';
@@ -961,7 +976,6 @@ onAuthStateChanged(auth, async (user) => {
       showToast('Formulario limpiado');
   });
 
-  // Renderizar posts iniciales
   renderPosts();
 });
 </script>
