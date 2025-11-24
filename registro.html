@@ -224,6 +224,11 @@
 <script type="module">
     import { auth } from './firebase.js';
     import { createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+
+    const app = initializeApp(window.firebaseConfig);
+    const db = getFirestore(app);
 
     const form = document.querySelector('form');
     const termsLink = document.getElementById('termsLink');
@@ -242,6 +247,8 @@
             const emailEl = document.getElementById('email');
             const senhaEl = document.getElementById('senha');
             const confEl = document.getElementById('confirmar');
+            const profissaoEl = document.getElementById('profissao');
+            const empresaEl = document.getElementById('empresa');
             const nome = nomeEl ? nomeEl.value.trim() : '';
             const email = emailEl ? emailEl.value.trim() : '';
             const senha = senhaEl ? senhaEl.value : '';
@@ -262,6 +269,21 @@
                 const cred = await createUserWithEmailAndPassword(auth, email, senha);
                 if (nome) {
                     try { await updateProfile(cred.user, { displayName: nome }); } catch (e) {}
+                }
+
+                // Guardar datos adicionales en Firestore
+                try {
+                    const userDocRef = doc(db, 'users', cred.user.uid);
+                    await setDoc(userDocRef, {
+                        uid: cred.user.uid,
+                        name: nome,
+                        email: email,
+                        profession: profissaoEl ? profissaoEl.value.trim() : '',
+                        company: empresaEl ? empresaEl.value.trim() : '',
+                        createdAt: serverTimestamp()
+                    });
+                } catch (firestoreError) {
+                    console.error("Error guardando datos adicionales en Firestore:", firestoreError);
                 }
                 window.location.href = 'onboarding.html';
             } catch (err) {
