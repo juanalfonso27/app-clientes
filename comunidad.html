@@ -586,7 +586,7 @@ let currentUserProfile = null; // Para guardar los datos del perfil de Firestore
 
 // Utilidades
 async function readPosts() {
-    console.log(PFX, 'Cargando publicaciones desde Firestore...');
+    // console.log(PFX, 'Cargando publicaciones desde Firestore...');
     const postsRef = collection(db, 'community_posts');
     const q = query(postsRef, orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
@@ -767,14 +767,14 @@ onAuthStateChanged(auth, async (user) => {
   
     if (user) {
         currentUser = user;
-        console.log(PFX, 'Usuario autenticado:', user.uid);
+        // console.log(PFX, 'Usuario autenticado:', user.uid);
 
         // --- ¡NUEVO! Cargar perfil del usuario desde Firestore ---
         const userDocRef = doc(db, 'users', user.uid);
         const userDocSnap = await getDoc(userDocRef);
         if (userDocSnap.exists()) {
             currentUserProfile = userDocSnap.data();
-            console.log(PFX, 'Perfil de usuario cargado:', currentUserProfile);
+            // console.log(PFX, 'Perfil de usuario cargado:', currentUserProfile);
         } else {
             // Fallback si no hay perfil en Firestore (usa datos de Auth)
             currentUserProfile = { name: user.displayName || 'Anónimo', location: '' };
@@ -903,7 +903,7 @@ onAuthStateChanged(auth, async (user) => {
             await uploadString(imageRef, lastImage, 'data_url');
             imageUrl = await getDownloadURL(imageRef);
             storagePath = path;
-            console.log(PFX, 'Imagen subida:', imageUrl);
+            // console.log(PFX, 'Imagen subida:', imageUrl);
         } catch (error) {
             console.error(PFX, 'Error al subir imagen:', error);
             showToast('❌ Error al subir la imagen.');
