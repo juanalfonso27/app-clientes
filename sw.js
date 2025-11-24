@@ -6,8 +6,8 @@ const urlsToCache = [
   '/firebase-config.js',
   '/firebase.js',
   '/manifest.json',
-  // Asegúrate de que la ruta a tus íconos sea correcta
-  '/icons/icon-192x192.png'
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png'
 ];
 
 // Evento de instalación: se abre el caché y se guardan los archivos del app-shell.

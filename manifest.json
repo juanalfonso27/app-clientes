@@ -1,6 +1,6 @@
 {
-  "name": "IASA APP",
-  "short_name": "IASA APP",
+  "name": "IASA App",
+  "short_name": "IASA",
   "description": "Plataforma comunitaria para agricultores. Comparte experiencias, aprende de otros y conecta con la comunidad agrícola local.",
   "start_url": "/index.html",
   "display": "standalone",
@@ -8,8 +8,14 @@
   "theme_color": "#6b4dbf",
   "icons": [
     {
-      "src": "logo1.png",
-      "sizes": "1000x470",
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
       "type": "image/png"
     }
   ]
