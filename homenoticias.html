@@ -41,22 +41,49 @@
             updateStatus('error', '❌ Error conectando a Firebase: ' + e.message);
         }
 
+        const NEWS_CACHE_KEY = 'news_cache_data';
+        const NEWS_CACHE_TIMESTAMP_KEY = 'news_cache_latest_ts';
+
         async function loadNewsFromApi() {
             console.log(PFX, 'loadNewsFromApi called');
             const newsListContainer = document.querySelector('.news-list');
-            if (!newsListContainer) {
-                console.warn(PFX, 'No .news-list container found');
-                return;
+            if (!newsListContainer) return;
+
+            // 1. Intentar cargar desde la caché primero para una carga visual instantánea
+            const cachedNews = JSON.parse(localStorage.getItem(NEWS_CACHE_KEY) || 'null');
+            if (cachedNews && cachedNews.length > 0) {
+                console.log(PFX, 'Renderizando noticias desde la caché');
+                renderNewsItems(cachedNews);
+            } else {
+                newsListContainer.innerHTML = '<p>Cargando noticias...</p>';
             }
+
+            // 2. Verificar si hay noticias nuevas en Firebase
+            try {
+                const latestCachedTimestamp = localStorage.getItem(NEWS_CACHE_TIMESTAMP_KEY) || '0';
+                const q = query(collection(db, 'news'), orderBy('createdAt', 'desc'), limit(1));
+                const latestNewsSnap = await getDocs(q);
+
+                if (!latestNewsSnap.empty) {
+                    const latestRemoteNews = latestNewsSnap.docs[0].data();
+                    const latestRemoteTimestamp = latestRemoteNews.createdAt?.toMillis().toString() || '0';
+
+                    // Si la noticia más reciente en Firebase es la misma que la que tenemos en caché, no hacemos nada más.
+                    if (latestRemoteTimestamp === latestCachedTimestamp) {
+                        console.log(PFX, 'Las noticias están actualizadas. No se requiere descarga.');
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.warn(PFX, 'No se pudo verificar si hay noticias nuevas, se forzará la recarga.', error);
+            }
+
+            // 3. Si hay noticias nuevas (o si la verificación falló), obtener la lista completa
             newsListContainer.innerHTML = '<p>Cargando noticias...</p>';
             try {
+                console.log(PFX, 'Detectadas nuevas noticias, descargando lista completa.');
                 const news = await window.fbListNews();
-                if (news.length === 0) {
-                    newsListContainer.innerHTML = '<p>No hay noticias disponibles.</p>';
-                    LATEST_NEWS_ITEMS = [];
-                    return;
-                }
-                renderNewsItems(news);
+                renderNewsItems(news); // renderNewsItems ya maneja el caso de lista vacía
             } catch (error) {
                 console.error(PFX, 'Error loading news:', error);
                 newsListContainer.innerHTML = '<p>Error al cargar las noticias.</p>';
@@ -112,6 +139,16 @@
                 const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
                 return tb - ta;
             });
+
+            // Guardar en caché si hay noticias
+            if (list.length > 0) {
+                const latestTimestamp = list[0].createdAt?.toMillis().toString() || '0';
+                localStorage.setItem(NEWS_CACHE_KEY, JSON.stringify(list));
+                localStorage.setItem(NEWS_CACHE_TIMESTAMP_KEY, latestTimestamp);
+            } else {
+                localStorage.removeItem(NEWS_CACHE_KEY);
+                localStorage.removeItem(NEWS_CACHE_TIMESTAMP_KEY);
+            }
             console.log(PFX, 'fbListNews count', list.length);
             return list;
         };
@@ -1615,10 +1652,10 @@
         function renderNewsItems(items) {
             const list = document.querySelector('.news-list');
             if (!items || items.length === 0) {
-                list.innerHTML = '<div class="weather-error">No se encontraron noticias.</div>';
+                list.innerHTML = '<p>No hay noticias disponibles.</p>';
                 return;
             }
-            list.innerHTML = buildNewsHTML(items);
+            list.innerHTML = buildNewsHTML(items.slice(0, 5)); // Mostrar solo las primeras 5 en la vista principal
             LATEST_NEWS_ITEMS = items.slice();
         }
 
@@ -1667,61 +1704,6 @@
                 return false;
             } catch(e) {
                 return false;
-            }
-        }
-
-        // Realiza la petición a Apitube
-        function loadNewsFromApi(){
-            const container = document.querySelector('.news-list');
-            if(!container) return;
-            container.innerHTML = '<div class="weather-loading">Cargando noticias...</div>';
-            if (fbEnabled) {
-                window.fbListNews().then(items => {
-                    if (items.length === 0) {
-                        try {
-                            const v = localStorage.getItem(CUSTOM_NEWS_KEY);
-                            const localItems = Array.isArray(JSON.parse(v)) ? JSON.parse(v) : [];
-                            if (localItems.length) {
-                                renderNewsItems(localItems);
-                                LATEST_NEWS_ITEMS = localItems.slice();
-                                return;
-                            }
-                        } catch(e) {}
-                    }
-                    renderNewsItems(items);
-                    LATEST_NEWS_ITEMS = items.slice();
-                }).catch((err) => {
-                    updateStatus('error', '❌ Error leyendo Firebase: ' + (err && err.message ? err.message : 'desconocido'));
-                    try {
-                        const v = localStorage.getItem(CUSTOM_NEWS_KEY);
-                        const items = Array.isArray(JSON.parse(v)) ? JSON.parse(v) : [];
-                        if (!items.length) {
-                            container.innerHTML = '<div class="weather-error">No hay noticias cargadas.</div>';
-                            LATEST_NEWS_ITEMS = [];
-                            return;
-                        }
-                        renderNewsItems(items);
-                        LATEST_NEWS_ITEMS = items.slice();
-                    } catch(e) {
-                        container.innerHTML = '<div class="weather-error">No hay noticias cargadas.</div>';
-                        LATEST_NEWS_ITEMS = [];
-                    }
-                });
-                return;
-            }
-            try {
-                const v = localStorage.getItem(CUSTOM_NEWS_KEY);
-                const items = Array.isArray(JSON.parse(v)) ? JSON.parse(v) : [];
-                if (!items.length) {
-                    container.innerHTML = '<div class="weather-error">No hay noticias cargadas.</div>';
-                    LATEST_NEWS_ITEMS = [];
-                    return;
-                }
-                renderNewsItems(items);
-                LATEST_NEWS_ITEMS = items.slice();
-            } catch(e) {
-                container.innerHTML = '<div class="weather-error">No hay noticias cargadas.</div>';
-                LATEST_NEWS_ITEMS = [];
             }
         }
 
@@ -1855,6 +1837,8 @@
             if (!newsOverlay || !newsModalList) return;
             const items = Array.isArray(LATEST_NEWS_ITEMS) ? LATEST_NEWS_ITEMS : [];
             if (items.length === 0) return;
+            newsModalList.innerHTML = buildNewsHTML(items);
+            // Ajuste para el modal: mostrar todas las noticias, no solo 5
             newsModalList.innerHTML = buildNewsHTML(items);
             newsOverlay.classList.add('open');
         }
