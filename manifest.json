@@ -2,7 +2,7 @@
   "name": "IASA APP",
   "short_name": "IASA APP",
   "description": "Plataforma comunitaria para agricultores. Comparte experiencias, aprende de otros y conecta con la comunidad agrícola local.",
-  "start_url": "/comunidad.html",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#f5f5f5",
   "theme_color": "#6b4dbf",
