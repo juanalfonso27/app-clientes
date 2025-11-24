@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar sesión</title>
+    <meta name="theme-color" content="#6b4dbf"/>
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
     <style>
         * {
@@ -414,6 +416,20 @@
                 showToast('No se pudo enviar el correo: ' + msg, 'error');
             }
         });
+    }
+</script>
+<script>
+    // --- Registro del Service Worker para PWA ---
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('ServiceWorker registrado con éxito:', registration.scope);
+          })
+          .catch(err => {
+            console.error('Fallo en el registro de ServiceWorker:', err);
+          });
+      });
     }
 </script>
 </html>
