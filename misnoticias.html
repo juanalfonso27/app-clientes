@@ -326,6 +326,14 @@
                 try { if (it.storagePath) await fbDeleteImage(it.storagePath); } catch(e) {}
             }
             console.log(PFX, '✅ Noticia eliminada');
+
+            try {
+                localStorage.removeItem('news_cache_data');
+                localStorage.removeItem('news_cache_latest_ts');
+                console.log(PFX, '✅ Cache de noticias de la home page limpiado');
+            } catch(e) {
+                console.warn(PFX, '⚠️ No se pudo limpiar el cache de la home page', e);
+            }
         }
 
         // Utilidades de imagen

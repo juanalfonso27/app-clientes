@@ -9,7 +9,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, query, orderBy, limit, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, orderBy, limit, addDoc, serverTimestamp, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
         const PFX = '[HomeNoticias]';
         function updateStatus(type, message) {
             const el = document.getElementById('firebaseStatus');
@@ -23,8 +23,13 @@
         try {
             if (!window.firebaseConfig) throw new Error('firebaseConfig no encontrado');
             app = initializeApp(window.firebaseConfig);
-            db = getFirestore(app);
-            console.log(PFX, 'Firestore inicializado (default)');
+            try {
+                db = initializeFirestore(app, { databaseId: 'news' });
+                console.log(PFX, 'Firestore inicializado con databaseId', 'news');
+            } catch (e) {
+                console.warn(PFX, 'initializeFirestore falló, usando default', e);
+                db = getFirestore(app);
+            }
             updateStatus('success', '✅ Conectado a Firebase');
             auth = getAuth(app);
             try { await signInAnonymously(auth); } catch(e) {}
@@ -43,6 +48,7 @@
 
         const NEWS_CACHE_KEY = 'news_cache_data';
         const NEWS_CACHE_TIMESTAMP_KEY = 'news_cache_latest_ts';
+        const NEWS_CACHE_COUNT_KEY = 'news_cache_count';
 
         async function loadNewsFromApi() {
             console.log(PFX, 'loadNewsFromApi called');
@@ -60,26 +66,35 @@
 
             // 2. Verificar si hay noticias nuevas en Firebase
             try {
-                const latestCachedTimestamp = localStorage.getItem(NEWS_CACHE_TIMESTAMP_KEY) || '0';
-                const q = query(collection(db, 'news'), orderBy('createdAt', 'desc'), limit(1));
-                const latestNewsSnap = await getDocs(q);
+                const cachedCount = parseInt(localStorage.getItem(NEWS_CACHE_COUNT_KEY) || '-1', 10);
+                const allNewsQuery = query(collection(db, 'news'));
+                const allNewsSnap = await getDocs(allNewsQuery);
+                const remoteCount = allNewsSnap.size;
 
-                if (!latestNewsSnap.empty) {
-                    const latestRemoteNews = latestNewsSnap.docs[0].data();
-                    const latestRemoteTimestamp = latestRemoteNews.createdAt?.toMillis().toString() || '0';
-
-                    // Si la noticia más reciente en Firebase es la misma que la que tenemos en caché, no hacemos nada más.
-                    if (latestRemoteTimestamp === latestCachedTimestamp) {
-                        console.log(PFX, 'Las noticias están actualizadas. No se requiere descarga.');
-                        return;
+                // Si la cantidad de noticias en la caché es la misma que en Firebase, asumimos que no hay cambios.
+                if (remoteCount === cachedCount) {
+                    console.log(PFX, 'Las noticias están actualizadas (conteo idéntico). No se requiere descarga.');
+                    // Si la caché estaba vacía pero el conteo es 0, nos aseguramos que no se muestre "cargando".
+                    if (remoteCount === 0 && (!cachedNews || cachedNews.length === 0)) {
+                        renderNewsItems([]);
                     }
+                    return;
+                }
+                
+                // Si el conteo es 0, limpiamos la caché y renderizamos una lista vacía.
+                if (remoteCount === 0) {
+                    console.log(PFX, 'No hay noticias en Firebase. Limpiando caché.');
+                    localStorage.removeItem(NEWS_CACHE_KEY);
+                    localStorage.removeItem(NEWS_CACHE_TIMESTAMP_KEY);
+                    localStorage.removeItem(NEWS_CACHE_COUNT_KEY);
+                    renderNewsItems([]);
+                    return;
                 }
             } catch (error) {
                 console.warn(PFX, 'No se pudo verificar si hay noticias nuevas, se forzará la recarga.', error);
             }
 
             // 3. Si hay noticias nuevas (o si la verificación falló), obtener la lista completa
-            newsListContainer.innerHTML = '<p>Cargando noticias...</p>';
             try {
                 console.log(PFX, 'Detectadas nuevas noticias, descargando lista completa.');
                 const news = await window.fbListNews();
@@ -145,9 +160,11 @@
                 const latestTimestamp = list[0].createdAt?.toMillis().toString() || '0';
                 localStorage.setItem(NEWS_CACHE_KEY, JSON.stringify(list));
                 localStorage.setItem(NEWS_CACHE_TIMESTAMP_KEY, latestTimestamp);
+                localStorage.setItem(NEWS_CACHE_COUNT_KEY, list.length.toString());
             } else {
                 localStorage.removeItem(NEWS_CACHE_KEY);
                 localStorage.removeItem(NEWS_CACHE_TIMESTAMP_KEY);
+                localStorage.removeItem(NEWS_CACHE_COUNT_KEY);
             }
             console.log(PFX, 'fbListNews count', list.length);
             return list;
