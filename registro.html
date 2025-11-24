@@ -228,13 +228,9 @@
     </div>
  </div>
 <script type="module">
-    import { auth } from './firebase.js';
+    import { auth, db } from './firebase.js';
     import { createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
-
-    const app = initializeApp(window.firebaseConfig);
-    const db = getFirestore(app);
+    import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
     const form = document.querySelector('form');
     const termsLink = document.getElementById('termsLink');
@@ -250,19 +246,16 @@
     if (form) {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const nomeEl = document.getElementById('nome');
-            const emailEl = document.getElementById('email');
-            const senhaEl = document.getElementById('senha');
-            const confEl = document.getElementById('confirmar');
-            const profissaoEl = document.getElementById('profissao');
-            const empresaEl = document.getElementById('empresa');
-            const locationEl = document.getElementById('location');
-            
-            const nome = nomeEl ? nomeEl.value.trim() : '';
-            const email = emailEl ? emailEl.value.trim() : '';
-            const senha = senhaEl ? senhaEl.value : '';
-            const confirmar = confEl ? confEl.value : '';
-            
+
+            const nome  = document.getElementById('nome')?.value.trim() ?? '';
+            const email = document.getElementById('email')?.value.trim() ?? '';
+            const senha = document.getElementById('senha')?.value ?? '';
+            const confirmar = document.getElementById('confirmar')?.value ?? '';
+
+            const profissao = document.getElementById('profissao')?.value.trim() ?? '';
+            const empresa   = document.getElementById('empresa')?.value.trim() ?? '';
+            const location  = document.getElementById('location')?.value.trim() ?? '';
+
             if (!email || !senha) {
                 alert('Completa email y contraseña');
                 return;
@@ -271,53 +264,42 @@
                 alert('Las contraseñas no coinciden');
                 return;
             }
-            
+
             try {
                 if (acceptTerms && !acceptTerms.checked) {
                     if (termsOverlay) termsOverlay.classList.add('open');
                     return;
                 }
-                
+
                 const cred = await createUserWithEmailAndPassword(auth, email, senha);
-                
+
                 if (nome) {
-                    try { await updateProfile(cred.user, { displayName: nome }); } catch (e) {}
+                    try { 
+                        await updateProfile(cred.user, { displayName: nome }); 
+                    } catch (_) {}
                 }
 
-                // Esperar a que el usuario esté completamente autenticado
-                await new Promise(resolve => {
-                    const unsubscribe = auth.onAuthStateChanged(user => {
-                        if (user && user.uid === cred.user.uid) {
-                            unsubscribe();
-                            resolve();
-                        }
-                    });
+                await cred.user.reload();
+
+                await setDoc(doc(db, "users", cred.user.uid), {
+                    name: nome,
+                    email: cred.user.email,
+                    profession: profissao,
+                    company: empresa,
+                    location: location,
+                    createdAt: serverTimestamp()
                 });
 
-                // Ahora guardar datos adicionales en Firestore
-                try {
-                    const userDocRef = doc(db, 'users', cred.user.uid);
-                    await setDoc(userDocRef, {
-                        name: nome,
-                        email: cred.user.email,
-                        profession: profissaoEl?.value.trim() || '',
-                        company: empresaEl?.value.trim() || '',
-                        location: locationEl?.value.trim() || '',
-                        createdAt: serverTimestamp()
-                    }, { merge: false });
-                    
-                    // Redirigir SOLO DESPUÉS de que todo se haya guardado correctamente
-                    window.location.href = 'onboarding.html';
-                } catch (firestoreError) {
-                    console.error("Error guardando datos adicionales en Firestore:", firestoreError);
-                    alert('Se creó tu usuario, pero hubo un error al guardar tus datos de perfil. Por favor, contacta a soporte.');
-                }
+                window.location.href = "onboarding.html";
+
             } catch (err) {
-                alert('Error al registrarse: ' + (err && err.message ? err.message : String(err)));
+                console.error("Error al guardar:", err);
+                alert('Se creó tu usuario, pero hubo un problema guardando tu perfil.');
             }
         });
     }
-    
+
+    // ===== TERMS =====
     if (termsLink && termsOverlay) {
         termsLink.addEventListener('click', (e) => {
             e.preventDefault();
@@ -325,19 +307,24 @@
             termsOverlay.classList.add('open');
         });
     }
+
     if (termsOverlay) {
         termsOverlay.addEventListener('click', (e) => {
             if (e.target === termsOverlay) termsOverlay.classList.remove('open');
         });
     }
+
     if (termsClose) {
         termsClose.addEventListener('click', () => termsOverlay.classList.remove('open'));
     }
+
     if (termsAccept) {
         termsAccept.addEventListener('click', () => {
             if (termsOverlay) termsOverlay.classList.remove('open');
         });
     }
+
+    // ===== PRIVACY =====
     if (privacyLink && privacyOverlay) {
         privacyLink.addEventListener('click', (e) => {
             e.preventDefault();
@@ -345,18 +332,22 @@
             privacyOverlay.classList.add('open');
         });
     }
+
     if (privacyOverlay) {
         privacyOverlay.addEventListener('click', (e) => {
             if (e.target === privacyOverlay) privacyOverlay.classList.remove('open');
         });
     }
+
     if (privacyClose) {
         privacyClose.addEventListener('click', () => privacyOverlay.classList.remove('open'));
     }
+
     if (privacyAccept) {
         privacyAccept.addEventListener('click', () => {
             if (privacyOverlay) privacyOverlay.classList.remove('open');
         });
     }
 </script>
+
 </html>
