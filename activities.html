@@ -95,6 +95,8 @@
     </style>
     <!-- Librería para generar PDF en cliente (jsPDF UMD) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Configuración de Firebase -->
+    <script src="firebase-config.js"></script>
 </head>
 <body>
    <div class="header">
@@ -193,29 +195,78 @@
         </div>
     </div>
 
-    <script>
-        // Utilidades de almacenamiento simple
-        let CLOCK_ICON = 'reloj.svg'; // valor por defecto
-        async function detectClockIcon(){
-            const candidates = ['iconos/reloj.png','reloj.png','iconos/relog.png','relog.png','reloj.svg'];
-            for(const p of candidates){
-                try{
-                    const r = await fetch(p,{cache:'no-store'});
-                    if(r && r.ok){ CLOCK_ICON = p; return; }
-                }catch(e){ /* ignora */ }
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            query, 
+            orderBy, 
+            getDocs, 
+            addDoc, 
+            deleteDoc, 
+            doc, 
+            serverTimestamp,
+            Timestamp
+        } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+
+        const PFX = '[Activities]';
+        const app = initializeApp(window.firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let activitiesCache = []; // Caché en memoria para no recargar constantemente
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                console.log(PFX, 'Usuario autenticado:', user.uid);
+                // Una vez autenticado, cargamos y renderizamos las actividades
+                loadAndRenderActivities();
+            } else {
+                console.log(PFX, 'Usuario no autenticado. Redirigiendo a login.html');
+                window.location.href = 'login.html';
             }
+        });
+
+        // --- Lógica de Datos con Firestore ---
+
+        async function loadActivitiesFromFirestore() {
+            if (!currentUser) return [];
+            
+            // La ruta ahora apunta a la subcolección del usuario
+            const activitiesRef = collection(db, 'users', currentUser.uid, 'activities');
+            const q = query(activitiesRef, orderBy('date', 'desc'), orderBy('time', 'desc'));
+            
+            const snapshot = await getDocs(q);
+            const activities = snapshot.docs.map(doc => {
+                const data = doc.data();
+                // Convertir Timestamps de Firestore a objetos Date si es necesario
+                // y luego a strings para mantener la compatibilidad con el renderizado.
+                return {
+                    id: doc.id, // Guardamos el ID para poder borrarlo
+                    ...data,
+                    // El formato de fecha y hora ya debería estar como string al guardar
+                };
+            });
+            activitiesCache = activities; // Actualizar caché
+            return activities;
         }
-        const STORAGE_KEY = 'app_activities_v1';
-        function loadActivities(){
-            try{const raw=localStorage.getItem(STORAGE_KEY);return raw?JSON.parse(raw):[];}catch(e){return[]}
+
+        async function loadAndRenderActivities() {
+            activitiesList.innerHTML = '<div class="empty">Cargando actividades...</div>';
+            const list = await loadActivitiesFromFirestore();
+            renderActivities(list);
         }
-        function saveActivities(arr){localStorage.setItem(STORAGE_KEY,JSON.stringify(arr))}
 
         // Render
         const activitiesList = document.getElementById('activitiesList');
-        function renderActivities(){
-            const list = loadActivities();
-                if(!list || list.length===0){
+        function renderActivities(list){
+            // La función ahora recibe la lista como argumento
+            activitiesCache = list; // Actualizamos la caché local
+            if(!list || list.length===0){
                     // Mostrar texto mínimo cuando no hay actividades
                     activitiesList.innerHTML = '<div class="empty">No hay actividades registradas — pulsa "Agregar actividad" para crear una.</div>';
                     return;
@@ -223,10 +274,11 @@
             activitiesList.innerHTML = '';
             list.forEach((act, idx) => {
                 const card = document.createElement('div');
-                card.className = 'activity-card';
+                card.className = 'activity-card';                
+                card.dataset.id = act.id; // Usamos el ID de Firestore en lugar del índice
                 var html = '';
                 // Icono de compartir: interactivo y accesible (role, tabindex, title, data-index)
-                html += '<div class="activity-icon" role="button" tabindex="0" title="Compartir actividad" data-index="' + idx + '" aria-label="Compartir actividad">'
+                html += '<div class="activity-icon" role="button" tabindex="0" title="Compartir actividad" data-id="' + act.id + '" aria-label="Compartir actividad">'
                     + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
                     + '<circle cx="18" cy="5" r="3" stroke="#000" stroke-width="1.8"/>'
                     + '<circle cx="6" cy="12" r="3" stroke="#000" stroke-width="1.8"/>'
@@ -238,8 +290,8 @@
                 html += '<div class="activity-title">' + escapeHtml(act.title) + '</div>';
                 if(act.description) html += '<div class="activity-desc">' + escapeHtml(act.description) + '</div>';
                 html += '<div class="activity-meta">';
-                html += '<span class="meta"><img src="iconos/calendario.png" class="meta-icon" alt="Fecha"><span>' + escapeHtml(act.date) + '</span></span>';
-                html += '<span class="meta"><img src="' + CLOCK_ICON + '" class="meta-icon" alt="Hora"><span>' + escapeHtml(act.time) + '</span></span>';
+                html += '<span class="meta"><img src="iconos/calendario.png" class="meta-icon" alt="Fecha"><span>' + escapeHtml(act.date) + '</span></span>'; // Asumimos que los iconos existen
+                html += '<span class="meta"><img src="iconos/reloj.png" class="meta-icon" alt="Hora"><span>' + escapeHtml(act.time) + '</span></span>';
                 if(act.location) html += '<span class="meta"><img src="iconos/ubicacion.png" class="meta-icon" alt="Ubicación"><span>' + escapeHtml(act.location) + '</span></span>';
                 if(act.assignee) html += '<span class="meta"><img src="iconos/usuario.png" class="meta-icon" alt="Responsable"><span>' + escapeHtml(act.assignee) + '</span></span>';
                 html += '</div>';
@@ -247,7 +299,7 @@
                 html += '<div class="activity-actions">';
                 html += '<div class="pill ' + act.status + '">' + capitalizeStatus(act.status) + '</div>';
                 html += '<div class="priority-badge ' + ('priority-' + (act.priority ? escapeHtml(act.priority) : 'media')) + '">' + (act.priority ? escapeHtml(act.priority.charAt(0).toUpperCase() + act.priority.slice(1)) : 'Media') + '</div>';
-                html += '<button class="delete-act" data-index="' + idx + '" aria-label="Eliminar actividad" title="Eliminar actividad">';
+                html += '<button class="delete-act" data-id="' + act.id + '" aria-label="Eliminar actividad" title="Eliminar actividad">';
                 html += '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">';
                 html += '<path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12z" fill="currentColor"/>';
                 html += '<path d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/>';
@@ -255,7 +307,7 @@
                 html += '</button>';
                 html += '</div>';
                 // Añadir data-index al card para identificar la actividad al hacer click
-                card.dataset.index = idx;
+                card.dataset.id = act.id;
                 card.innerHTML = html;
                 activitiesList.appendChild(card);
             });
@@ -287,7 +339,7 @@
         cancelAdd.addEventListener('click', ()=>overlay.classList.remove('open'));
         overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.classList.remove('open') });
 
-        saveAdd.addEventListener('click', ()=>{
+        saveAdd.addEventListener('click', async () => {
                 const title = titleInput.value.trim();
                 const date = dateInput.value || new Date().toISOString().slice(0,10);
                 const time = timeInput.value || new Date().toTimeString().slice(0,5);
@@ -297,26 +349,37 @@
                 const assignee = document.getElementById('assigneeInput').value.trim();
                 const priority = document.getElementById('prioritySelect').value || 'media';
             if(!title){ alert('Por favor ingrese un título.'); titleInput.focus(); return; }
-                const list = loadActivities();
-                list.unshift({title,date,time,status,description,location,assignee,priority});
-            saveActivities(list);
-            overlay.classList.remove('open');
-            renderActivities();
+            if (!currentUser) { alert('Error: No se ha iniciado sesión.'); return; }
+
+            const newActivity = {title,date,time,status,description,location,assignee,priority, createdAt: serverTimestamp()};
+            
+            try {
+                const activitiesRef = collection(db, 'users', currentUser.uid, 'activities');
+                await addDoc(activitiesRef, newActivity);
+                overlay.classList.remove('open');
+                loadAndRenderActivities(); // Recargar desde Firestore para mostrar el nuevo item
+            } catch (error) {
+                console.error(PFX, "Error al guardar la actividad:", error);
+                alert('No se pudo guardar la actividad.');
+            }
         });
 
 
         // Delegación: eliminar actividad individual al pulsar el tacho
-        activitiesList.addEventListener('click', e => {
+        activitiesList.addEventListener('click', async (e) => {
             const btn = e.target.closest('.delete-act');
             if(!btn) return;
-            const idx = Number(btn.dataset.index);
-            if(Number.isNaN(idx)) return;
-            const list = loadActivities();
-            if(!list || idx < 0 || idx >= list.length) return;
+            const activityId = btn.dataset.id;
+            if(!activityId || !currentUser) return;
+            
             if(confirm('¿Eliminar esta actividad?')){
-                list.splice(idx,1);
-                saveActivities(list);
-                renderActivities();
+                try {
+                    await deleteDoc(doc(db, 'users', currentUser.uid, 'activities', activityId));
+                    loadAndRenderActivities(); // Recargar para reflejar la eliminación
+                } catch (error) {
+                    console.error(PFX, "Error al eliminar:", error);
+                    alert('No se pudo eliminar la actividad.');
+                }
             }
         });
 
@@ -324,29 +387,18 @@
         activitiesList.addEventListener('click', e => {
             const icon = e.target.closest('.activity-icon');
             if(!icon) return;
-            // Evitar que el click abra la vista detalle
-            e.stopPropagation();
-            const idx = Number(icon.dataset.index || icon.closest('.activity-card')?.dataset.index);
-            if(Number.isNaN(idx)) return;
-            shareActivity(idx);
-        });
-
-        // Soporte por teclado: activar compartir con Enter o Espacio
-        activitiesList.addEventListener('keydown', e => {
-            if(e.key !== 'Enter' && e.key !== ' ') return;
-            const icon = e.target.closest ? e.target.closest('.activity-icon') : null;
-            if(!icon) return;
             e.preventDefault();
-            const idx = Number(icon.dataset.index || icon.closest('.activity-card')?.dataset.index);
-            if(Number.isNaN(idx)) return;
-            shareActivity(idx);
+            e.stopPropagation();
+            const activityId = icon.dataset.id || icon.closest('.activity-card')?.dataset.id;
+            if(!activityId) return;
+            shareActivity(activityId);
         });
 
         // Función para compartir: genera un PDF con la información en forma de planilla
-        async function shareActivity(idx){
-            const list = loadActivities();
-            if(!list || idx < 0 || idx >= list.length) return;
-            const act = list[idx];
+        async function shareActivity(activityId){
+            const act = activitiesCache.find(a => a.id === activityId);
+            if(!act) return;
+
             const parts = [];
             if(act.title) parts.push(act.title);
             if(act.date || act.time) parts.push((act.date || '') + (act.time ? ' ' + act.time : ''));
@@ -456,10 +508,10 @@
             const del = e.target.closest('.delete-act');
             if(del) return; // ya manejado
             const card = e.target.closest('.activity-card');
-            if(!card) return;
-            const idx = Number(card.dataset.index);
-            if(Number.isNaN(idx)) return;
-            openDetailView(idx);
+            if(!card) return;            
+            const activityId = card.dataset.id;
+            if(!activityId) return;
+            openDetailView(activityId);
         });
 
         // Función para abrir el modal de detalle
@@ -470,44 +522,17 @@
         const viewExtra = document.getElementById('viewExtra');
         const closeView = document.getElementById('closeView');
 
-        function openDetailView(idx){
-            const list = loadActivities();
-            if(!list || idx<0 || idx>=list.length) return;
-            const act = list[idx];
+        function openDetailView(activityId){
+            const act = activitiesCache.find(a => a.id === activityId);
+            if(!act) return;
             viewTitle.textContent = act.title || 'Actividad';
             viewDesc.textContent = act.description || '';
-            viewMeta.innerHTML = '<img src="iconos/calendario.png" class="meta-icon" alt="Fecha">' + escapeHtml(act.date) + ' &nbsp; • &nbsp; <img src="' + CLOCK_ICON + '" class="meta-icon" alt="Hora"> ' + escapeHtml(act.time) + (act.location?(' &nbsp; • &nbsp; <img src="iconos/ubicacion.png" class="meta-icon" alt="Ubicación"> '+escapeHtml(act.location)):"") + (act.assignee?(' &nbsp; • &nbsp; <img src="iconos/usuario.png" class="meta-icon" alt="Responsable"> '+escapeHtml(act.assignee)):"");
+            viewMeta.innerHTML = '<img src="iconos/calendario.png" class="meta-icon" alt="Fecha">' + escapeHtml(act.date) + ' &nbsp; • &nbsp; <img src="iconos/reloj.png" class="meta-icon" alt="Hora"> ' + escapeHtml(act.time) + (act.location?(' &nbsp; • &nbsp; <img src="iconos/ubicacion.png" class="meta-icon" alt="Ubicación"> '+escapeHtml(act.location)):"") + (act.assignee?(' &nbsp; • &nbsp; <img src="iconos/usuario.png" class="meta-icon" alt="Responsable"> '+escapeHtml(act.assignee)):"");
             viewExtra.innerHTML = '<span class="pill '+escapeHtml(act.status)+'">'+capitalizeStatus(act.status)+'</span> &nbsp; <span class="priority-badge '+('priority-'+escapeHtml(act.priority||'media'))+'">'+(act.priority?escapeHtml(act.priority.charAt(0).toUpperCase()+act.priority.slice(1)):'Media')+'</span>';
             overlayView.classList.add('open');
         }
 
         closeView.addEventListener('click', ()=>overlayView.classList.remove('open'));
-
-        // Inicializar render sin añadir datos de ejemplo
-        renderActivities();
-
-        // Botón para añadir datos de ejemplo (solo para desarrollo/pruebas)
-        const seedBtn = document.getElementById('seedBtn');
-        function seedExampleData(){
-            const examples = [
-                {title:'Aplicar fertilizante foliar',date:'2025-11-20',time:'09:00',status:'pendiente',description:'Aplicar 100ml por hectárea en parcelas A y B',location:'Parcelas A',assignee:'Carlos',priority:'media'},
-                {title:'Revisión de riego',date:'2025-11-21',time:'07:30',status:'realizado',description:'Comprobar emisores y presión',location:'Sector 3',assignee:'María',priority:'baja'},
-                {title:'Control de plagas - insecticida',date:'2025-11-22',time:'14:00',status:'pendiente',description:'Aplicación localizada en sectores con brotes',location:'Parcelas C',assignee:'Jorge',priority:'alta'}
-            ];
-            const list = loadActivities() || [];
-            // Añadir sin duplicar títulos existentes
-            examples.forEach(ex => { if(!list.some(i=>i.title===ex.title)) list.unshift(ex); });
-            saveActivities(list);
-            renderActivities();
-        }
-        if(seedBtn){seedBtn.addEventListener('click', ()=>{
-            if(confirm('Agregar actividades de ejemplo para revisar el diseño?')) seedExampleData();
-        })}
-        // Detectar icono de reloj disponible y volver a renderizar para usar la ruta correcta
-        detectClockIcon().then(()=>{
-            // re-render para asegurar que los <img> apunten al icono correcto
-            renderActivities();
-        });
     </script>
 </body>
 </html>

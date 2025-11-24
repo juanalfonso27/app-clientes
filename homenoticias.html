@@ -32,14 +32,18 @@
             }
             updateStatus('success', '✅ Conectado a Firebase');
             auth = getAuth(app);
-            try { await signInAnonymously(auth); } catch(e) {}
-            // Una vez que el estado de autenticación cambie (o se establezca inicialmente),
-            // cargamos las noticias si la sección de noticias está activa.
+
+            // Proteger la ruta: verificar si el usuario está logueado.
             onAuthStateChanged(auth, (user) => {
-                console.log(PFX, 'Estado de autenticación cambiado. Usuario:', user ? user.uid : 'ninguno');
-                // Llamar a loadNewsFromApi directamente, ya que queremos que las noticias se muestren siempre.
-                // La función loadNewsFromApi ya se encarga de verificar si la sección de noticias existe.
-                setTimeout(loadNewsFromApi, 50); // Pequeña demora para asegurar que el DOM esté listo
+                if (user) {
+                    // El usuario está logueado. Podemos cargar el contenido.
+                    console.log(PFX, 'Usuario autenticado:', user.uid);
+                    setTimeout(loadNewsFromApi, 50); // Cargar noticias
+                } else {
+                    // El usuario no está logueado. Redirigir a la página de login.
+                    console.log(PFX, 'Usuario no autenticado. Redirigiendo a login.html');
+                    window.location.href = 'login.html';
+                }
             });
         } catch (e) {
             console.error(PFX, 'Firebase init error', e);
