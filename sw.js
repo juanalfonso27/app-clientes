@@ -2,12 +2,11 @@ const CACHE_NAME = 'app-cache-v1';
 const urlsToCache = [
   '/', // Para la ruta raíz
   '/index.html',
-  '/comunidad.html',
   '/firebase-config.js',
   '/firebase.js',
   '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/iconos/logo1.jpeg',
+  '/iconos/logo1.jpeg'
 ];
 
 // Evento de instalación: se abre el caché y se guardan los archivos del app-shell.
