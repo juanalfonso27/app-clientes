@@ -1111,25 +1111,6 @@
             });
         })();
 
-        // Noticias del agro dinámicas desde un JSON local (sin APIs externas)
-        const LOCAL_AGRO_NEWS = [
-            { title: 'USDA ajusta estimaciones de maíz y mercados reaccionan', description: 'Informe reciente con impacto en precios y expectativas de exportación.', image: 'https://images.unsplash.com/photo-1562751361-d0c4bc3c0d66?w=300&auto=format&fit=crop', url: 'https://www.usda.gov' },
-            { title: 'Soja: mayor demanda de China sostiene precios en la región', description: 'Analistas prevén menos presión en la nueva campaña por demanda externa.', image: 'https://images.unsplash.com/photo-1500939834731-5a9e0bff3f1b?w=300&auto=format&fit=crop', url: 'https://www.fao.org' },
-            { title: 'Tecnologías de riego elevan eficiencia hídrica en fincas familiares', description: 'Casos locales muestran mejora en rendimiento y ahorro de costos.', image: 'https://images.unsplash.com/photo-1509822929063-6b6cfc9b42f2?w=300&auto=format&fit=crop', url: 'https://www.iica.int' },
-            { title: 'Ganadería sostenible: buenas prácticas para mejorar productividad', description: 'Recomendaciones clave para manejo de pasturas y bienestar animal.', image: 'https://images.unsplash.com/photo-1581092334280-684b5f1f5a06?w=300&auto=format&fit=crop', url: 'https://www.example.com/ganaderia-sostenible' },
-            { title: 'Maíz: perspectivas de precios para el Cono Sur', description: 'Factores climáticos y oferta global condicionan la evolución de precios.', image: 'https://images.unsplash.com/photo-1596485430387-6cf3dc1d9fbb?w=300&auto=format&fit=crop', url: 'https://www.example.com/maiz-perspectivas' },
-            { title: 'Bioinsumos: adopción crece en productores hortícolas', description: 'Mayor uso de biológicos por sostenibilidad y resultados en campo.', image: 'https://images.unsplash.com/photo-1516919768374-95f89e2bf7d1?w=300&auto=format&fit=crop', url: 'https://www.example.com/bioinsumos-horticultura' }
-        ];
-
-        function loadAgroNews() {
-            const container = document.getElementById('newsList');
-            if (!container) return;
-            const shuffled = LOCAL_AGRO_NEWS.slice().sort(() => Math.random() - 0.5);
-            const selected = shuffled.slice(0, 5);
-            container.innerHTML = buildNewsHTML(selected);
-            LATEST_NEWS_ITEMS = LOCAL_AGRO_NEWS.slice();
-        }
-
         // Open-Meteo API
         // https://open-meteo.com/
         const WEATHER_API_URL = 'https://api.open-meteo.com/v1/forecast';
@@ -1621,18 +1602,9 @@
         /* ----------------------------- */
         /* Integración Apitube (Noticias) */
         /* ----------------------------- */
-        // Configura aquí tu API key y endpoint. Si el endpoint de Apitube es distinto, reemplázalo por la URL correcta.
-        const APITUBE_API_URL = '/api/agro-news';
-        const CUSTOM_NEWS_KEY = 'custom_news_items';
-        let fbEnabled = !!window.fbListNews;
 
         let LATEST_NEWS_ITEMS = [];
-        function isThisMonth(dateStr){
-            const d = new Date(dateStr);
-            if (isNaN(d)) return false;
-            const now = new Date();
-            return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-        }
+
         function buildNewsHTML(items){
             return items.map(item => {
                 const title = item.title || item.headline || item.name || 'Sin título';
@@ -1661,51 +1633,6 @@
 
         // Helper para escapar texto
         function escapeHtml(str){ return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-        async function loadNewsFromRSS(){
-            const feeds = [
-                'https://news.un.org/feed/subscribe/es/news/topic/agriculture/rss.xml',
-                'https://news.google.com/rss/search?q=agricultura&hl=es-419&gl=AR&ceid=AR:es-419',
-                'https://news.google.com/rss/search?q=ganader%C3%ADa&hl=es-419&gl=AR&ceid=AR:es-419',
-                'https://news.google.com/rss/search?q=agro&hl=es-419&gl=AR&ceid=AR:es-419',
-                'https://news.google.com/rss/search?q=soja&hl=es-419&gl=AR&ceid=AR:es-419',
-                'https://news.google.com/rss/search?q=ma%C3%ADz&hl=es-419&gl=AR&ceid=AR:es-419'
-            ];
-            try {
-                const results = await Promise.all(feeds.map(async f => {
-                    const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(f));
-                    if (!r.ok) throw new Error('rss');
-                    const j = await r.json();
-                    const doc = new DOMParser().parseFromString(j.contents || '', 'text/xml');
-                    const items = Array.from(doc.querySelectorAll('item')).map(it => {
-                        const title = it.querySelector('title')?.textContent || '';
-                        const link = it.querySelector('link')?.textContent || '#';
-                        const description = it.querySelector('description')?.textContent || '';
-                        const pubDate = it.querySelector('pubDate')?.textContent || '';
-                        const enclosure = it.querySelector('enclosure');
-                        const media = it.getElementsByTagName('media:content')[0];
-                        const image = enclosure?.getAttribute('url') || (media ? media.getAttribute('url') : '') || '';
-                        return { title, url: link, description, pubDate, image };
-                    });
-                    return items;
-                }));
-                const merged = results.flat().filter(x => x && x.title);
-                const dedup = new Map();
-                for (const it of merged) {
-                    const key = (it.url || it.title).trim();
-                    if (!dedup.has(key)) dedup.set(key, it);
-                }
-                const items = Array.from(dedup.values()).sort((a,b)=> new Date(b.pubDate) - new Date(a.pubDate)).slice(0,12);
-                if (items.length) {
-                    renderNewsItems(items);
-                    LATEST_NEWS_ITEMS = items.slice();
-                    return true;
-                }
-                return false;
-            } catch(e) {
-                return false;
-            }
-        }
 
         // Cargar noticias inicialmente y cuando se active la pestaña Noticias
         // Llamada inicial para poblar la sección al cargar la página
