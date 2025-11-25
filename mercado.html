@@ -111,8 +111,8 @@ async function fetchQuotes() {
 function updateGrano(id, data) {
   document.getElementById(`${id}-price`).textContent = data.price.toFixed(2);
   const sign = data.change >= 0 ? '+' : '';
-  document.getElementById(`${id}-change`).textContent = `${sign}${data.change.toFixed(2)} (${sign}${(data.changePct*100).toFixed(2)}%)`;
-  document.getElementById(`${id}-time`).textContent = new Date(data.ts).toLocaleTimeString();
+  document.getElementById(`${id}-change`).textContent = `${sign}${data.change.toFixed(2)} (${sign}${(data.changePct * 100).toFixed(2)}%)`;
+  document.getElementById(`${id}-time`).textContent = new Date(data.ts * 1000).toLocaleTimeString();
 }
 
 async function refresh() {
