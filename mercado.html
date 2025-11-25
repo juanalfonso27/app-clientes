@@ -80,69 +80,81 @@
     </nav>
 
     <script>
-    const grains = [
-        { name: "Soja", symbol: "ZS=F" },
-        { name: "Maíz", symbol: "ZC=F" },
-        { name: "Trigo", symbol: "ZW=F" }
-    ];
-
     async function loadMarketData() {
-
         const container = document.getElementById("marketData");
         container.innerHTML = '<div class="market-loading">Cargando datos...</div>';
 
         let html = "";
+        let dataFound = false;
+        let targetDate = new Date(); // Intentar con la fecha actual primero
 
-        for (let item of grains) {
+        while (!dataFound && targetDate.getFullYear() >= 1993) { // Limitar la búsqueda histórica para evitar bucles infinitos
+            const day = String(targetDate.getDate()).padStart(2, '0');
+            const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+            const year = targetDate.getFullYear();
+            const formattedDate = `${day}/${month}/${year}`;
+
+            const apiUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.magyp.gob.ar/sitio/areas/ss_mercados_agropecuarios/ws/ssma/precios_fob.php?Fecha=${formattedDate}`)}`;
+
             try {
-                const url = `https://query1.finance.yahoo.com/v8/finance/chart/${item.symbol}`;
-                const res = await fetch(url);
+                const res = await fetch(apiUrl);
+                if (!res.ok) throw new Error("No se pudo obtener datos de la API de SIO Granos");
 
-                if (!res.ok) throw new Error("No se pudo obtener datos");
+                const responseData = JSON.parse((await res.json()).contents);
 
-                const data = await res.json();
-                const meta = data.chart.result[0].meta;
+                if (responseData.posts && responseData.posts.length > 0) {
+                    const grainMap = {
+                        "07131090910B": "Soja",
+                        "10059090910B": "Maíz",
+                        "10019090910B": "Trigo"
+                    };
 
-                const last = meta.regularMarketPrice;
-                const previous = meta.chartPreviousClose;
-                const change = last - previous;
-                const changePercent = (change / previous) * 100;
+                    const displayedGrains = {};
 
-                const arrow = change >= 0 ? "↑" : "↓";
-                const changeClass = change >= 0 ? "positive" : "negative";
+                    responseData.posts.forEach(item => {
+                        const grainName = grainMap[item.posicion];
+                        if (grainName && !displayedGrains[grainName]) {
+                            displayedGrains[grainName] = true;
 
-                html += `
-                <div class="market-item">
-                    <div class="market-item-header">
-                        <div class="market-item-name">${item.name}</div>
-                        <div style="text-align: right;">
-                            <div class="market-item-price">$${last.toFixed(2)}</div>
-                            <div class="market-item-change ${changeClass}">
-                                ${arrow} ${Math.abs(change).toFixed(2)} (${changePercent.toFixed(2)}%)
+                            html += `
+                            <div class="market-item">
+                                <div class="market-item-header">
+                                    <div class="market-item-name">${grainName}</div>
+                                    <div style="text-align: right;">
+                                        <div class="market-item-price">$${item.precio.toFixed(2)}</div>
+                                        <div class="market-item-change positive">
+                                            N/A
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="market-item-details">
+                                    <div class="market-detail-item">
+                                        <span class="market-detail-label">Fecha</span>
+                                        <span class="market-detail-value">${item.fecha.split(' ')[0]}</span>
+                                    </div>
+                                    <div class="market-detail-item">
+                                        <span class="market-detail-label">Moneda</span>
+                                        <span class="market-detail-value">ARS</span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="market-item-details">
-                        <div class="market-detail-item">
-                            <span class="market-detail-label">Anterior</span>
-                            <span class="market-detail-value">${previous.toFixed(2)}</span>
-                        </div>
-                        <div class="market-detail-item">
-                            <span class="market-detail-label">Moneda</span>
-                            <span class="market-detail-value">USD</span>
-                        </div>
-                    </div>
-                </div>
-                `;
-
+                            `;
+                        }
+                    });
+                    dataFound = true; // Se encontraron datos, salir del bucle
+                }
             } catch (err) {
-                console.error(err);
-                html += `
-                <div class="market-error">
-                    No se pudo cargar ${item.name}
-                </div>`;
+                console.error(`Error al cargar datos del mercado para ${formattedDate}:`, err);
             }
+
+            if (!dataFound) {
+                targetDate.setDate(targetDate.getDate() - 1); // Retroceder un día
+            }
+        }
+
+        if (html === "") {
+            html = '<div class="market-error">No se encontraron datos de granos disponibles.</div>';
         }
 
         container.innerHTML = html;

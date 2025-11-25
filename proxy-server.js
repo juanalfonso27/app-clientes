@@ -40,4 +40,19 @@ app.get('/api/agro-news', async (req, res) => {
   }
 });
 
+app.get('/api/finance/:symbol', async (req, res) => {
+  try {
+    const { symbol } = req.params;
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    res.status(response.status).json(data);
+  } catch (err) {
+    console.error('Proxy error:', err && err.message ? err.message : err);
+    res.status(500).json({ error: 'Error en proxy al obtener datos financieros', details: err && err.message });
+  }
+});
+
 app.listen(PORT, () => console.log(`Proxy server listening on http://localhost:${PORT}`));
