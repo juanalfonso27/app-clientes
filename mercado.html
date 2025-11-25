@@ -6,59 +6,99 @@
   <title>Precios de granos en Paraguay</title>
   <style>
     body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #f9f9f9;
-  color: #333;
-  margin: 0;
-  padding: 0;
-}
-header {
-  background: #2e7d32;
-  color: white;
-  padding: 20px;
-  text-align: center;
-}
-main {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-  padding: 20px;
-}
-.grano {
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-.grano h2 {
-  margin-top: 0;
-  color: #2e7d32;
-}
-.dato {
-  margin: 8px 0;
-}
-footer {
-  text-align: center;
-  padding: 12px;
-  background: #eee;
-  font-size: 12px;
-  color: #666;
-}
-
+      font-family: 'Segoe UI', sans-serif;
+      background: #f9f9f9;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #2e7d32;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    main {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .grano {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      transition: transform 0.2s;
+    }
+    .grano:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .grano h2 {
+      margin-top: 0;
+      color: #2e7d32;
+      font-size: 1.3em;
+    }
+    .dato {
+      margin: 12px 0;
+      font-size: 0.95em;
+    }
+    .precio {
+      font-size: 1.8em;
+      font-weight: bold;
+      color: #1b5e20;
+      margin: 16px 0;
+    }
+    .variacion {
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      font-weight: bold;
+    }
+    .positivo {
+      background: #c8e6c9;
+      color: #1b5e20;
+    }
+    .negativo {
+      background: #ffcdd2;
+      color: #c62828;
+    }
+    .loading {
+      color: #666;
+      font-style: italic;
+    }
+    footer {
+      text-align: center;
+      padding: 12px;
+      background: #eee;
+      font-size: 12px;
+      color: #666;
+    }
+    .error-msg {
+      background: #ffebee;
+      color: #c62828;
+      padding: 12px;
+      border-radius: 4px;
+      margin: 20px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
   <header>
     <h1>🌾 Precio de granos en Paraguay</h1>
-    <p>Actualizado automáticamente con datos reales (retraso de 10–15 min)</p>
+    <p>Cotizaciones CBOT en tiempo real</p>
   </header>
 
   <main>
     <section class="grano">
       <h2>Soja (CBOT)</h2>
-      <div class="dato">
-        <strong>Precio:</strong> <span id="SOY-price">—</span> USD/ton
+      <div class="precio" id="SOY-price">
+        <span class="loading">Cargando...</span>
       </div>
       <div class="dato">
         <strong>Variación:</strong> <span id="SOY-change">—</span>
@@ -70,8 +110,8 @@ footer {
 
     <section class="grano">
       <h2>Maíz (CBOT)</h2>
-      <div class="dato">
-        <strong>Precio:</strong> <span id="CORN-price">—</span> USD/ton
+      <div class="precio" id="CORN-price">
+        <span class="loading">Cargando...</span>
       </div>
       <div class="dato">
         <strong>Variación:</strong> <span id="CORN-change">—</span>
@@ -83,8 +123,8 @@ footer {
 
     <section class="grano">
       <h2>Trigo (CBOT)</h2>
-      <div class="dato">
-        <strong>Precio:</strong> <span id="WHEAT-price">—</span> USD/ton
+      <div class="precio" id="WHEAT-price">
+        <span class="loading">Cargando...</span>
       </div>
       <div class="dato">
         <strong>Variación:</strong> <span id="WHEAT-change">—</span>
@@ -96,45 +136,89 @@ footer {
   </main>
 
   <footer>
-    <small>Fuente: Yahoo Finance (CBOT) — retraso de 10–15 min</small>
+    <small>Fuente: Yahoo Finance (CBOT) — Los datos pueden tener un retraso de 15-20 minutos</small>
   </footer>
 
   <script>
-    const ENDPOINT = '/api/quotes';
+    // Símbolos de Yahoo Finance para futuros de CBOT
+    const symbols = {
+      SOY: 'ZS=F',    // Soja
+      CORN: 'ZC=F',   // Maíz
+      WHEAT: 'ZW=F'   // Trigo
+    };
 
-async function fetchQuotes() {
-  const res = await fetch(ENDPOINT);
-  if (!res.ok) throw new Error('Error al obtener datos');
-  return res.json();
-}
+    // Conversión de cents/bushel a USD/tonelada
+    const conversion = {
+      SOY: 36.7437,    // 1 bushel soja = 60 lbs = 27.216 kg
+      CORN: 39.3683,   // 1 bushel maíz = 56 lbs = 25.4 kg
+      WHEAT: 36.7437   // 1 bushel trigo = 60 lbs = 27.216 kg
+    };
 
-function updateGrano(id, data) {
-  // Si no hay datos para este grano, no hacemos nada y evitamos un error.
-  if (!data) {
-    console.warn(`No se recibieron datos para ${id}`);
-    return;
-  }
-  document.getElementById(`${id}-price`).textContent = (data.price || 0).toFixed(2);
-  const sign = (data.change || 0) >= 0 ? '+' : '';
-  document.getElementById(`${id}-change`).textContent = `${sign}${(data.change || 0).toFixed(2)} (${sign}${((data.changePct || 0) * 100).toFixed(2)}%)`;
-  document.getElementById(`${id}-time`).textContent = data.ts ? new Date(data.ts * 1000).toLocaleTimeString() : '—';
-}
+    async function fetchQuote(symbol) {
+      try {
+        // Usando la API pública de Yahoo Finance
+        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const quote = data.chart.result[0];
+        const meta = quote.meta;
+        
+        return {
+          price: meta.regularMarketPrice,
+          previousClose: meta.previousClose,
+          change: meta.regularMarketPrice - meta.previousClose,
+          changePct: ((meta.regularMarketPrice - meta.previousClose) / meta.previousClose) * 100,
+          timestamp: meta.regularMarketTime
+        };
+      } catch (error) {
+        console.error(`Error fetching ${symbol}:`, error);
+        return null;
+      }
+    }
 
-async function refresh() {
-  try {
-    const quotes = await fetchQuotes();
-    updateGrano('SOY', quotes.SOY);
-    updateGrano('CORN', quotes.CORN);
-    updateGrano('WHEAT', quotes.WHEAT);
-  } catch (err) {
-    console.error('Error al actualizar:', err);
-  } finally {
-    setTimeout(refresh, 10000);
-  }
-}
+    function updateGrano(id, data, conversionFactor) {
+      if (!data) {
+        document.getElementById(`${id}-price`).innerHTML = '<span class="loading">Error al cargar</span>';
+        return;
+      }
 
-refresh();
+      // Convertir de cents/bushel a USD/tonelada
+      const priceInTons = data.price * conversionFactor;
+      const changeInTons = data.change * conversionFactor;
+      
+      document.getElementById(`${id}-price`).textContent = `$${priceInTons.toFixed(2)}`;
+      
+      const sign = data.change >= 0 ? '+' : '';
+      const variationClass = data.change >= 0 ? 'positivo' : 'negativo';
+      
+      document.getElementById(`${id}-change`).innerHTML = 
+        `<span class="variacion ${variationClass}">${sign}${changeInTons.toFixed(2)} (${sign}${data.changePct.toFixed(2)}%)</span>`;
+      
+      const date = new Date(data.timestamp * 1000);
+      document.getElementById(`${id}-time`).textContent = date.toLocaleString('es-PY');
+    }
 
+    async function refreshAll() {
+      try {
+        for (const [key, symbol] of Object.entries(symbols)) {
+          const data = await fetchQuote(symbol);
+          updateGrano(key, data, conversion[key]);
+          // Pequeña pausa entre peticiones para no saturar la API
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      } catch (error) {
+        console.error('Error al actualizar:', error);
+      }
+    }
+
+    // Actualizar al cargar y cada 60 segundos
+    refreshAll();
+    setInterval(refreshAll, 60000);
   </script>
 </body>
 </html>
