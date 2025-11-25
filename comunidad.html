@@ -595,10 +595,7 @@
 
     <div class="feed-section">
       <div id="feed" class="feed">
-        <!-- Loader para el scroll infinito -->
-        <div id="feedLoader" class="feed-loader">
-          Cargando más...
-        </div>
+        <!-- Las publicaciones se insertarán aquí dinámicamente -->
         <div class="empty-state hidden" id="emptyState">
           <div class="empty-icon">🌱</div>
           <h3>No hay publicaciones</h3>
@@ -744,70 +741,39 @@ window.deletePost = deletePost; // Exponer la función globalmente para el `oncl
         });
     }
 
-// --- Lógica de Carga Progresiva (Infinite Scroll) ---
-const POSTS_PER_PAGE = 10; // Cargar 10 publicaciones a la vez
-let lastVisiblePostDoc = null; // El "cursor" para la paginación
-let isLoadingPosts = false; // Flag para evitar cargas múltiples
-let allPostsLoaded = false; // Flag para saber si ya no hay más posts
-
-async function fetchPosts(startAfterDoc = null) {
-    if (isLoadingPosts || allPostsLoaded) return;
-    isLoadingPosts = true;
-    
-    const loader = document.getElementById('feedLoader');
+async function fetchPosts() {
     const emptyState = document.getElementById('emptyState');
-    
-    // Mostrar el loader al iniciar la carga
-    if (loader) loader.style.display = 'block';
+    const feed = document.getElementById('feed');
+
+    // Mostrar estado de carga inicial
+    feed.innerHTML = ''; // Limpiar el feed
+    emptyState.classList.remove('hidden');
+    emptyState.querySelector('p').textContent = 'Cargando publicaciones...';
 
     try {
         const postsRef = collection(db, 'community_posts');
-        let q;
-
-        if (startAfterDoc) {
-            q = query(postsRef, orderBy('createdAt', 'desc'), startAfter(startAfterDoc), limit(POSTS_PER_PAGE));
-        } else {
-            // Primera carga
-            document.querySelectorAll('.post').forEach(p => p.remove());
-            q = query(postsRef, orderBy('createdAt', 'desc'), limit(POSTS_PER_PAGE));
-        }
+        const q = query(postsRef, orderBy('createdAt', 'desc'));
 
         const snapshot = await getDocs(q);
         const posts = snapshot.docs;
 
-        if (posts.length === 0 && !startAfterDoc) {
+        emptyState.classList.add('hidden'); // Ocultar el estado de carga/vacío por defecto
+
+        if (posts.length === 0) {
             // Estado vacío: no hay publicaciones en la base de datos
             emptyState.classList.remove('hidden');
             emptyState.querySelector('p').textContent = 'Sé el primero en compartir';
-            if (loader) loader.style.display = 'none';
-            allPostsLoaded = true;
         } else {
             // Hay publicaciones, las renderizamos
-            emptyState.classList.add('hidden');
-
             posts.forEach(doc => {
                 renderSinglePost(doc.data(), doc.id);
             });
-
-            // Actualizar el cursor para la próxima carga
-            if (posts.length > 0) {
-                lastVisiblePostDoc = posts[posts.length - 1];
-            }
-
-            // Si se cargaron menos posts que el límite, significa que llegamos al final
-            if (posts.length < POSTS_PER_PAGE) {
-                allPostsLoaded = true;
-                console.log(PFX, 'Se han cargado todas las publicaciones.');
-                if (loader) loader.style.display = 'none';
-            }
         }
 
     } catch (err) {
         console.error(PFX, "Error al cargar posts:", err);
+        emptyState.classList.remove('hidden');
         emptyState.querySelector('p').textContent = 'Error al cargar publicaciones.';
-    } finally {
-        isLoadingPosts = false;
-        if (!allPostsLoaded && loader) loader.style.display = 'block';
     }
 }
 
@@ -845,8 +811,8 @@ function renderSinglePost(p, id) {
         `;
 
     // Insertar el nuevo post. El loader y el estado vacío ya están al final en el HTML.
-    // Usamos prepend para añadirlo al principio del feed.
-    feed.prepend(post);
+    // Usamos append porque fetchPosts ahora los trae todos ordenados.
+    feed.appendChild(post);
 }
 
 // Inicialización
@@ -1026,10 +992,6 @@ onAuthStateChanged(auth, async (user) => {
         await addDoc(collection(db, 'community_posts'), post);
         
         // Resetear y recargar para ver la nueva publicación al principio
-        lastVisiblePostDoc = null;
-        allPostsLoaded = false;
-        const loader = document.getElementById('feedLoader');
-        if (loader) loader.style.display = 'block'; // Asegurarse que el loader sea visible para la nueva carga
         fetchPosts();
         showToast('✓ Publicación creada');
 
@@ -1059,22 +1021,6 @@ onAuthStateChanged(auth, async (user) => {
       charCount.className = 'char-count';
       showToast('Formulario limpiado');
   });
-
-  // --- Configuración del Intersection Observer ---
-  const loader = document.getElementById('feedLoader');
-  const observer = new IntersectionObserver((entries) => {
-    // Si el loader es visible y no estamos ya cargando posts...
-    if (entries[0].isIntersecting && !isLoadingPosts) {
-      console.log(PFX, 'Loader visible, cargando más publicaciones...');
-      fetchPosts(lastVisiblePostDoc);
-    }
-  }, {
-    rootMargin: '0px 0px 200px 0px' // Empezar a cargar 200px antes de que llegue al final
-  });
-
-  if (loader) {
-    observer.observe(loader);
-  }
 
   fetchPosts(); // Carga inicial de publicaciones
 });
