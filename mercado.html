@@ -86,6 +86,12 @@
       margin: 20px;
       text-align: center;
     }
+    .status {
+      text-align: center;
+      padding: 8px;
+      font-size: 0.9em;
+      color: #666;
+    }
   </style>
 </head>
 <body>
@@ -93,6 +99,8 @@
     <h1>🌾 Precio de granos en Paraguay</h1>
     <p>Cotizaciones CBOT en tiempo real</p>
   </header>
+
+  <div class="status" id="status">Conectando...</div>
 
   <main>
     <section class="grano">
@@ -136,7 +144,7 @@
   </main>
 
   <footer>
-    <small>Fuente: Yahoo Finance (CBOT) — Los datos pueden tener un retraso de 15-20 minutos</small>
+    <small>Fuente: Yahoo Finance (CBOT) vía proxy CORS — Los datos pueden tener un retraso de 15-20 minutos</small>
   </footer>
 
   <script>
@@ -156,8 +164,8 @@
 
     async function fetchQuote(symbol) {
       try {
-        // Usando la API pública de Yahoo Finance
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
+        // Usando proxy CORS gratuito
+        const url = `https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
         const response = await fetch(url);
         
         if (!response.ok) {
@@ -204,15 +212,29 @@
     }
 
     async function refreshAll() {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = 'Actualizando precios...';
+      
       try {
+        let successCount = 0;
+        
         for (const [key, symbol] of Object.entries(symbols)) {
           const data = await fetchQuote(symbol);
           updateGrano(key, data, conversion[key]);
-          // Pequeña pausa entre peticiones para no saturar la API
-          await new Promise(resolve => setTimeout(resolve, 200));
+          if (data) successCount++;
+          // Pausa entre peticiones
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        
+        if (successCount > 0) {
+          const now = new Date().toLocaleTimeString('es-PY');
+          statusEl.textContent = `✓ Última actualización: ${now}`;
+        } else {
+          statusEl.textContent = '⚠ Error al conectar con el servidor';
         }
       } catch (error) {
         console.error('Error al actualizar:', error);
+        statusEl.textContent = '⚠ Error en la actualización';
       }
     }
 
