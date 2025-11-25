@@ -5,8 +5,8 @@ const urlsToCache = [
   '/firebase-config.js',
   '/firebase.js',
   '/manifest.json',
-  '/logo1.png',
-  '/logo1.png'
+  '/descargaLOGO.png',
+  '/descargaLOGO.png'
 ];
 
 // Evento de instalación: se abre el caché y se guardan los archivos del app-shell.
