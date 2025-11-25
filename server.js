@@ -3,6 +3,8 @@ import fetch from 'node-fetch';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+const app = express();
+
 // --- NUEVO ENDPOINT PARA COTIZACIONES DE GRANOS ---
 app.get('/api/quotes', async (req, res) => {
   const symbols = ['ZS=F', 'ZC=F', 'ZW=F']; // Soja, Maíz, Trigo
