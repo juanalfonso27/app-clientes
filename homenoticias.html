@@ -41,8 +41,8 @@
                     setTimeout(loadNewsFromApi, 50); // Cargar noticias
                 } else {
                     // El usuario no está logueado. Redirigir a la página de login.
-                    console.log(PFX, 'Usuario no autenticado. Redirigiendo a login.html');
-                    window.location.href = 'login.html';
+                    console.log(PFX, 'Usuario no autenticado. Redirigiendo a index.html');
+                    window.location.href = 'index.html';
                 }
             });
         } catch (e) {
@@ -1304,11 +1304,26 @@
 
         // Función para cargar el pronóstico del tiempo
         function loadWeatherForecast() {
+            const CACHE_KEY = 'weather_forecast_cache';
+            const CACHE_EXPIRATION = 30 * 60 * 1000; // 30 minutos en milisegundos
+
             const container = document.getElementById('weatherForecast');
+
+            // 1. Intentar cargar desde caché
+            try {
+                const cachedData = JSON.parse(localStorage.getItem(CACHE_KEY));
+                if (cachedData && (Date.now() - cachedData.timestamp < CACHE_EXPIRATION)) {
+                    console.log('Cargando pronóstico del tiempo desde caché.');
+                    renderWeatherForecast(cachedData.data);
+                    return; // Salir si el caché es válido
+                }
+            } catch (e) { /* Ignorar errores de caché */ }
+
             container.innerHTML = '<div class="weather-loading">Cargando pronóstico del tiempo...</div>';
 
             // Obtener ubicación del usuario
             if (navigator.geolocation) {
+                console.log('Solicitando nueva geolocalización para el pronóstico.');
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
                         const lat = position.coords.latitude;
@@ -1326,6 +1341,13 @@
                                 return response.json();
                             })
                             .then(data => {
+                                // 2. Guardar en caché antes de renderizar
+                                try {
+                                    const cachePayload = { timestamp: Date.now(), data: data };
+                                    localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
+                                } catch (e) { /* Ignorar si no se puede guardar */ }
+
+                                // 3. Renderizar los nuevos datos
                                 renderWeatherForecast(data);
                             })
                             .catch(error => {
@@ -1370,6 +1392,9 @@
 
         // Función para obtener precio de un commodity en tiempo real
         async function fetchMarketPrice(grain) {
+            // --- INICIO: Integración con Finnhub.io ---
+            const API_KEY = 'd4ipj5hr01qkv40jnlggd4ipj5hr01qkv40jnlh0'; // Tu clave de API
+
             // Mapeo de símbolos a códigos de Yahoo Finance
             const yahooSymbols = {
                 'SOYBEAN': 'ZS=F',  // Soybean Futures
@@ -1378,123 +1403,44 @@
                 'COFFEE': 'KC=F',   // Coffee Futures
                 'SUGAR': 'SB=F'     // Sugar Futures
             };
+            
+            const symbol = yahooSymbols[grain.symbol];
+            if (!symbol) return null;
 
-                const symbol = yahooSymbols[grain.symbol];
-            if (!symbol) {
-                throw new Error(`Símbolo no encontrado para ${grain.name}`);
-            }
+            // Endpoint de Finnhub para cotizaciones
+            const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${API_KEY}`;
 
             try {
-                // Usar proxy CORS público para acceder a Yahoo Finance sin API key
-                // Proxies disponibles: allorigins.win, corsproxy.io, etc.
-                const proxies = [
-                    'https://api.allorigins.win/raw?url=',
-                    'https://corsproxy.io/?',
-                    'https://api.codetabs.com/v1/proxy?quest='
-                ];
-                
-                const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
-                
-                // Intentar con cada proxy hasta que uno funcione
-                for (const proxy of proxies) {
-                    try {
-                        const proxyFullUrl = proxy + encodeURIComponent(yahooUrl);
-                        const response = await fetch(proxyFullUrl, {
-                            method: 'GET',
-                            headers: {
-                                'Accept': 'application/json'
-                            }
-                        });
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            
-                            if (data.chart && data.chart.result && data.chart.result[0]) {
-                                const result = data.chart.result[0];
-                                const meta = result.meta;
-                                const indicators = result.indicators;
-                                
-                                if (meta) {
-                                    // Intentar obtener datos de meta primero (más confiable)
-                                    const currentPrice = meta.regularMarketPrice || meta.previousClose || meta.chartPreviousClose;
-                                    const previousPrice = meta.previousClose || meta.chartPreviousClose || currentPrice;
-                                    
-                                    if (currentPrice) {
-                                        const change = currentPrice - previousPrice;
-                                        const changePercent = (change / previousPrice) * 100;
-                                        
-                                        // Intentar obtener datos de indicators si están disponibles
-                                        let high = meta.regularMarketDayHigh || currentPrice;
-                                        let low = meta.regularMarketDayLow || currentPrice;
-                                        let volume = meta.regularMarketVolume || 0;
-                                        
-                                        if (indicators && indicators.quote && indicators.quote[0]) {
-                                            const quote = indicators.quote[0];
-                                            const highs = quote.high.filter(p => p !== null);
-                                            const lows = quote.low.filter(p => p !== null);
-                                            const volumes = quote.volume.filter(v => v !== null);
-                                            
-                                            if (highs.length > 0) high = Math.max(...highs);
-                                            if (lows.length > 0) low = Math.min(...lows);
-                                            if (volumes.length > 0) volume = volumes.reduce((a, b) => a + b, 0);
-                                        }
-                                        
-                                        return {
-                                            name: grain.name,
-                                            symbol: grain.symbol,
-                                            price: parseFloat(currentPrice.toFixed(2)),
-                                            change: parseFloat(change.toFixed(2)),
-                                            changePercent: parseFloat(changePercent.toFixed(2)),
-                                            high: parseFloat(high.toFixed(2)),
-                                            low: parseFloat(low.toFixed(2)),
-                                            volume: Math.floor(volume),
-                                            unit: grain.unit
-                                        };
-                                    }
-                                }
-                            }
-                        }
-                    } catch (proxyError) {
-                        // Continuar con el siguiente proxy
-                        continue;
-                    }
+                const response = await fetch(url);
+                if (!response.ok) {
+                    // Si la respuesta no es OK (ej. 401, 429, 500), lanza un error.
+                    throw new Error(`Finnhub API respondió con estado: ${response.status}`);
                 }
-                
-                throw new Error('Todos los proxies fallaron');
+                const data = await response.json();
+
+                // Finnhub devuelve 'c' (current price) como 0 si no hay datos o el mercado está cerrado.
+                if (data && data.c) {
+                    return {
+                        name: grain.name,
+                        symbol: grain.symbol,
+                        price: parseFloat(data.c.toFixed(2)),
+                        change: parseFloat(data.d.toFixed(2)), // 'd' es el cambio
+                        changePercent: parseFloat(data.dp.toFixed(2)), // 'dp' es el cambio porcentual
+                        high: parseFloat(data.h.toFixed(2)), // 'h' es el máximo del día
+                        low: parseFloat(data.l.toFixed(2)),  // 'l' es el mínimo del día
+                        volume: 0, // El volumen no viene en este endpoint gratuito
+                        unit: grain.unit
+                    };
+                }
+                // Si no hay precio, devolvemos null para que se maneje como un fallo.
+                return null;
+
             } catch (error) {
                 console.log(`Error al buscar ${grain.name} vía API:`, error.message);
-                
-                // Fallback: usar datos base con variación realista
-                const basePrices = {
-                    'SOYBEAN': { price: 12.50, change: 0.15, high: 12.80, low: 12.20 },
-                    'CORN': { price: 4.80, change: -0.05, high: 4.95, low: 4.65 },
-                    'WHEAT': { price: 6.20, change: 0.10, high: 6.40, low: 6.00 },
-                    'COFFEE': { price: 1.85, change: -0.02, high: 1.90, low: 1.80 },
-                    'SUGAR': { price: 0.22, change: 0.01, high: 0.23, low: 0.21 }
-                };
-
-                const base = basePrices[grain.symbol] || { price: 0, change: 0, high: 0, low: 0 };
-                const now = new Date();
-                const hour = now.getHours();
-                const dayOfWeek = now.getDay();
-                const marketActivity = (hour >= 9 && hour <= 16) ? 1.5 : 0.5;
-                const dayVariation = (dayOfWeek >= 1 && dayOfWeek <= 5) ? 1 : 0.3;
-                
-                const variation = (Math.random() - 0.5) * 0.1 * marketActivity * dayVariation;
-                const changeVariation = (Math.random() - 0.5) * 0.05 * marketActivity * dayVariation;
-                
-                return {
-                    name: grain.name,
-                    symbol: grain.symbol,
-                    price: parseFloat((base.price + variation).toFixed(2)),
-                    change: parseFloat((base.change + changeVariation).toFixed(2)),
-                    changePercent: parseFloat((((base.change + changeVariation) / (base.price + variation)) * 100).toFixed(2)),
-                    high: parseFloat((base.high + Math.random() * 0.1).toFixed(2)),
-                    low: parseFloat((base.low - Math.random() * 0.1).toFixed(2)),
-                    volume: Math.floor(Math.random() * 1000000) + 500000,
-                    unit: grain.unit
-                };
+                // En lugar de devolver datos falsos, devolvemos null para indicar un fallo.
+                return null;
             }
+            // --- FIN: Integración con Finnhub.io ---
         }
 
         // Función para renderizar los datos del mercado
@@ -1509,7 +1455,13 @@
             let html = '';
             
             marketData.forEach(item => {
-                const isPositive = item.change >= 0;
+                // Si un item es nulo, es porque falló la carga para ese grano.
+                if (!item) {
+                    // Podríamos incluso mostrar una tarjeta de error para ese grano específico,
+                    // pero por ahora, simplemente lo saltamos.
+                    return;
+                }
+                const isPositive = item.change >= 0; // Asegurarse de que item no es nulo
                 const changeIcon = isPositive ? '↑' : '↓';
                 
                 html += `
@@ -1545,6 +1497,13 @@
                     </div>
                 `;
             });
+
+            // Si después de recorrer todos los items, el html sigue vacío,
+            // significa que ninguno pudo ser cargado. Mostramos un mensaje.
+            if (html.trim() === '') {
+                container.innerHTML = '<div class="market-error">Datos del mercado no disponibles en este momento.</div>';
+                return;
+            }
 
             container.innerHTML = html;
         }

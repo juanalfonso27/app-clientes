@@ -45,6 +45,13 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // --- CORRECCIÓN ---
+  // Ignorar todas las solicitudes que no sean GET.
+  // Esto es crucial para que las peticiones POST de Firestore no fallen.
+  if (request.method !== 'GET') {
+    return; // Dejar que el navegador maneje la solicitud normalmente.
+  }
+
   // Estrategia "Stale-While-Revalidate" para las API de Firebase Firestore.
   // Esto es lo que permite que los datos se actualicen.
   if (url.hostname === 'firestore.googleapis.com') {
