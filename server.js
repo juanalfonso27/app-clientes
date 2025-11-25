@@ -9,11 +9,9 @@ const NEWSDATA_API_KEY = 'pub_...'; // Reemplaza con tu clave si la usas
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Servir archivos estáticos desde la carpeta 'public'
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-app.use(express.static(path.join(__dirname, 'public')));
-
+// En Vercel, la carpeta 'public' se sirve automáticamente.
+// No es necesario usar express.static para los archivos estáticos.
+// La función de la API solo se encargará de las rutas /api/*.
 app.get('/api/agro-news', async (req, res) => {
   if (!NEWSDATA_API_KEY || NEWSDATA_API_KEY === 'pub_551eaeced3014a828336e2840cc5d63c') {
     return res.status(500).json({ error: 'Configura la API key de NewsData.io en server.js' });
