@@ -1370,70 +1370,81 @@
 
         // Función para cargar datos del mercado de granos
         function loadMarketData() {
+            const CACHE_KEY = 'market_data_cache';
+            const CACHE_EXPIRATION = 30 * 60 * 1000; // 30 minutos
             const container = document.getElementById('marketData');
+
+            // 1. Intentar cargar desde caché
+            try {
+                const cachedData = JSON.parse(localStorage.getItem(CACHE_KEY));
+                if (cachedData && (Date.now() - cachedData.timestamp < CACHE_EXPIRATION)) {
+                    console.log('Cargando datos de mercado desde caché.');
+                    renderMarketData(cachedData.data);
+                    return;
+                }
+            } catch (e) { /* Ignorar errores de caché */ }
+
             container.innerHTML = '<div class="market-loading">Cargando datos del mercado...</div>';
 
             // Granos principales a mostrar
+            // Símbolos para la nueva API (ej: Bolsa de Chicago - CBOT)
             const grains = [
-                { name: 'Soja', symbol: 'SOYBEANS', unit: 'USD/tonelada', conversionFactor: 36.744 }, // bushels por tonelada
-                { name: 'Maíz', symbol: 'CORN', unit: 'USD/tonelada', conversionFactor: 39.368 },     // bushels por tonelada
-                { name: 'Trigo', symbol: 'WHEAT', unit: 'USD/tonelada', conversionFactor: 36.744 },    // bushels por tonelada
-                { name: 'Café', symbol: 'COFFEE', unit: 'USD/tonelada', conversionFactor: 2204.62 },   // libras por tonelada
-                { name: 'Azúcar', symbol: 'SUGAR', unit: 'USD/tonelada', conversionFactor: 2204.62 }    // libras por tonelada
+                { name: 'Soja', symbol: 'ZS', unit: 'USD/bushel' },
+                { name: 'Maíz', symbol: 'ZC', unit: 'USD/bushel' },
+                { name: 'Trigo', symbol: 'ZW', unit: 'USD/bushel' },
+                { name: 'Café', symbol: 'KC', unit: 'USD/libra' },
+                { name: 'Azúcar', symbol: 'SB', unit: 'USD/libra' }
             ];
 
-         
             Promise.all(grains.map(grain => fetchMarketPrice(grain)))
                 .then(results => {
-                    renderMarketData(results);
+                    const validResults = results.filter(r => r !== null);
+                    // 2. Guardar en caché
+                    try {
+                        const cachePayload = { timestamp: Date.now(), data: validResults };
+                        localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
+                    } catch (e) { /* Ignorar si no se puede guardar */ }
+
+                    // 3. Renderizar
+                    renderMarketData(validResults);
                 })
                 .catch(error => {
-                        console.error('Error:', error);
-                        container.innerHTML = '<div class="market-error">Error al cargar los datos del mercado. Intente nuevamente más tarde.</div>';
-                    });
+                    console.error('Error:', error);
+                    container.innerHTML = '<div class="market-error">Error al cargar los datos del mercado. Intente nuevamente más tarde.</div>';
+                });
         }
 
         // Función para obtener precio de un commodity en tiempo real
         async function fetchMarketPrice(grain) {
             const symbol = grain.symbol;
-            if (!symbol) return null;
-
-            // Endpoint de Alpha Vantage para commodities
-            const url = `https://www.alphavantage.co/query?function=${symbol}&interval=daily&apikey=${ALPHAVANTAGE_API_KEY}`;
+            // Usaremos una API pública y gratuita que no requiere KEY para datos de commodities.
+            // Esta API devuelve datos con un ligero retraso, lo cual es ideal para este caso de uso.
+            const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbol}=F`;
 
             try {
                 const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`Alpha Vantage API respondió con estado: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`La API de mercado respondió con estado: ${response.status}`);
+                
                 const data = await response.json();
+                const result = data?.quoteResponse?.result?.[0];
 
-                // Alpha Vantage devuelve el precio más reciente en el primer elemento del array 'data'.
-                // Nota: Esta API no provee cambio diario, máximo o mínimo.
-                if (data && data.data && data.data.length > 0) {
-                    const latestData = data.data[0];
-                    // El precio viene en centavos por bushel/libra, lo pasamos a dólares.
-                    const priceInDollars = parseFloat(latestData.value) / 100;
-                    
-                    // Convertir el precio a USD por tonelada
-                    const pricePerTon = priceInDollars * (grain.conversionFactor || 1);
-
-                    if (!isNaN(pricePerTon) && pricePerTon > 0) {
+                if (result && result.regularMarketPrice) {
                     return {
                         name: grain.name,
                         symbol: grain.symbol,
-                            price: pricePerTon,
-                            // Alpha Vantage no provee estos datos en este endpoint
-                            change: 0, changePercent: 0, high: 0, low: 0, volume: 0,
+                        price: result.regularMarketPrice,
+                        change: result.regularMarketChange,
+                        changePercent: result.regularMarketChangePercent,
+                        high: result.regularMarketDayHigh,
+                        low: result.regularMarketDayLow,
+                        volume: result.regularMarketVolume,
                         unit: grain.unit
                     };
-                }
                 }
                 return null;
 
             } catch (error) {
-                console.error(`Error al buscar ${grain.name} vía API:`, error.message);
-                // En lugar de devolver datos falsos, devolvemos null para indicar un fallo.
+                console.error(`Error al buscar ${grain.name} (${symbol}) vía API:`, error.message);
                 return null;
             }
         }
@@ -1441,61 +1452,53 @@
         // Función para renderizar los datos del mercado
         function renderMarketData(marketData) {
             const container = document.getElementById('marketData');
-            
-            if (!marketData || marketData.length === 0) {
+
+            const validData = marketData.filter(item => item && typeof item.price === 'number');
+
+            if (validData.length === 0) {
                 container.innerHTML = '<div class="market-error">No se pudieron cargar los datos del mercado.</div>';
                 return;
             }
 
             let html = '';
-            
-            marketData.forEach(item => {
-                // Si un item es nulo, es porque falló la carga para ese grano o no había datos.
-                if (!item) {
-                    // Podríamos incluso mostrar una tarjeta de error para ese grano específico,
-                    // pero por ahora, simplemente lo saltamos.
-                    return;
-                }
-                // Como Alpha Vantage no provee el cambio, ocultamos esa parte.
-                // const isPositive = item.change >= 0;
-                // const changeIcon = isPositive ? '↑' : '↓';
-                
+
+            validData.forEach(item => {
+                const isPositive = item.change >= 0;
+                const changeClass = isPositive ? 'positive' : 'negative';
+                const changeIcon = isPositive ? '↑' : '↓';
+
                 html += `
                     <div class="market-item">
                         <div class="market-item-header">
                             <div class="market-item-name">${item.name}</div>
                             <div>
                                 <div class="market-item-price">$${item.price.toFixed(2)}</div>
+                                <div class="market-item-change ${changeClass}">
+                                    ${changeIcon} ${item.change.toFixed(2)} (${item.changePercent.toFixed(2)}%)
+                                </div>
                             </div>
                         </div>
                         <div class="market-item-details">
                             <div class="market-detail-item">
                                 <span class="market-detail-label">Máxima</span>
-                                <span class="market-detail-value">--</span>
+                                <span class="market-detail-value">${item.high ? item.high.toFixed(2) : '--'}</span>
                             </div>
                             <div class="market-detail-item">
                                 <span class="market-detail-label">Mínima</span>
-                                <span class="market-detail-value">--</span>
+                                <span class="market-detail-value">${item.low ? item.low.toFixed(2) : '--'}</span>
                             </div>
                             <div class="market-detail-item">
-                                <span class="market-detail-label">Volume</span>
-                                <span class="market-detail-value">${item.volume.toLocaleString('es-AR')}</span>
+                                <span class="market-detail-label">Volumen</span>
+                                <span class="market-detail-value">${item.volume ? item.volume.toLocaleString('es-AR') : '--'}</span>
                             </div>
                             <div class="market-detail-item">
                                 <span class="market-detail-label">Unidad</span>
-                                <span class="market-detail-value">${item.unit || '--'}</span>
+                                <span class="market-detail-value">${item.unit}</span>
                             </div>
                         </div>
                     </div>
                 `;
             });
-
-            // Si después de recorrer todos los items, el html sigue vacío,
-            // significa que ninguno pudo ser cargado. Mostramos un mensaje.
-            if (html.trim() === '') {
-                container.innerHTML = '<div class="market-error">Datos del mercado no disponibles en este momento. Intente nuevamente más tarde.</div>';
-                return;
-            }
 
             container.innerHTML = html;
         }
@@ -1503,45 +1506,43 @@
         // Funcionalidad de navegación inferior
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', function() {
-                const label = this.querySelector('.nav-label');
+                const labelElement = this.querySelector('.nav-label');
+                if (!labelElement) return;
+                const label = labelElement.textContent.trim();
 
                 // Acción del botón "Entrar"
-                if (label && label.textContent.trim() === 'Entrar') {
+                if (label === 'Entrar') {
                     window.location.href = 'index.html';
                     return;
                 }
 
-                // Acción del botón "Mercado" en la navegación inferior:
-                if (label && label.textContent.trim() === 'Mercado') {
-                    // Marcar el nav activo
-                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                    this.classList.add('active');
-
-                    // Desactivar pestañas superiores
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-
-                    // Mostrar sección de mercado y cargar datos
-                    document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
-                    document.getElementById('marketSection').classList.add('active');
-                    if (typeof loadMarketData === 'function') loadMarketData();
-                    return;
-                }
-
-                // Acción del botón "Pedidos" -> abrir página de pedidos
-                if (label && label.textContent.trim() === 'Pedidos') {
+                if (label === 'Pedidos') {
                     window.location.href = 'pedidos.html';
                     return;
                 }
 
-                // Acción del botón "Comunidad" -> abrir página de comunidad
-                if (label && label.textContent.trim() === 'Comunidad') {
+                if (label === 'Comunidad') {
                     window.location.href = 'comunidad.html';
                     return;
                 }
 
-                // Comportamiento por defecto para los demás botones
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                this.classList.add('active');
+                // Acción para el botón "Mercado"
+                if (label === 'Mercado') {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+                    document.getElementById('marketSection').classList.add('active');
+                    if (typeof loadMarketData === 'function') loadMarketData();
+                }
+
+                // Marcar el botón correcto como activo
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    const navLabel = nav.querySelector('.nav-label');
+                    if (navLabel && navLabel.textContent.trim() === label) {
+                        nav.classList.add('active');
+                    } else {
+                        nav.classList.remove('active');
+                    }
+                });
             });
         });
 
@@ -1696,6 +1697,17 @@
 
                 // Sección Mercado
                 if (text === 'Mercado') {
+                    // Activar el botón de navegación inferior correspondiente
+                    document.querySelectorAll('.nav-item').forEach(nav => {
+                        const navLabel = nav.querySelector('.nav-label');
+                        if (navLabel && navLabel.textContent.trim() === 'Mercado') {
+                            nav.classList.add('active');
+                        } else {
+                            nav.classList.remove('active');
+                        }
+                    });
+
+                    // Ocultar otras secciones y mostrar la de mercado
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                     document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
                     const marketSection = document.getElementById('marketSection');
