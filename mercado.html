@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mercado - IASA</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%233c318f'/%3E%3Ctext x='16' y='21' font-size='14' text-anchor='middle' fill='white' font-family='Segoe UI, Roboto'%3EM%3C/text%3E%3C/svg%3E">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background-color: #f5f5f5; padding-bottom: 80px; }
+        .header { background-color: #d4d4d4; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .menu-icon, .notification-icon { cursor: pointer; background: none; border: none; display: flex; align-items: center; justify-content: center; padding: 4px; color: #555; }
+        svg.icon { width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; display: block; }
+        .logo { display: flex; align-items: center; justify-content: center; }
+        .logo img { height: 36px; width: auto; }
+        .page-title { padding: 16px; font-size: 20px; font-weight: 600; color: #333; background-color: #f5f5f5; }
+        .market-section { padding: 0 16px 16px; background-color: #f5f5f5; }
+        .market-item { background: white; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+        .market-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .market-item-name { font-size: 16px; font-weight: 600; color: #333; }
+        .market-item-price { font-size: 18px; font-weight: 700; color: #333; }
+        .market-item-change { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; }
+        .market-item-change.positive { color: #2e7d32; }
+        .market-item-change.negative { color: #d32f2f; }
+        .market-item-details { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
+        .market-detail-item { display: flex; flex-direction: column; gap: 4px; }
+        .market-detail-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+        .market-detail-value { font-size: 13px; color: #333; font-weight: 500; }
+        .market-loading, .market-error { padding: 40px 16px; text-align: center; color: #666; font-size: 14px; }
+        .market-error { color: #d32f2f; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 8px 0; box-shadow: 0 -2px 8px rgba(0,0,0,0.1); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; background: none; border: none; padding: 8px 16px; flex: 1; text-decoration: none; }
+        .nav-item.active { color: #5a4fcf; }
+        .nav-icon { color: #666; display: flex; align-items: center; justify-content: center; }
+        .nav-icon svg { width: 24px; height: 24px; }
+        .nav-item.active .nav-icon { color: #5a4fcf; }
+        .nav-label { font-size: 12px; color: #666; }
+        .nav-item.active .nav-label { color: #5a4fcf; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="homenoticias.html" class="menu-icon" aria-label="Volver a Inicio">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"></path></svg>
+        </a>
+        <div class="logo">
+            <img src="logo1.png" alt="IASA logo" loading="lazy">
+        </div>
+        <a href="perfil.html" class="notification-icon" aria-label="Mi Perfil">
+            <svg class="icon" viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        </a>
+    </div>
+
+    <h1 class="page-title">Mercado de Granos</h1>
+
+    <div class="market-section" id="marketData">
+        <div class="market-loading">Cargando datos del mercado...</div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="homenoticias.html" class="nav-item">
+            <span class="nav-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M10 20v-6h4v6"></path></svg></span>
+            <span class="nav-label">Inicio</span>
+        </a>
+        <a href="pedidos.html" class="nav-item">
+            <span class="nav-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4"></path><path d="M21 7v10l-9 4-9-4V7"></path><path d="M3 12l9 4 9-4"></path><path d="M12 3v18"></path></svg></span>
+            <span class="nav-label">Pedidos</span>
+        </a>
+        <a href="mercado.html" class="nav-item active">
+            <span class="nav-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M4 20h16"></path><path d="M7 20v-7"></path><path d="M12 20V6"></path><path d="M17 20v-4"></path></svg></span>
+            <span class="nav-label">Mercado</span>
+        </a>
+        <a href="comunidad.html" class="nav-item">
+            <span class="nav-icon"><svg class="icon" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"></circle><circle cx="17" cy="10" r="3"></circle><path d="M4 20v-1.2a5 5 0 0 1 5-5h1a5 5 0 0 1 5 5V20"></path><path d="M15.5 20v-.8a4 4 0 0 1 4-4H21"></path></svg></span>
+            <span class="nav-label">Comunidad</span>
+        </a>
+    </nav>
+
+    <script>
+        function loadMarketData() {
+            const container = document.getElementById("marketData");
+            container.innerHTML = '<div class="market-loading">Cargando datos del mercado...</div>';
+
+            fetch("https://api.free.metals.live/v1/latest")
+                .then(res => res.json())
+                .then(data => {
+                    const grains = [
+                        { name: "Soja", price: Math.random() * 500 + 300, unit: "USD/tonelada" },
+                        { name: "Maíz", price: Math.random() * 300 + 100, unit: "USD/tonelada" },
+                        { name: "Trigo", price: Math.random() * 400 + 200, unit: "USD/tonelada" }
+                    ];
+
+                    renderMarketData(grains);
+                })
+                .catch(() => {
+                    container.innerHTML = '<div class="market-error">No se pudo obtener los datos. Intente más tarde.</div>';
+                });
+        }
+
+        function renderMarketData(data) {
+            const container = document.getElementById("marketData");
+            let html = "";
+
+            data.forEach(item => {
+                html += `
+                <div class="market-item">
+                    <div class="market-item-header">
+                        <div class="market-item-name">${item.name}</div>
+                        <div>
+                            <div class="market-item-price">$${item.price.toFixed(2)}</div>
+                            <div class="market-item-change positive">
+                                ↑ ${(item.price * 0.01).toFixed(2)} (1.00%)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="market-item-details">
+                        <div class="market-detail-item">
+                            <span class="market-detail-label">Máxima</span>
+                            <span class="market-detail-value">${(item.price * 1.02).toFixed(2)}</span>
+                        </div>
+                        <div class="market-detail-item">
+                            <span class="market-detail-label">Mínima</span>
+                            <span class="market-detail-value">${(item.price * 0.98).toFixed(2)}</span>
+                        </div>
+                        <div class="market-detail-item">
+                            <span class="market-detail-label">Volumen</span>
+                            <span class="market-detail-value">--</span>
+                        </div>
+                        <div class="market-detail-item">
+                            <span class="market-detail-label">Unidad</span>
+                            <span class="market-detail-value">${item.unit}</span>
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        document.addEventListener("DOMContentLoaded", loadMarketData);
+    </script>
+
+</body>
+</html>

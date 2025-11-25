@@ -614,19 +614,6 @@
         }
 
         /* Market Section */
-        .market-section {
-            padding: 16px;
-            background-color: #f5f5f5;
-        }
-
-        .market-item {
-            background: white;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-        }
-
         .market-item-header {
             display: flex;
             justify-content: space-between;
@@ -660,47 +647,6 @@
 
         .market-item-change.negative {
             color: #d32f2f;
-        }
-
-        .market-item-details {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #f0f0f0;
-        }
-
-        .market-detail-item {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .market-detail-label {
-            font-size: 11px;
-            color: #999;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .market-detail-value {
-            font-size: 13px;
-            color: #333;
-            font-weight: 500;
-        }
-
-        .market-loading {
-            padding: 40px 16px;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-        }
-
-        .market-error {
-            padding: 40px 16px;
-            text-align: center;
-            color: #d32f2f;
-            font-size: 14px;
         }
 
         /* View All Link */
@@ -1014,13 +960,6 @@
         </div>
     </div>
 
-    <!-- Market Section -->
-        <div class="content-section" id="marketSection">
-        <div class="market-section" id="marketData">
-            <div class="market-loading">Cargando datos del mercado...</div>
-        </div>
-    </div>
-
     <!-- Bottom Navigation -->
     <nav class="bottom-nav">
         <button class="nav-item active">
@@ -1034,7 +973,7 @@
             <span class="nav-label">Inicio</span>
         </button>
         
-        <button class="nav-item">
+        <a href="pedidos.html" class="nav-item" style="text-decoration: none;">
             <span class="nav-icon" aria-hidden="true">
                 <svg class="icon" viewBox="0 0 24 24">
                     <path d="M3 7l9-4 9 4"></path>
@@ -1044,8 +983,8 @@
                 </svg>
             </span>
             <span class="nav-label">Pedidos</span>
-        </button>
-        <button class="nav-item">
+        </a>
+        <a href="mercado.html" class="nav-item" style="text-decoration: none;">
             <span class="nav-icon" aria-hidden="true">
                 <svg class="icon" viewBox="0 0 24 24">
                     <path d="M4 20h16"></path>
@@ -1055,8 +994,8 @@
                 </svg>
             </span>
             <span class="nav-label">Mercado</span>
-        </button>
-        <button class="nav-item">
+        </a>
+        <a href="comunidad.html" class="nav-item" style="text-decoration: none;">
             <span class="nav-icon" aria-hidden="true">
                 <svg class="icon" viewBox="0 0 24 24">
                     <circle cx="9" cy="8" r="3.5"></circle>
@@ -1066,7 +1005,7 @@
                 </svg>
             </span>
             <span class="nav-label">Comunidad</span>
-        </button>
+        </a>
     </nav>
 
     <script>
@@ -1095,9 +1034,6 @@
                 } else if (tabType === 'weather') {
                     document.getElementById('weatherSection').classList.add('active');
                     loadWeatherForecast();
-                } else if (tabType === 'market') {
-                    document.getElementById('marketSection').classList.add('active');
-                    loadMarketData();
                 }
             });
         });
@@ -1136,7 +1072,7 @@
         // https://open-meteo.com/
         const WEATHER_API_URL = 'https://api.open-meteo.com/v1/forecast';
         const ALPHAVANTAGE_API_KEY = 'NY5V6BV99829NM8C'; // Clave de Alpha Vantage (no usada actualmente para mercado)
-        const FINNHUB_API_KEY = 'd4ipj5hr01qkv40jnlggd4ipj5hr01qkv40jnlh0'; // ¡Reemplaza esto con tu nueva clave de Finnhub!
+        
         // Función para obtener el icono del clima según el código de Open-Meteo
         function getWeatherIcon(weatherCode) {
             // Códigos de Open-Meteo Weather Code (WMO)
@@ -1366,119 +1302,6 @@
             }
         }
 
-        // Función para cargar datos del mercado de granos
-        function loadMarketData() {
-            const container = document.getElementById('marketData');
-            container.innerHTML = '<div class="market-loading">Cargando datos del mercado...</div>';
-
-            // Granos principales a mostrar
-            // Símbolos para la nueva API (ej: Bolsa de Chicago - CBOT)
-            // OANDA:XAU_USD (Oro), OANDA:XAG_USD (Plata)
-            // FINNHUB: ZS (Soja), ZC (Maíz), ZW (Trigo), KC (Café), SB (Azúcar)
-            const grains = [
-                { name: 'Soja', symbol: 'OANDA:SOYBN_USD', unit: 'USD/bushel' },
-                { name: 'Maíz', symbol: 'OANDA:CORN_USD', unit: 'USD/bushel' },
-                { name: 'Trigo', symbol: 'OANDA:WHEAT_USD', unit: 'USD/bushel' }
-            ];
-
-            Promise.all(grains.map(grain => fetchMarketPrice(grain)))
-                .then(results => {
-                    const validResults = results.filter(r => r !== null);
-                    renderMarketData(validResults);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    container.innerHTML = '<div class="market-error">Error al cargar los datos del mercado. Intente nuevamente más tarde.</div>';
-                });
-        }
-
-        // Función para obtener precio de un commodity en tiempo real
-        async function fetchMarketPrice(grain) {
-            const symbol = grain.symbol;
-            // Usaremos la API de Finnhub, que es más estable.
-            const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`;
-
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`La API de mercado (Finnhub) respondió con estado: ${response.status}`);
-                
-                const result = await response.json();
-
-                // Finnhub devuelve 'c' para precio actual, 'd' para cambio, 'dp' para cambio porcentual, etc.
-                if (result && result.c > 0) {
-                    return {
-                        name: grain.name,
-                        symbol: grain.symbol,
-                        price: result.c, // Current price
-                        change: result.d, // Change
-                        changePercent: result.dp, // Percent change
-                        high: result.h, // Day high
-                        low: result.l, // Day low
-                        volume: result.t, // 't' es timestamp, Finnhub no provee volumen en este endpoint
-                        unit: grain.unit
-                    };
-                }
-                return null;
-            } catch (error) {
-                console.error(`Error al buscar ${grain.name} (${symbol}) vía API:`, error.message);
-                return null;
-            }
-        }
-
-        // Función para renderizar los datos del mercado
-        function renderMarketData(marketData) {
-            const container = document.getElementById('marketData');
-
-            const validData = marketData.filter(item => item && typeof item.price === 'number');
-
-            if (validData.length === 0) {
-                container.innerHTML = '<div class="market-error">No se pudieron cargar los datos del mercado.</div>';
-                return;
-            }
-
-            let html = '';
-
-            validData.forEach(item => {
-                const isPositive = item.change >= 0;
-                const changeClass = isPositive ? 'positive' : 'negative';
-                const changeIcon = isPositive ? '↑' : '↓';
-
-                html += `
-                    <div class="market-item">
-                        <div class="market-item-header">
-                            <div class="market-item-name">${item.name}</div>
-                            <div>
-                                <div class="market-item-price">$${item.price.toFixed(2)}</div>
-                                <div class="market-item-change ${changeClass}">
-                                    ${changeIcon} ${item.change.toFixed(2)} (${item.changePercent.toFixed(2)}%)
-                                </div>
-                            </div>
-                        </div>
-                        <div class="market-item-details">
-                            <div class="market-detail-item">
-                                <span class="market-detail-label">Máxima</span>
-                                <span class="market-detail-value">${item.high ? item.high.toFixed(2) : '--'}</span>
-                            </div>
-                            <div class="market-detail-item">
-                                <span class="market-detail-label">Mínima</span>
-                                <span class="market-detail-value">${item.low ? item.low.toFixed(2) : '--'}</span>
-                            </div>
-                            <div class="market-detail-item">
-                                <span class="market-detail-label">Volumen</span>
-                                <span class="market-detail-value">--</span>
-                            </div>
-                            <div class="market-detail-item">
-                                <span class="market-detail-label">Unidad</span>
-                                <span class="market-detail-value">${item.unit}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-        }
-
         // Funcionalidad de navegación inferior
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', function() {
@@ -1486,45 +1309,18 @@
                 if (!labelElement) return;
                 const label = labelElement.textContent.trim();
 
-                // Marcar el botón correcto como activo
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                this.classList.add('active');
-
-                // Acción del botón "Entrar"
-                if (label === 'Entrar') {
-                    window.location.href = 'index.html';
-                    return;
-                }
-
-                if (label === 'Pedidos') {
-                    window.location.href = 'pedidos.html';
-                    return;
-                }
-
-                if (label === 'Comunidad') {
-                    window.location.href = 'comunidad.html';
-                    return;
-                }
-
                 // Acción para el botón "Inicio"
                 if (label === 'Inicio') {
-                    // Ocultar mercado y mostrar las pestañas principales
-                    document.getElementById('marketSection').classList.remove('active');
+                    // Marcar el botón correcto como activo
+                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Mostrar las pestañas principales
                     document.querySelector('.tabs').style.display = '';
                     // Activar la primera pestaña por defecto (Noticias)
                     document.querySelector('.tab[data-tab="news"]').click();
                 }
 
-                // Acción para el botón "Mercado"
-                if (label === 'Mercado') {
-                    // Ocultar las pestañas y todas las secciones de contenido de las pestañas
-                    document.querySelector('.tabs').style.display = 'none';
-                    document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
-                    
-                    // Mostrar solo la sección de mercado y cargar sus datos
-                    document.getElementById('marketSection').classList.add('active');
-                    if (typeof loadMarketData === 'function') loadMarketData();
-                }
             });
         });
 
@@ -1679,32 +1475,9 @@
 
                 // Sección Mercado
                 if (text === 'Mercado') {
-                    // Activar el botón de navegación inferior correspondiente
-                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                    const marketNav = Array.from(document.querySelectorAll('.nav-item')).find(nav => nav.querySelector('.nav-label')?.textContent.trim() === 'Mercado');
-                    if (marketNav) marketNav.classList.add('active');
-
-                    document.querySelectorAll('.nav-item').forEach(nav => {
-                        const navLabel = nav.querySelector('.nav-label');
-                        if (navLabel && navLabel.textContent.trim() === 'Mercado') {
-                            nav.classList.add('active');
-                        } else {
-                            nav.classList.remove('active');
-                        }
-                    });
-
-                    // Ocultar otras secciones y mostrar la de mercado
-                    document.querySelector('.tabs').style.display = 'none';
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
-                    const marketSection = document.getElementById('marketSection');
-                    if (marketSection) marketSection.classList.add('active');
-
-                    if (typeof loadMarketData === 'function') {
-                        loadMarketData();
-                    }
-
-                    marketSection?.scrollIntoView({ behavior: 'smooth' });
+                    closeMenu();
+                    window.location.href = 'mercado.html';
+                    return;
                 }
 
                 // Navegar a Comunidad (menú lateral)
