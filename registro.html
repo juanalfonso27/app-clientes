@@ -296,7 +296,8 @@
             try {
                 if (acceptTerms && !acceptTerms.checked) {
                     if (termsOverlay) termsOverlay.classList.add('open');
-                    return;
+                    alert('Por favor, acepte los Términos y Condiciones y la Política de Privacidad para continuar.');
+                    return; // Detener el proceso de registro
                 }
 
                 const cred = await createUserWithEmailAndPassword(auth, email, senha);

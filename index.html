@@ -248,6 +248,21 @@
             display: none;
         }
         .toast.success { background: #2e7d32; }
+        /* Estilos para el spinner */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-left-color: #fff; /* Color del spinner */
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            animation: spin 1s linear infinite;
+            display: none; /* Oculto por defecto */
+            margin-left: 10px; /* Espacio entre el texto del botón y el spinner */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
         .toast.error { background: #c62828; }
         .overlay.open { display: flex; }
         .modal {
@@ -311,7 +326,10 @@
                     <input type="password" id="password" placeholder="••••••••">
                 </div>
 
-                <button type="submit" class="login-button">Iniciar sesión</button>
+                <button type="submit" class="login-button" id="loginButton">
+                    Iniciar sesión
+                    <div class="spinner" id="loginSpinner"></div>
+                </button>
             </form>
 
             <div class="forgot-password">
@@ -349,6 +367,8 @@
     import { signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
     const form = document.querySelector('form');
+    const loginButton = document.getElementById('loginButton');
+    const loginSpinner = document.getElementById('loginSpinner');
     if (form) {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -360,15 +380,21 @@
                 alert('Ingresa correo y contraseña');
                 return;
             }
+
+            loginButton.disabled = true;
+            loginSpinner.style.display = 'inline-block';
+
             try {
                 await signInWithEmailAndPassword(auth, email, password);
                 window.location.href = 'homenoticias.html';
             } catch (err) {
                 alert('Error al iniciar sesión: ' + (err && err.message ? err.message : String(err)));
+            } finally {
+                loginButton.disabled = false;
+                loginSpinner.style.display = 'none';
             }
         });
     }
-
     const recoverLink = document.getElementById('recoverLink');
     const recoverOverlay = document.getElementById('recoverOverlay');
     const recoverCancel = document.getElementById('recoverCancel');
