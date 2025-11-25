@@ -623,15 +623,6 @@ const storage = getStorage(app);
 let currentUser = null;
 let currentUserProfile = null; // Para guardar los datos del perfil de Firestore
 
-// Utilidades
-async function readPosts() {
-    // console.log(PFX, 'Cargando publicaciones desde Firestore...');
-    const postsRef = collection(db, 'community_posts');
-    const q = query(postsRef, orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-}
-
 async function deletePost(button, id) {
     if (!currentUser) {
         showToast('⚠️ Debes iniciar sesión para eliminar.');
@@ -676,7 +667,7 @@ async function deletePost(button, id) {
         }
 
         await deleteDoc(postRef);
-        renderPosts();
+        postElement.remove(); // Eliminar el elemento del DOM directamente
         showToast('✓ Publicación eliminada');
     } catch (error) {
         console.error(PFX, 'Error al eliminar:', error);
@@ -741,72 +732,103 @@ window.deletePost = deletePost; // Exponer la función globalmente para el `oncl
         });
     }
 
-function renderPosts() {
-  const feed = document.getElementById('feed');
-  let emptyState = document.getElementById('emptyState');
+// --- Lógica de Carga Progresiva (Infinite Scroll) ---
+const POSTS_PER_PAGE = 10; // Cargar 10 publicaciones a la vez
+let lastVisiblePostDoc = null; // El "cursor" para la paginación
+let isLoadingPosts = false; // Flag para evitar cargas múltiples
+let allPostsLoaded = false; // Flag para saber si ya no hay más posts
 
-  // Limpiar solo las publicaciones anteriores, no el emptyState
-  feed.querySelectorAll('.post').forEach(p => p.remove());
-  
-  // Si emptyState no existe (porque fue borrado en un render anterior), lo creamos.
-  if (!emptyState) {
-    emptyState = document.createElement('div');
-    emptyState.className = 'empty-state';
-    emptyState.id = 'emptyState';
-    emptyState.innerHTML = `<div class="empty-icon">🌱</div><h3>Cargando...</h3><p>Cargando publicaciones...</p>`;
-    feed.appendChild(emptyState);
-  }
+async function fetchPosts(startAfterDoc = null) {
+    if (isLoadingPosts || allPostsLoaded) return;
+    isLoadingPosts = true;
 
-  emptyState.style.display = 'block';
-  emptyState.querySelector('p').textContent = 'Cargando publicaciones...';
+    const feed = document.getElementById('feed');
+    const emptyState = document.getElementById('emptyState');
+    emptyState.style.display = 'block';
+    emptyState.querySelector('p').textContent = 'Cargando publicaciones...';
 
-  readPosts().then(posts => {
-    if (!posts.length) {
-        emptyState.style.display = 'block';
-        emptyState.querySelector('p').textContent = 'Sé el primero en compartir';
-        return;
+    try {
+        const postsRef = collection(db, 'community_posts');
+        let q;
+        if (startAfterDoc) {
+            q = query(postsRef, orderBy('createdAt', 'desc'), startAfter(startAfterDoc), limit(POSTS_PER_PAGE));
+        } else {
+            // Primera carga
+            feed.querySelectorAll('.post').forEach(p => p.remove()); // Limpiar feed inicial
+            q = query(postsRef, orderBy('createdAt', 'desc'), limit(POSTS_PER_PAGE));
+        }
+
+        const snapshot = await getDocs(q);
+        const posts = snapshot.docs;
+
+        if (posts.length === 0 && !startAfterDoc) {
+            // No hay ninguna publicación en total
+            emptyState.querySelector('p').textContent = 'Sé el primero en compartir';
+            allPostsLoaded = true;
+            return;
+        }
+
+        emptyState.style.display = 'none';
+
+        posts.forEach(doc => {
+            renderSinglePost(doc.data(), doc.id);
+        });
+
+        // Actualizar el cursor para la próxima carga
+        lastVisiblePostDoc = posts[posts.length - 1];
+
+        if (posts.length < POSTS_PER_PAGE) {
+            allPostsLoaded = true;
+            console.log(PFX, 'Se han cargado todas las publicaciones.');
+            // Opcional: ocultar el loader del final si ya no hay más
+            const loader = document.getElementById('feedLoader');
+            if (loader) loader.style.display = 'none';
+        }
+
+    } catch (err) {
+        console.error(PFX, "Error al cargar posts:", err);
+        emptyState.querySelector('p').textContent = 'Error al cargar publicaciones.';
+    } finally {
+        isLoadingPosts = false;
     }
+}
 
-    emptyState.style.display = 'none';
+function renderSinglePost(p, id) {
+    const feed = document.getElementById('feed');
+    const post = document.createElement('div');
+    post.className = 'post';
+    post.dataset.postId = id; // Guardar el ID por si lo necesitamos
 
-    posts.forEach(p => {
-        const post = document.createElement('div');
-        post.className = 'post';
+    const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
+    const displayName = p.name || 'Anónimo';
+    const displayLocation = p.location || 'Sin ubicación';
+    const photoURL = p.photoURL;
 
-        const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
-        const displayName = p.name || 'Anónimo';
-        const displayLocation = p.location || 'Sin ubicación';
-        const photoURL = p.photoURL;
+    const imageHtml = p.image
+      ? `<div class="post-image-wrapper"><img src="${p.image}" class="post-image" alt="Imagen"></div>`
+      : '';
+    
+    const avatarHtml = photoURL
+      ? `<div class="post-avatar"><img src="${escapeHtml(photoURL)}" class="post-avatar-img" alt="Avatar de ${escapeHtml(displayName)}"></div>`
+      : `<div class="post-avatar">${initial}</div>`;
 
-        const imageHtml = p.image
-          ? `<div class="post-image-wrapper"><img src="${p.image}" class="post-image" alt="Imagen"></div>`
-          : '';
-        
-        const avatarHtml = photoURL
-          ? `<div class="post-avatar"><img src="${escapeHtml(photoURL)}" class="post-avatar-img" alt="Avatar de ${escapeHtml(displayName)}"></div>`
-          : `<div class="post-avatar">${initial}</div>`;
-
-
-        post.innerHTML = `
+    post.innerHTML = `
           <div class="post-header">
             ${avatarHtml}
             <div class="post-info">
               <h3 class="post-name">${escapeHtml(displayName)}</h3>
               <p class="post-location">${escapeHtml(displayLocation)}</p>
             </div>
-            ${currentUser && p.authorId === currentUser.uid ? `<button class="post-delete" onclick="deletePost(this, '${p.id}')">Eliminar</button>` : ''}
+            ${currentUser && p.authorId === currentUser.uid ? `<button class="post-delete" onclick="deletePost(this, '${id}')">Eliminar</button>` : ''}
           </div>
           ${imageHtml}
           <p class="post-message">${escapeHtml(p.message || 'Sin descripción')}</p>
           <div class="post-time">${formatDate(p.createdAt)}</div>
         `;
 
-        feed.appendChild(post);
-    });
-  }).catch(err => {
-      console.error(PFX, "Error al renderizar posts:", err);
-      emptyState.querySelector('p').textContent = 'Error al cargar publicaciones.';
-  });
+    // Insertar antes del loader para que el loader siempre quede al final
+    const loader = document.getElementById('feedLoader');
+    feed.insertBefore(post, loader);
 }
 
 // Inicialización
@@ -985,7 +1007,12 @@ onAuthStateChanged(auth, async (user) => {
 
         await addDoc(collection(db, 'community_posts'), post);
         
-        renderPosts();
+        // Resetear y recargar para ver la nueva publicación al principio
+        lastVisiblePostDoc = null;
+        allPostsLoaded = false;
+        const loader = document.getElementById('feedLoader');
+        if (loader) loader.style.display = 'block';
+        fetchPosts();
         showToast('✓ Publicación creada');
 
         // Scroll al feed
@@ -1015,8 +1042,23 @@ onAuthStateChanged(auth, async (user) => {
       showToast('Formulario limpiado');
   });
 
-  // Renderizar posts iniciales
-  renderPosts();
+  // --- Configuración del Intersection Observer ---
+  const loader = document.getElementById('feedLoader');
+  const observer = new IntersectionObserver((entries) => {
+    // Si el loader es visible y no estamos ya cargando posts...
+    if (entries[0].isIntersecting && !isLoadingPosts) {
+      console.log(PFX, 'Loader visible, cargando más publicaciones...');
+      fetchPosts(lastVisiblePostDoc);
+    }
+  }, {
+    rootMargin: '0px 0px 200px 0px' // Empezar a cargar 200px antes de que llegue al final
+  });
+
+  if (loader) {
+    observer.observe(loader);
+  }
+
+  fetchPosts(); // Carga inicial de publicaciones
 });
 
 // --- Registro del Service Worker para PWA ---

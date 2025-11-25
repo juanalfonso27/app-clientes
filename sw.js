@@ -1,82 +1,76 @@
-const CACHE_NAME = 'app-cache-v1';
-const urlsToCache = [
-  '/', // Para la ruta raíz
+const CACHE_NAME = 'iasa-app-cache-v1';
+const DATA_CACHE_NAME = 'iasa-app-data-cache-v1';
+
+// Lista de archivos estáticos para cachear en la instalación.
+const STATIC_ASSETS = [
+  '/',
   '/index.html',
+  '/comunidad.html',
   '/firebase-config.js',
-  '/firebase.js',
   '/manifest.json',
   '/descargaLOGO.png',
-  '/descargaLOGO.png'
+  // Agrega aquí otros assets estáticos importantes (CSS, otros JS, imágenes de la UI).
 ];
 
-// Evento de instalación: se abre el caché y se guardan los archivos del app-shell.
-self.addEventListener('install', event => {
+self.addEventListener('install', (event) => {
+  console.log('[Service Worker] Instalando...');
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Cache abierto');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('[Service Worker] Cacheando assets estáticos');
+      return cache.addAll(STATIC_ASSETS);
+    })
   );
+  self.skipWaiting();
 });
 
-// Evento de activación: se limpia el caché antiguo si existe una nueva versión.
-self.addEventListener('activate', event => {
+self.addEventListener('activate', (event) => {
+  console.log('[Service Worker] Activando...');
   event.waitUntil(
-    caches.keys().then(cacheNames => {
+    caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Borrando caché antiguo:', cacheName);
+        cacheNames.map((cacheName) => {
+          // Eliminar cachés viejos que no coincidan con los nombres actuales.
+          if (cacheName !== CACHE_NAME && cacheName !== DATA_CACHE_NAME) {
+            console.log('[Service Worker] Eliminando caché antiguo:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     })
   );
+  return self.clients.claim();
 });
 
-// Evento fetch: intercepta las peticiones de red.
-self.addEventListener('fetch', event => {
-  const requestUrl = new URL(event.request.url);
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
 
-  // Estrategia "Cache First" para recursos locales y fuentes de Google.
-  // Ideal para archivos que no cambian a menudo.
-  if (
-    urlsToCache.includes(requestUrl.pathname) ||
-    requestUrl.origin === 'https://fonts.googleapis.com' ||
-    requestUrl.origin === 'https://fonts.gstatic.com'
-  ) {
+  // Estrategia "Stale-While-Revalidate" para las API de Firebase Firestore.
+  // Esto es lo que permite que los datos se actualicen.
+  if (url.hostname === 'firestore.googleapis.com') {
     event.respondWith(
-      caches.match(event.request)
-        .then(response => {
-          // Si está en caché, lo devuelve. Si no, va a la red.
-          return response || fetch(event.request).then(fetchResponse => {
-            // Opcional: guardar en caché la nueva respuesta para futuras peticiones
-            return caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, fetchResponse.clone());
-              return fetchResponse;
-            });
+      caches.open(DATA_CACHE_NAME).then((cache) => {
+        return cache.match(request).then((cachedResponse) => {
+          const networkFetch = fetch(request).then((networkResponse) => {
+            // Si la petición a la red es exitosa, la guardamos en el caché de datos.
+            // Esto actualiza el caché con los datos más recientes (incluyendo eliminaciones).
+            cache.put(request, networkResponse.clone());
+            return networkResponse;
           });
-        })
-    );
-    return;
-  }
 
-  // Estrategia "Network First" para las APIs de Firebase y las imágenes.
-  // Intenta obtener la versión más reciente de la red, y si falla, usa el caché.
-  if (requestUrl.href.includes('firebase') || requestUrl.href.includes('firebasestorage')) {
-    event.respondWith(
-      fetch(event.request).then(networkResponse => {
-        return caches.open('dynamic-cache').then(cache => {
-          cache.put(event.request, networkResponse.clone());
-          return networkResponse;
+          // Devuelve la respuesta del caché si existe, si no, espera a la red.
+          return cachedResponse || networkFetch;
         });
-      }).catch(() => caches.match(event.request)) // Si la red falla, busca en caché.
+      })
     );
     return;
   }
 
-  // Para cualquier otra petición, simplemente se ejecuta la petición de red.
-  event.respondWith(fetch(event.request));
+  // Estrategia "Cache First" para todos los demás assets estáticos.
+  event.respondWith(
+    caches.match(request).then((response) => {
+      // Si está en caché, lo devuelve. Si no, lo busca en la red.
+      return response || fetch(request);
+    })
+  );
 });
