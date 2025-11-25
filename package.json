@@ -2,9 +2,11 @@
   "name": "app-clientes",
   "version": "1.0.0",
   "description": "Servidor para la app de clientes con noticias y cotizaciones.",
+  "main": "server.js",
   "type": "module",
   "scripts": {
-    "dev": "vercel dev"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "dependencies": {
     "node-fetch": "^3.3.2"
