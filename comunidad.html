@@ -551,7 +551,6 @@
             <button id="removePreview" class="preview-remove">✕</button>
           </div>
         </div>
-        <p class="photo-hint">Máx. 2MB.</p>
       </div>
 
       <div class="btn-group">
@@ -704,6 +703,21 @@ window.deletePost = deletePost; // Exponer la función globalmente para el `oncl
         return d.toLocaleDateString('es');
     }
 
+    function compressDataUrl(dataUrl, maxWidth, quality) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                let w = img.width, h = img.height;
+                if (w > maxWidth) { const ratio = maxWidth / w; w = Math.round(w * ratio); h = Math.round(h * ratio); }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.src = dataUrl;
+        });
+    }
+
 function renderPosts() {
   const feed = document.getElementById('feed');
   let emptyState = document.getElementById('emptyState');
@@ -835,22 +849,19 @@ onAuthStateChanged(auth, async (user) => {
   });
 
   // Preview de imagen
-  photo.addEventListener('change', (e) => {
+  photo.addEventListener('change', async (e) => {
     const f = e.target.files && e.target.files[0];
     if (!f) {
       previewWrapper.style.display = 'none';
       lastImage = null;
       return;
     }
-    if (f.size > 2_000_000) {
-      showToast('⚠️ La imagen supera 2MB');
-      photo.value = '';
-      return;
-    }
+
     const reader = new FileReader();
-    reader.onload = function (ev) {
-      lastImage = ev.target.result;
-      preview.src = lastImage;
+    reader.onload = async function (ev) {
+      const rawDataUrl = ev.target.result;
+      lastImage = await compressDataUrl(rawDataUrl, 1280, 0.85); // Comprimir imagen
+      preview.src = lastImage; // Mostrar la imagen comprimida
       previewWrapper.style.display = 'block';
     };
     reader.readAsDataURL(f);
