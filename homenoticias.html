@@ -1135,6 +1135,9 @@
         // Open-Meteo API
         // https://open-meteo.com/
         const WEATHER_API_URL = 'https://api.open-meteo.com/v1/forecast';
+        // Clave de API para Alpha Vantage - ¡No exponer en producción!
+        // Es mejor moverla a un backend/proxy para mayor seguridad.
+        const ALPHAVANTAGE_API_KEY = 'NY5V6BV99829NM8C';
 
         // Función para obtener el icono del clima según el código de Open-Meteo
         function getWeatherIcon(weatherCode) {
@@ -1372,11 +1375,11 @@
 
             // Granos principales a mostrar
             const grains = [
-                { name: 'Soja', symbol: 'SOYBEAN', unit: 'USD/bushel' },
-                { name: 'Milho', symbol: 'CORN', unit: 'USD/bushel' },
-                { name: 'Trigo', symbol: 'WHEAT', unit: 'USD/bushel' },
-                { name: 'Café', symbol: 'COFFEE', unit: 'USD/lb' },
-                { name: 'Açúcar', symbol: 'SUGAR', unit: 'USD/lb' }
+                { name: 'Soja', symbol: 'SOYBEANS', unit: 'USD/tonelada', conversionFactor: 36.744 }, // bushels por tonelada
+                { name: 'Maíz', symbol: 'CORN', unit: 'USD/tonelada', conversionFactor: 39.368 },     // bushels por tonelada
+                { name: 'Trigo', symbol: 'WHEAT', unit: 'USD/tonelada', conversionFactor: 36.744 },    // bushels por tonelada
+                { name: 'Café', symbol: 'COFFEE', unit: 'USD/tonelada', conversionFactor: 2204.62 },   // libras por tonelada
+                { name: 'Azúcar', symbol: 'SUGAR', unit: 'USD/tonelada', conversionFactor: 2204.62 }    // libras por tonelada
             ];
 
          
@@ -1392,55 +1395,47 @@
 
         // Función para obtener precio de un commodity en tiempo real
         async function fetchMarketPrice(grain) {
-            // --- INICIO: Integración con Finnhub.io ---
-            const API_KEY = 'd4ipj5hr01qkv40jnlggd4ipj5hr01qkv40jnlh0'; // Tu clave de API
-
-            // Mapeo de símbolos a códigos de Yahoo Finance
-            const yahooSymbols = {
-                'SOYBEAN': 'ZS=F',  // Soybean Futures
-                'CORN': 'ZC=F',     // Corn Futures
-                'WHEAT': 'ZW=F',    // Wheat Futures
-                'COFFEE': 'KC=F',   // Coffee Futures
-                'SUGAR': 'SB=F'     // Sugar Futures
-            };
-            
-            const symbol = yahooSymbols[grain.symbol];
+            const symbol = grain.symbol;
             if (!symbol) return null;
 
-            // Endpoint de Finnhub para cotizaciones
-            const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${API_KEY}`;
+            // Endpoint de Alpha Vantage para commodities
+            const url = `https://www.alphavantage.co/query?function=${symbol}&interval=daily&apikey=${ALPHAVANTAGE_API_KEY}`;
 
             try {
                 const response = await fetch(url);
                 if (!response.ok) {
-                    // Si la respuesta no es OK (ej. 401, 429, 500), lanza un error.
-                    throw new Error(`Finnhub API respondió con estado: ${response.status}`);
+                    throw new Error(`Alpha Vantage API respondió con estado: ${response.status}`);
                 }
                 const data = await response.json();
 
-                // Finnhub devuelve 'c' (current price) como 0 si no hay datos o el mercado está cerrado.
-                if (data && data.c) {
+                // Alpha Vantage devuelve el precio más reciente en el primer elemento del array 'data'.
+                // Nota: Esta API no provee cambio diario, máximo o mínimo.
+                if (data && data.data && data.data.length > 0) {
+                    const latestData = data.data[0];
+                    // El precio viene en centavos por bushel/libra, lo pasamos a dólares.
+                    const priceInDollars = parseFloat(latestData.value) / 100;
+                    
+                    // Convertir el precio a USD por tonelada
+                    const pricePerTon = priceInDollars * (grain.conversionFactor || 1);
+
+                    if (!isNaN(pricePerTon) && pricePerTon > 0) {
                     return {
                         name: grain.name,
                         symbol: grain.symbol,
-                        price: parseFloat(data.c.toFixed(2)),
-                        change: parseFloat(data.d.toFixed(2)), // 'd' es el cambio
-                        changePercent: parseFloat(data.dp.toFixed(2)), // 'dp' es el cambio porcentual
-                        high: parseFloat(data.h.toFixed(2)), // 'h' es el máximo del día
-                        low: parseFloat(data.l.toFixed(2)),  // 'l' es el mínimo del día
-                        volume: 0, // El volumen no viene en este endpoint gratuito
+                            price: pricePerTon,
+                            // Alpha Vantage no provee estos datos en este endpoint
+                            change: 0, changePercent: 0, high: 0, low: 0, volume: 0,
                         unit: grain.unit
                     };
                 }
-                // Si no hay precio, devolvemos null para que se maneje como un fallo.
+                }
                 return null;
 
             } catch (error) {
-                console.log(`Error al buscar ${grain.name} vía API:`, error.message);
+                console.error(`Error al buscar ${grain.name} vía API:`, error.message);
                 // En lugar de devolver datos falsos, devolvemos null para indicar un fallo.
                 return null;
             }
-            // --- FIN: Integración con Finnhub.io ---
         }
 
         // Función para renderizar los datos del mercado
@@ -1455,14 +1450,15 @@
             let html = '';
             
             marketData.forEach(item => {
-                // Si un item es nulo, es porque falló la carga para ese grano.
+                // Si un item es nulo, es porque falló la carga para ese grano o no había datos.
                 if (!item) {
                     // Podríamos incluso mostrar una tarjeta de error para ese grano específico,
                     // pero por ahora, simplemente lo saltamos.
                     return;
                 }
-                const isPositive = item.change >= 0; // Asegurarse de que item no es nulo
-                const changeIcon = isPositive ? '↑' : '↓';
+                // Como Alpha Vantage no provee el cambio, ocultamos esa parte.
+                // const isPositive = item.change >= 0;
+                // const changeIcon = isPositive ? '↑' : '↓';
                 
                 html += `
                     <div class="market-item">
@@ -1470,28 +1466,24 @@
                             <div class="market-item-name">${item.name}</div>
                             <div>
                                 <div class="market-item-price">$${item.price.toFixed(2)}</div>
-                                <div class="market-item-change ${isPositive ? 'positive' : 'negative'}">
-                                    <span>${changeIcon}</span>
-                                    <span>${Math.abs(item.change).toFixed(2)} (${Math.abs(item.changePercent).toFixed(2)}%)</span>
-                                </div>
                             </div>
                         </div>
                         <div class="market-item-details">
                             <div class="market-detail-item">
                                 <span class="market-detail-label">Máxima</span>
-                                <span class="market-detail-value">$${item.high.toFixed(2)}</span>
+                                <span class="market-detail-value">--</span>
                             </div>
                             <div class="market-detail-item">
                                 <span class="market-detail-label">Mínima</span>
-                                <span class="market-detail-value">$${item.low.toFixed(2)}</span>
+                                <span class="market-detail-value">--</span>
                             </div>
                             <div class="market-detail-item">
                                 <span class="market-detail-label">Volume</span>
-                                <span class="market-detail-value">${item.volume.toLocaleString('pt-BR')}</span>
+                                <span class="market-detail-value">${item.volume.toLocaleString('es-AR')}</span>
                             </div>
                             <div class="market-detail-item">
                                 <span class="market-detail-label">Unidad</span>
-                                <span class="market-detail-value">${item.unit}</span>
+                                <span class="market-detail-value">${item.unit || '--'}</span>
                             </div>
                         </div>
                     </div>
@@ -1501,7 +1493,7 @@
             // Si después de recorrer todos los items, el html sigue vacío,
             // significa que ninguno pudo ser cargado. Mostramos un mensaje.
             if (html.trim() === '') {
-                container.innerHTML = '<div class="market-error">Datos del mercado no disponibles en este momento.</div>';
+                container.innerHTML = '<div class="market-error">Datos del mercado no disponibles en este momento. Intente nuevamente más tarde.</div>';
                 return;
             }
 
