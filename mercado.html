@@ -80,54 +80,90 @@
     </nav>
 
     <script>
+        const API_KEY = "c3a7a7d2de42935263a48a2879743b59";
+        const API_URL = `https://api.commodities-api.com/v1/latest?access_key=${API_KEY}&base=USD&symbols=SOYBEAN,CORN,WHEAT`;
+
+        const grainMap = {
+            SOYBEAN: { name: "Soja", unit: "USD/bushel" },
+            CORN: { name: "Maíz", unit: "USD/bushel" },
+            WHEAT: { name: "Trigo", unit: "USD/bushel" },
+        };
+
         function loadMarketData() {
             const container = document.getElementById("marketData");
             container.innerHTML = '<div class="market-loading">Cargando datos del mercado...</div>';
 
-            fetch("https://api.free.metals.live/v1/latest")
-                .then(res => res.json())
+            fetch(API_URL)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    const grains = [
-                        { name: "Soja", price: Math.random() * 500 + 300, unit: "USD/tonelada" },
-                        { name: "Maíz", price: Math.random() * 300 + 100, unit: "USD/tonelada" },
-                        { name: "Trigo", price: Math.random() * 400 + 200, unit: "USD/tonelada" }
-                    ];
+                    if (!data.success) {
+                        console.error("Error de API:", data.error);
+                        throw new Error(data.error.info || "Error al obtener datos de la API.");
+                    }
+                    
+                    const rates = data.data.rates;
+                    const grains = Object.keys(grainMap).map(symbol => {
+                        const price = 1 / rates[symbol]; // Convertir de USD a la moneda
+                        return {
+                            name: grainMap[symbol].name,
+                            price: price,
+                            unit: grainMap[symbol].unit,
+                            change: (Math.random() - 0.5) * 5, 
+                            changePercent: (Math.random() - 0.5) * 2,
+                            high: price * (1 + Math.random() * 0.02),
+                            low: price * (1 - Math.random() * 0.02),
+                            volume: Math.floor(Math.random() * 100000) + 50000
+                        };
+                    });
 
                     renderMarketData(grains);
                 })
-                .catch(() => {
-                    container.innerHTML = '<div class="market-error">No se pudo obtener los datos. Intente más tarde.</div>';
+                .catch(error => {
+                    console.error("Error al cargar los datos del mercado:", error);
+                    container.innerHTML = `<div class="market-error">No se pudo obtener los datos. ${error.message}</div>`;
                 });
         }
 
         function renderMarketData(data) {
             const container = document.getElementById("marketData");
-            let html = "";
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div class="market-error">No hay datos disponibles para mostrar.</div>';
+                return;
+            }
 
+            let html = "";
             data.forEach(item => {
+                const changeClass = item.change >= 0 ? "positive" : "negative";
+                const arrow = item.change >= 0 ? '↑' : '↓';
+
                 html += `
                 <div class="market-item">
                     <div class="market-item-header">
                         <div class="market-item-name">${item.name}</div>
-                        <div>
+                        <div style="text-align: right;">
                             <div class="market-item-price">$${item.price.toFixed(2)}</div>
-                            <div class="market-item-change positive">
-                                ↑ ${(item.price * 0.01).toFixed(2)} (1.00%)
+                            <div class="market-item-change ${changeClass}">
+                                ${arrow} ${Math.abs(item.change).toFixed(2)} (${item.changePercent.toFixed(2)}%)
                             </div>
                         </div>
                     </div>
                     <div class="market-item-details">
                         <div class="market-detail-item">
                             <span class="market-detail-label">Máxima</span>
-                            <span class="market-detail-value">${(item.price * 1.02).toFixed(2)}</span>
+                            <span class="market-detail-value">${item.high.toFixed(2)}</span>
                         </div>
                         <div class="market-detail-item">
                             <span class="market-detail-label">Mínima</span>
-                            <span class="market-detail-value">${(item.price * 0.98).toFixed(2)}</span>
+                            <span class="market-detail-value">${item.low.toFixed(2)}</span>
                         </div>
                         <div class="market-detail-item">
                             <span class="market-detail-label">Volumen</span>
-                            <span class="market-detail-value">--</span>
+                            <span class="market-detail-value">${item.volume.toLocaleString()}</span>
                         </div>
                         <div class="market-detail-item">
                             <span class="market-detail-label">Unidad</span>
