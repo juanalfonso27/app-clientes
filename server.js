@@ -1,17 +1,19 @@
-const express = require('express');
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
-const path = require('path');
+import express from 'express';
+import fetch from 'node-fetch';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// TODO: pega aquí tu API key de NewsData.io
+// TODO: pega aquí tu API key de NewsData.io si la vas a usar
 const NEWSDATA_API_KEY = 'pub_...'; // Reemplaza con tu clave si la usas
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Servir archivos estáticos desde la carpeta 'public'
-app.use(express.static('public'));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Endpoint para noticias del agro
 app.get('/api/agro-news', async (req, res) => {
   if (!NEWSDATA_API_KEY || NEWSDATA_API_KEY === 'pub_551eaeced3014a828336e2840cc5d63c') {
     return res.status(500).json({ error: 'Configura la API key de NewsData.io en server.js' });
@@ -80,6 +82,6 @@ app.get('/api/quotes', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor escuchando en http://localhost:${PORT}`);
-});
+// Vercel se encarga de iniciar el servidor, por lo que app.listen no es necesario.
+// En su lugar, exportamos la app para que Vercel la pueda usar.
+export default app;
