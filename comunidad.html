@@ -621,10 +621,10 @@
 
 <script type="module">
 // --- Integración con Firebase ---
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
-import { getFirestore, collection, query, orderBy, getDocs, addDoc, deleteDoc, doc, serverTimestamp, getDoc, limit, startAfter } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
-import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, query, orderBy, getDocs, addDoc, deleteDoc, doc, serverTimestamp, getDoc, limit, startAfter } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const PFX = '[Comunidad]';
 const app = initializeApp(window.firebaseConfig);
@@ -753,67 +753,53 @@ let allPostsLoaded = false; // Flag para saber si ya no hay más posts
 async function fetchPosts(startAfterDoc = null) {
     if (isLoadingPosts || allPostsLoaded) return;
     isLoadingPosts = true;
-
-    const feed = document.getElementById('feed');
+    
+    const loader = document.getElementById('feedLoader');
     const emptyState = document.getElementById('emptyState');
-    if (!startAfterDoc) { // Solo mostrar "Cargando" en el estado vacío en la carga inicial
-        emptyState.classList.remove('hidden');
-        emptyState.querySelector('p').textContent = 'Cargando publicaciones...';
-    }
+    
+    // Mostrar el loader al iniciar la carga
+    if (loader) loader.style.display = 'block';
 
     try {
         const postsRef = collection(db, 'community_posts');
-        let q = null;
+        let q;
+
         if (startAfterDoc) {
             q = query(postsRef, orderBy('createdAt', 'desc'), startAfter(startAfterDoc), limit(POSTS_PER_PAGE));
         } else {
             // Primera carga
-            feed.querySelectorAll('.post').forEach(p => p.remove()); // Limpiar feed inicial
+            document.querySelectorAll('.post').forEach(p => p.remove());
             q = query(postsRef, orderBy('createdAt', 'desc'), limit(POSTS_PER_PAGE));
-        // Asegurarse de que el loader esté presente para la primera carga
-        if (!document.getElementById('feedLoader')) {
-            const loader = document.createElement('div');
-            loader.id = 'feedLoader';
-            loader.className = 'feed-loader';
-            loader.textContent = 'Cargando más...';
-            feed.appendChild(loader);
-        }
         }
 
         const snapshot = await getDocs(q);
         const posts = snapshot.docs;
 
         if (posts.length === 0 && !startAfterDoc) {
-            // No hay ninguna publicación en total
+            // Estado vacío: no hay publicaciones en la base de datos
+            emptyState.classList.remove('hidden');
             emptyState.querySelector('p').textContent = 'Sé el primero en compartir';
-            const loader = document.getElementById('feedLoader');
-            if (loader) {
-                loader.style.display = 'none'; // Ocultar en lugar de eliminar
-            }
-            allPostsLoaded = true;
-            return;
-        }
-
-        emptyState.classList.add('hidden');
-
-        posts.forEach(doc => {
-            renderSinglePost(doc.data(), doc.id);
-        });
-
-        // Actualizar el cursor para la próxima carga
-        lastVisiblePostDoc = posts[posts.length - 1];
-
-        const loader = document.getElementById('feedLoader');
-        if (loader) {
-            loader.style.display = 'block'; // Asegurarse de que sea visible
-        }
-
-        if (posts.length < POSTS_PER_PAGE) {
-            allPostsLoaded = true;
-            console.log(PFX, 'Se han cargado todas las publicaciones.');
-            // Opcional: ocultar el loader del final si ya no hay más
-            const loader = document.getElementById('feedLoader'); // Corregido
             if (loader) loader.style.display = 'none';
+            allPostsLoaded = true;
+        } else {
+            // Hay publicaciones, las renderizamos
+            emptyState.classList.add('hidden');
+
+            posts.forEach(doc => {
+                renderSinglePost(doc.data(), doc.id);
+            });
+
+            // Actualizar el cursor para la próxima carga
+            if (posts.length > 0) {
+                lastVisiblePostDoc = posts[posts.length - 1];
+            }
+
+            // Si se cargaron menos posts que el límite, significa que llegamos al final
+            if (posts.length < POSTS_PER_PAGE) {
+                allPostsLoaded = true;
+                console.log(PFX, 'Se han cargado todas las publicaciones.');
+                if (loader) loader.style.display = 'none';
+            }
         }
 
     } catch (err) {
@@ -821,6 +807,7 @@ async function fetchPosts(startAfterDoc = null) {
         emptyState.querySelector('p').textContent = 'Error al cargar publicaciones.';
     } finally {
         isLoadingPosts = false;
+        if (!allPostsLoaded && loader) loader.style.display = 'block';
     }
 }
 
@@ -857,17 +844,9 @@ function renderSinglePost(p, id) {
           <div class="post-time">${formatDate(p.createdAt)}</div>
         `;
 
-    // Insertar antes del loader para que el loader siempre quede al final
-    let loader = document.getElementById('feedLoader');
-    // Fallback: si el loader no existe por alguna razón, lo creamos y añadimos.
-    if (!loader) {
-        loader = document.createElement('div');
-        loader.id = 'feedLoader';
-        loader.className = 'feed-loader';
-        loader.textContent = 'Cargando más...';
-        feed.appendChild(loader);
-    }
-    feed.insertBefore(post, loader);
+    // Insertar el nuevo post. El loader y el estado vacío ya están al final en el HTML.
+    // Usamos prepend para añadirlo al principio del feed.
+    feed.prepend(post);
 }
 
 // Inicialización
@@ -1049,8 +1028,8 @@ onAuthStateChanged(auth, async (user) => {
         // Resetear y recargar para ver la nueva publicación al principio
         lastVisiblePostDoc = null;
         allPostsLoaded = false;
-        const loader = document.getElementById('feedLoader'); // Corregido
-        if (loader) loader.style.display = 'block';
+        const loader = document.getElementById('feedLoader');
+        if (loader) loader.style.display = 'block'; // Asegurarse que el loader sea visible para la nueva carga
         fetchPosts();
         showToast('✓ Publicación creada');
 
