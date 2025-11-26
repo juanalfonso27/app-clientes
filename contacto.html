@@ -144,6 +144,11 @@
             box-shadow: 0 2px 8px rgba(90,79,207,0.35);
         }
 
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .btn-secondary {
             background: transparent;
             border: none;
@@ -151,13 +156,6 @@
             font-size: 13px;
             cursor: pointer;
             text-decoration: underline;
-        }
-
-        .small-hint {
-            font-size: 11px;
-            color: #999;
-            text-align: center;
-            margin-top: 10px;
         }
 
         @media (min-width: 720px) {
@@ -182,6 +180,11 @@
                     <div class="form-group">
                         <label class="form-label" for="name">Nombre y apellido <span>*</span></label>
                         <input id="name" name="name" type="text" class="form-input" required placeholder="Ej: Juan Pérez">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="location">Localidad <span>*</span></label>
+                        <input id="location" name="location" type="text" class="form-input" required placeholder="Ej: San Alberto, Paraguay">
                     </div>
 
                     <div class="form-group">
@@ -210,7 +213,27 @@
         </main>
     </div>
 
-    <script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBGOBLIVvJxHqBhBae-hI1vM_KrzDEdtM0",
+            authDomain: "iasa-app-bfe8b.firebaseapp.com",
+            projectId: "iasa-app-bfe8b",
+            storageBucket: "iasa-app-bfe8b.firebasestorage.app",
+            messagingSenderId: "920148045932",
+            appId: "1:920148045932:web:39e83aae9da23104eb2849",
+            measurementId: "G-E13QW4LCE2"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Manejo del formulario
         const form = document.getElementById('contactForm');
         const submitButton = form.querySelector('button[type="submit"]');
 
@@ -222,33 +245,25 @@
             const formData = new FormData(form);
             const data = {
                 name: formData.get('name').trim(),
-                location: formData.get('location'),
+                location: formData.get('location').trim(),
                 email: formData.get('email').trim(),
-                phone: formData.get('phone')?.trim() || '',
+                phone: formData.get('phone').trim() || 'No especificado',
                 message: formData.get('message').trim(),
-                submittedAt: new Date().toISOString()
+                createdAt: serverTimestamp(),
+                status: 'pendiente'
             };
 
             try {
-                // Este endpoint '/api/contact' lo crearemos en el servidor (server.js)
-                const response = await fetch('/api/contact', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data),
-                });
-
-                if (!response.ok) {
-                    throw new Error('Hubo un problema al enviar el mensaje.');
-                }
-
-                alert('Gracias por contactarte con nosotros. Te estaremos respondiendo a la brevedad.');
+                // Guardar en Firestore en la colección "contactos"
+                const docRef = await addDoc(collection(db, 'contactos'), data);
+                
+                console.log('Documento creado con ID:', docRef.id);
+                alert('✅ ¡Gracias por contactarnos! Tu mensaje fue enviado correctamente. Nos comunicaremos a la brevedad.');
                 form.reset();
 
             } catch (error) {
-                console.error('Error al enviar formulario:', error);
-                alert('Error: No se pudo enviar tu mensaje. Por favor, intentá de nuevo más tarde.');
+                console.error('Error al guardar en Firebase:', error);
+                alert('❌ Error: No se pudo enviar tu mensaje. Por favor, intentá de nuevo más tarde.');
             } finally {
                 submitButton.disabled = false;
                 submitButton.textContent = 'Enviar mensaje';
