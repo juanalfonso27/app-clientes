@@ -141,6 +141,14 @@
       margin: 20px 0;
     }
 
+    .precio .unit {
+      font-size: 0.4em;
+      font-weight: 500;
+      color: #555;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
     .variacion {
       padding: 4px 8px;
       border-radius: 4px;
@@ -204,8 +212,7 @@
 
 
   <header>
-    <h1>🌾 Precio de granos en Paraguay</h1>
-    <p>Cotizaciones CBOT en tiempo real</p>
+    <h1>Cotizaciones CBOT</h1>
   </header>
 
   <div class="status" id="status">Conectando...</div>
@@ -213,11 +220,17 @@
   <main>
     <section class="grano">
       <h2>Soja (CBOT)</h2>
-      <div class="precio" id="SOY-price">
-        <span class="loading">Cargando...</span>
+      <div class="precio">
+        <span id="SOY-price-ton"><span class="loading">Cargando...</span></span><span class="unit">USD/Ton</span>
+      </div>
+      <div class="dato">
+        <strong>Precio/Bushel (¢/bu):</strong> <span id="SOY-price-bushel">—</span>
       </div>
       <div class="dato">
         <strong>Variación:</strong> <span id="SOY-change">—</span>
+      </div>
+      <div class="dato">
+        <strong>Rango del día (¢/bu):</strong> <span id="SOY-range">—</span>
       </div>
       <div class="dato">
         <strong>Última actualización:</strong> <span id="SOY-time">—</span>
@@ -226,11 +239,17 @@
 
     <section class="grano">
       <h2>Maíz (CBOT)</h2>
-      <div class="precio" id="CORN-price">
-        <span class="loading">Cargando...</span>
+      <div class="precio">
+        <span id="CORN-price-ton"><span class="loading">Cargando...</span></span><span class="unit">USD/Ton</span>
+      </div>
+      <div class="dato">
+        <strong>Precio/Bushel (¢/bu):</strong> <span id="CORN-price-bushel">—</span>
       </div>
       <div class="dato">
         <strong>Variación:</strong> <span id="CORN-change">—</span>
+      </div>
+      <div class="dato">
+        <strong>Rango del día (¢/bu):</strong> <span id="CORN-range">—</span>
       </div>
       <div class="dato">
         <strong>Última actualización:</strong> <span id="CORN-time">—</span>
@@ -239,11 +258,17 @@
 
     <section class="grano">
       <h2>Trigo (CBOT)</h2>
-      <div class="precio" id="WHEAT-price">
-        <span class="loading">Cargando...</span>
+      <div class="precio">
+        <span id="WHEAT-price-ton"><span class="loading">Cargando...</span></span><span class="unit">USD/Ton</span>
+      </div>
+      <div class="dato">
+        <strong>Precio/Bushel (¢/bu):</strong> <span id="WHEAT-price-bushel">—</span>
       </div>
       <div class="dato">
         <strong>Variación:</strong> <span id="WHEAT-change">—</span>
+      </div>
+      <div class="dato">
+        <strong>Rango del día (¢/bu):</strong> <span id="WHEAT-range">—</span>
       </div>
       <div class="dato">
         <strong>Última actualización:</strong> <span id="WHEAT-time">—</span>
@@ -252,7 +277,7 @@
   </main>
 
   <footer>
-    Fuente: Yahoo Finance (CBOT) vía proxy CORS — Los datos pueden tener un retraso de 15-20 minutos
+    Fuente: Yahoo Finance (CBOT) vía proxy CORS — Los datos pueden tener un retraso. 1 Tonelada ≈ 36.74 bushels.
   </footer>
 
   <script>
@@ -287,6 +312,8 @@
         // Obtener el precio actual y el cierre anterior
         const currentPrice = meta.regularMarketPrice || meta.previousClose;
         const previousClose = meta.chartPreviousClose || meta.previousClose;
+        const dayLow = meta.regularMarketDayLow;
+        const dayHigh = meta.regularMarketDayHigh;
         
         // Verificar que los valores existen
         if (!currentPrice || !previousClose) {
@@ -302,6 +329,8 @@
           previousClose: previousClose,
           change: change,
           changePct: changePct,
+          dayLow: dayLow,
+          dayHigh: dayHigh,
           timestamp: meta.regularMarketTime || Math.floor(Date.now() / 1000)
         };
       } catch (error) {
@@ -312,15 +341,19 @@
 
     function updateGrano(id, data, conversionFactor) {
       if (!data) {
-        document.getElementById(`${id}-price`).innerHTML = '<span class="loading">Error al cargar</span>';
+        document.getElementById(`${id}-price-ton`).innerHTML = '<span class="loading" style="font-size: 0.5em;">Error</span>';
         return;
       }
 
       // Convertir de cents/bushel a USD/tonelada
-      const priceInTons = data.price * conversionFactor;
-      const changeInTons = data.change * conversionFactor;
+      const priceInTons = (data.price / 100) * conversionFactor;
+      const changeInTons = (data.change / 100) * conversionFactor;
       
-      document.getElementById(`${id}-price`).textContent = `$${priceInTons.toFixed(2)}`;
+      // Precio en USD por tonelada
+      document.getElementById(`${id}-price-ton`).textContent = `$${priceInTons.toFixed(2)} `;
+      
+      // Precio en centavos por bushel
+      document.getElementById(`${id}-price-bushel`).textContent = `${data.price.toFixed(2)}`;
       
       const sign = data.change >= 0 ? '+' : '';
       const variationClass = data.change >= 0 ? 'positivo' : 'negativo';
@@ -328,6 +361,14 @@
       document.getElementById(`${id}-change`).innerHTML = 
         `<span class="variacion ${variationClass}">${sign}${changeInTons.toFixed(2)} (${sign}${data.changePct.toFixed(2)}%)</span>`;
       
+      // Rango del día
+      const rangeEl = document.getElementById(`${id}-range`);
+      if (data.dayLow && data.dayHigh) {
+        rangeEl.textContent = `${data.dayLow.toFixed(2)} - ${data.dayHigh.toFixed(2)}`;
+      } else {
+        rangeEl.textContent = 'No disponible';
+      }
+
       const date = new Date(data.timestamp * 1000);
       document.getElementById(`${id}-time`).textContent = date.toLocaleString('es-PY');
     }
