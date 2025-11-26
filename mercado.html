@@ -8,7 +8,7 @@
 
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       background-color: #f0f2f5;
       color: #333;
       margin: 0;
@@ -44,11 +44,6 @@
       color: white;
       padding: 25px 20px;
       text-align: center;
-    }
-
-    header h1 {
-      margin: 0;
-      font-size: 2em;
     }
 
     .status {
@@ -98,33 +93,22 @@
       border-bottom: 1px solid #efefef;
     }
 
-    .tabla tr:hover {
-      background: #f5f6f8;
-    }
+    .var { font-weight: bold; }
+    .positive { color: #0a8a0a; }
+    .negative { color: #d00000; }
 
-    .var {
-      font-weight: bold;
-    }
-
-    .positive {
-      color: #0a8a0a;
-    }
-
-    .negative {
-      color: #d00000;
-    }
+    /* Widget Responsive */
     .widget-responsive {
-  width: 100%;
-  max-width: 425px;
-  margin: 0 auto;
-  overflow: hidden;
-  position: relative;
-}
+      width: 100%;
+      max-width: 425px;
+      margin: 0 auto;
+      overflow: hidden;
+      position: relative;
+    }
 
-.widget-responsive iframe {
-  transform-origin: top left;
-}
-
+    .widget-responsive iframe {
+      transform-origin: top left;
+    }
 
     footer {
       text-align: center;
@@ -141,9 +125,7 @@
   <!-- Header -->
   <div class="header">
     <a href="homenoticias.html" class="header-icon">
-      <svg viewBox="0 0 24 24">
-        <path d="M15 18l-6-6 6-6"></path>
-      </svg>
+      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"></path></svg>
     </a>
 
     <div class="logo">
@@ -164,137 +146,75 @@
 
   <div class="status" id="status">Conectando...</div>
 
-  <!-- ---------------- MAIN ---------------- -->
+  <!-- MAIN -->
   <main>
 
-<div class="tabla-container" style="padding: 15px; text-align:center;">
+    <!-- WIDGET INVESTING TÉCNICO (RESPONSIVE) -->
+    <div class="section-title">Resumen Técnico</div>
 
-  <div class="widget-responsive">
-    <iframe
-      id="investing-frame"
-      frameborder="0"
-      scrolling="no"
-      height="253"
-      width="425"
-      allowtransparency="true"
-      src="https://ssltools.investing.com/technical_summary.php?pairs=8916,8917,8918,13916,961618&curr-name-color=%230059B0&fields=5m,1h,1d&force_lang=4">
-    </iframe>
-  </div>
-<iframe 
-    frameborder="0" 
-    scrolling="no" 
-    height="400" 
-    width="600" 
-    allowtransparency="true"
-    src="https://ssltools.investing.com/commodities/Service?pairList=300,8830,8836,8831,8832,8833,8834,8835&lang=12">
-</iframe>
+    <div class="tabla-container" style="padding: 15px; text-align:center;">
+      <div class="widget-responsive">
+        <iframe
+          id="investing-frame"
+          frameborder="0"
+          scrolling="no"
+          height="253"
+          width="425"
+          allowtransparency="true"
+          src="https://ssltools.investing.com/technical_summary.php?pairs=8916,8917,8918,13916,961618&curr-name-color=%230059B0&fields=5m,1h,1d&force_lang=4">
+        </iframe>
+      </div>
 
-<div style="font-size:11px;color:#333;margin-top:4px;">
-  Cotizaciones proporcionadas por 
-  <a href="https://br.investing.com" target="_blank" rel="nofollow" style="color:#06529D;font-weight:bold;">
-    br.investing.com
-  </a>
-</div>
+      <script>
+        function resizeWidget() {
+          const container = document.querySelector('.widget-responsive');
+          const iframe = document.getElementById('investing-frame');
 
-  <script>
-    function resizeWidget() {
-      const container = document.querySelector('.widget-responsive');
-      const iframe = document.getElementById('investing-frame');
+          const originalWidth = 425;
+          const currentWidth = container.offsetWidth;
+          const scale = currentWidth / originalWidth;
 
-      const originalWidth = 425;
-      const currentWidth = container.offsetWidth;
-      const scale = currentWidth / originalWidth;
+          iframe.style.transform = `scale(${scale})`;
+          iframe.style.width = originalWidth + "px";
+          iframe.style.height = (253 * scale) + "px";
+        }
 
-      iframe.style.transform = `scale(${scale})`;
-      iframe.style.width = originalWidth + "px";
-      iframe.style.height = (253 * scale) + "px";
-    }
+        window.addEventListener('resize', resizeWidget);
+        window.addEventListener('load', resizeWidget);
+      </script>
 
-    window.addEventListener('resize', resizeWidget);
-    window.addEventListener('load', resizeWidget);
-  </script>
-
-  <div style="width:100%; margin-top: 8px;">
-    <span style="font-size: 11px;color: #333;">
-      Resumen técnico proporcionado por
-      <a href="https://es.investing.com/"
-         rel="nofollow"
-         target="_blank"
-         style="font-size: 11px;color: #06529D; font-weight: bold;">
-         Investing.com España
-      </a>.
-    </span>
-  </div>
-
-</div>
-    <!-- FIN WIDGET -->
-
-    <!-- TABLA 1 -->
-    <div class="section-title">Cotizaciones en tiempo real</div>
-
-    <div class="tabla-container">
-      <table class="tabla">
-        <thead>
-          <tr>
-            <th>Contrato</th>
-            <th>Último</th>
-            <th>Var. %</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <tr>
-            <td>Soja (CBOT)</td>
-            <td id="SOY-price-bushel">—</td>
-            <td id="SOY-var" class="var">—</td>
-          </tr>
-
-          <tr>
-            <td>Maíz (CBOT)</td>
-            <td id="CORN-price-bushel">—</td>
-            <td id="CORN-var" class="var">—</td>
-          </tr>
-
-          <tr>
-            <td>Trigo (CBOT)</td>
-            <td id="WHEAT-price-bushel">—</td>
-            <td id="WHEAT-var" class="var">—</td>
-          </tr>
-        </tbody>
-      </table>
+      <div style="font-size:11px;margin-top:8px;">
+        Resumen técnico por <a href="https://es.investing.com" target="_blank">Investing.com</a>
+      </div>
     </div>
 
-    <!-- TABLA 2 -->
-    <div class="section-title">Precios USD por tonelada</div>
+    <!-- WIDGET ALTERNATIVO (FUNCIONA SIEMPRE) -->
+    <div class="section-title">Cotizaciones Globales</div>
+
+    <div class="tabla-container" style="padding: 10px;">
+      <iframe 
+        src="https://api.stockdio.com/visualization/financial/charts/v1/Ticker?app-key=8E2F46D8F1CF4B09B927192EA20E6D84&symbols=GC;SI;CL;HG;ZC;ZW;ZS;LE"
+        style="width:100%;height:450px;border:0;">
+      </iframe>
+      <div style="font-size:11px;color:#777;text-align:center;margin-top:6px;">
+        Widget financiero por Stockdio
+      </div>
+    </div>
+
+    <!-- WIDGET CLONADO ESTILO INVESTING -->
+    <div class="section-title">Cotizaciones en Tiempo Real</div>
 
     <div class="tabla-container">
-      <table class="tabla">
+      <table class="tabla" id="widgetCommodities">
         <thead>
-          <tr>
-            <th>Contrato</th>
-            <th>Precio</th>
-            <th>Var.</th>
-          </tr>
+          <tr><th>Contrato</th><th>Último</th><th>Var. %</th></tr>
         </thead>
-
         <tbody>
-          <tr>
-            <td>Soja</td>
-            <td id="SOY-price-ton">—</td>
-            <td id="SOY-var-2" class="var">—</td>
-          </tr>
-
-          <tr>
-            <td>Maíz</td>
-            <td id="CORN-price-ton">—</td>
-            <td id="CORN-var-2" class="var">—</td>
-          </tr>
-
-          <tr>
-            <td>Trigo</td>
-            <td id="WHEAT-price-ton">—</td>
-            <td id="WHEAT-var-2" class="var">—</td>
-          </tr>
+          <tr><td>Soja Chicago</td><td id="soy_last">Cargando...</td><td id="soy_var">—</td></tr>
+          <tr><td>Maíz Chicago</td><td id="corn_last">Cargando...</td><td id="corn_var">—</td></tr>
+          <tr><td>Trigo Chicago</td><td id="wheat_last">Cargando...</td><td id="wheat_var">—</td></tr>
+          <tr><td>Petróleo WTI</td><td id="oil_last">Cargando...</td><td id="oil_var">—</td></tr>
+          <tr><td>Oro</td><td id="gold_last">Cargando...</td><td id="gold_var">—</td></tr>
         </tbody>
       </table>
     </div>
@@ -302,26 +222,20 @@
   </main>
 
   <footer>
-    Fuente: Yahoo Finance (CBOT) vía proxy — Datos con posible retraso.  
-    1 Tonelada ≈ 36.74 bushels.
+    Fuente: Yahoo Finance (CBOT) — Datos con posible retraso
   </footer>
 
-  <!-- SCRIPT -->
+  <!-- SCRIPT PARA EL WIDGET CLONADO -->
   <script>
-
-    const symbols = {
-      SOY: 'ZS=F',
-      CORN: 'ZC=F',
-      WHEAT: 'ZW=F'
+    const tickers = {
+      soy: "ZS=F",
+      corn: "ZC=F",
+      wheat: "ZW=F",
+      oil: "CL=F",
+      gold: "GC=F"
     };
 
-    const conversion = {
-      SOY: 36.7437,
-      CORN: 39.3683,
-      WHEAT: 36.7437
-    };
-
-    async function fetchQuote(symbol) {
+    async function getQuote(symbol) {
       try {
         const url = `https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
         const res = await fetch(url);
@@ -330,50 +244,35 @@
         const quote = json.chart.result[0];
         const prices = quote.indicators.quote[0];
 
-        const price = prices.close[prices.close.length - 1];
+        const price = prices.close.at(-1);
         const open = prices.open[0] || price;
         const pct = ((price - open) / open) * 100;
 
-        return { price, open, pct };
-
-      } catch (e) {
+        return { price, pct };
+      } catch {
         return null;
       }
     }
 
-    function updateGrano(id, data, factor) {
+    function updateRow(id, data) {
+      const lastEl = document.getElementById(id + "_last");
+      const varEl = document.getElementById(id + "_var");
+
       if (!data) return;
 
-      const priceBushel = data.price.toFixed(2);
-      const priceTon = ((data.price / 100) * factor).toFixed(2);
-
-      const pct = data.pct.toFixed(2);
-      const sign = pct >= 0 ? "+" : "";
-
-      document.getElementById(`${id}-price-bushel`).textContent = priceBushel;
-      document.getElementById(`${id}-var`).textContent = `${sign}${pct}%`;
-      document.getElementById(`${id}-var`).classList.add(pct >= 0 ? "positive" : "negative");
-
-      document.getElementById(`${id}-price-ton`).textContent = "$" + priceTon;
-      document.getElementById(`${id}-var-2`).textContent = `${sign}${pct}%`;
-      document.getElementById(`${id}-var-2`).classList.add(pct >= 0 ? "positive" : "negative");
+      lastEl.textContent = data.price.toFixed(2);
+      varEl.textContent = (data.pct >= 0 ? "+" : "") + data.pct.toFixed(2) + "%";
+      varEl.style.color = data.pct >= 0 ? "green" : "red";
     }
 
-    async function refresh() {
-      document.getElementById("status").textContent = "Actualizando...";
-
-      for (const [id, symbol] of Object.entries(symbols)) {
-        const data = await fetchQuote(symbol);
-        updateGrano(id, data, conversion[id]);
+    async function refreshWidgetClone() {
+      for (const id in tickers) {
+        updateRow(id, await getQuote(tickers[id]));
       }
-
-      document.getElementById("status").textContent =
-        "Última actualización: " + new Date().toLocaleTimeString("es-PY");
     }
 
-    refresh();
-    setInterval(refresh, 60000);
-
+    refreshWidgetClone();
+    setInterval(refreshWidgetClone, 60000);
   </script>
 
 </body>
