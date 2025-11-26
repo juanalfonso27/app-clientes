@@ -46,6 +46,11 @@
       text-align: center;
     }
 
+    header h1 {
+      margin: 0;
+      font-size: 2em;
+    }
+
     .status {
       text-align: center;
       padding: 15px;
@@ -97,7 +102,7 @@
     .positive { color: #0a8a0a; }
     .negative { color: #d00000; }
 
-    /* Widget Responsive */
+    /* Widget Responsive Investing */
     .widget-responsive {
       width: 100%;
       max-width: 425px;
@@ -165,44 +170,45 @@
         </iframe>
       </div>
 
-      <script>
-        function resizeWidget() {
-          const container = document.querySelector('.widget-responsive');
-          const iframe = document.getElementById('investing-frame');
-
-          const originalWidth = 425;
-          const currentWidth = container.offsetWidth;
-          const scale = currentWidth / originalWidth;
-
-          iframe.style.transform = `scale(${scale})`;
-          iframe.style.width = originalWidth + "px";
-          iframe.style.height = (253 * scale) + "px";
-        }
-
-        window.addEventListener('resize', resizeWidget);
-        window.addEventListener('load', resizeWidget);
-      </script>
-
       <div style="font-size:11px;margin-top:8px;">
         Resumen técnico por <a href="https://es.investing.com" target="_blank">Investing.com</a>
       </div>
     </div>
 
-    <!-- WIDGET ALTERNATIVO (FUNCIONA SIEMPRE) -->
-    <div class="section-title">Cotizaciones Globales</div>
+    <!-- WIDGET TRADINGVIEW (ALTERNATIVO, SIN CLAVE) -->
+    <div class="section-title">Commodities internacionales</div>
 
     <div class="tabla-container" style="padding: 10px;">
-      <iframe 
-        src="https://api.stockdio.com/visualization/financial/charts/v1/Ticker?app-key=8E2F46D8F1CF4B09B927192EA20E6D84&symbols=GC;SI;CL;HG;ZC;ZW;ZS;LE"
-        style="width:100%;height:450px;border:0;">
-      </iframe>
-      <div style="font-size:11px;color:#777;text-align:center;margin-top:6px;">
-        Widget financiero por Stockdio
+      <div class="tradingview-widget-container">
+        <div class="tradingview-widget-container__widget"></div>
+        <script type="text/javascript"
+          src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+        {
+          "colorTheme": "light",
+          "dateRange": "1D",
+          "showChart": true,
+          "locale": "es",
+          "width": "100%",
+          "height": "450",
+          "tabs": [
+            {
+              "title": "Commodities",
+              "symbols": [
+                { "s": "CBOT:ZS1!", "d": "Soja" },
+                { "s": "CBOT:ZC1!", "d": "Maíz" },
+                { "s": "CBOT:ZW1!", "d": "Trigo" },
+                { "s": "NYMEX:CL1!", "d": "Petróleo WTI" },
+                { "s": "COMEX:GC1!", "d": "Oro" }
+              ]
+            }
+          ]
+        }
+        </script>
       </div>
     </div>
 
-    <!-- WIDGET CLONADO ESTILO INVESTING -->
-    <div class="section-title">Cotizaciones en Tiempo Real</div>
+    <!-- WIDGET CLONADO ESTILO INVESTING (TABLA) -->
+    <div class="section-title">Cotizaciones en Tiempo Real (Tabla)</div>
 
     <div class="tabla-container">
       <table class="tabla" id="widgetCommodities">
@@ -221,9 +227,30 @@
 
   </main>
 
- 
+  <footer>
+    Fuente: Yahoo Finance (CBOT) — Datos con posible retraso
+  </footer>
 
-  <!-- SCRIPT PARA EL WIDGET CLONADO -->
+  <!-- SCRIPT RESIZE WIDGET INVESTING -->
+  <script>
+    function resizeWidget() {
+      const container = document.querySelector('.widget-responsive');
+      const iframe = document.getElementById('investing-frame');
+
+      const originalWidth = 425;
+      const currentWidth = container.offsetWidth || originalWidth;
+      const scale = currentWidth / originalWidth;
+
+      iframe.style.transform = `scale(${scale})`;
+      iframe.style.width = originalWidth + "px";
+      iframe.style.height = (253 * scale) + "px";
+    }
+
+    window.addEventListener('resize', resizeWidget);
+    window.addEventListener('load', resizeWidget);
+  </script>
+
+  <!-- SCRIPT PARA EL WIDGET CLONADO (TABLA) -->
   <script>
     const tickers = {
       soy: "ZS=F",
@@ -242,7 +269,7 @@
         const quote = json.chart.result[0];
         const prices = quote.indicators.quote[0];
 
-        const price = prices.close.at(-1);
+        const price = prices.close[prices.close.length - 1];
         const open = prices.open[0] || price;
         const pct = ((price - open) / open) * 100;
 
@@ -256,7 +283,11 @@
       const lastEl = document.getElementById(id + "_last");
       const varEl = document.getElementById(id + "_var");
 
-      if (!data) return;
+      if (!data) {
+        lastEl.textContent = "—";
+        varEl.textContent = "—";
+        return;
+      }
 
       lastEl.textContent = data.price.toFixed(2);
       varEl.textContent = (data.pct >= 0 ? "+" : "") + data.pct.toFixed(2) + "%";
@@ -265,7 +296,8 @@
 
     async function refreshWidgetClone() {
       for (const id in tickers) {
-        updateRow(id, await getQuote(tickers[id]));
+        const data = await getQuote(tickers[id]);
+        updateRow(id, data);
       }
     }
 
