@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Precios de granos en Paraguay</title>
+
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -20,7 +21,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .header-icon {
@@ -44,39 +45,9 @@
       stroke-linejoin: round;
     }
 
-    .logo {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
     .logo img {
       height: 36px;
       width: auto;
-    }
-
-
-    .navbar {
-      background-color: #ffffff;
-      padding: 10px 20px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      display: flex;
-      justify-content: center;
-      gap: 30px;
-    }
-
-    .navbar a {
-      text-decoration: none;
-      color: #555;
-      font-weight: 500;
-      padding: 8px 15px;
-      border-radius: 6px;
-      transition: background-color 0.3s, color 0.3s;
-    }
-
-    .navbar a:hover, .navbar a.active {
-      background-color: #e7f1ff;
-      color: #0B57D0;
     }
 
     header {
@@ -91,88 +62,6 @@
       font-size: 2em;
     }
 
-    header p {
-      margin: 5px 0 0;
-      opacity: 0.9;
-    }
-
-    main {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
-      padding: 20px;
-      max-width: 1200px;
-      margin: 20px auto;
-    }
-
-    .grano {
-      background: white;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-      transition: transform 0.3s, box-shadow 0.3s;
-    }
-
-    .grano:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-    }
-
-    .grano h2 {
-      margin-top: 0;
-      color: #0B57D0;
-      font-size: 1.5em;
-      border-bottom: 2px solid #f0f0f0;
-      padding-bottom: 10px;
-      margin-bottom: 20px;
-    }
-
-    .dato {
-      margin: 10px 0;
-      font-size: 1em;
-      color: #555;
-    }
-
-    .precio {
-      font-size: 2.2em;
-      font-weight: bold;
-      color: #084298; /* Darker blue */
-      margin: 20px 0;
-    }
-
-    .precio .unit {
-      font-size: 0.4em;
-      font-weight: 500;
-      color: #555;
-      margin-left: 8px;
-      vertical-align: middle;
-    }
-
-    .variacion {
-      padding: 4px 8px;
-      border-radius: 4px;
-      display: inline-block;
-      font-weight: bold;
-      font-size: 0.9em;
-    }
-
-    .positivo {
-      background-color: #cfe2ff; /* Light blue */
-      color: #084298; /* Dark blue */
-    }
-
-    .negativo {
-      background-color: #f8d7da; /* Light red */
-      color: #c62828;
-    }
-
-    .loading {
-      color: #666;
-      font-style: italic;
-      font-size: 0.8em;
-    }
-
     .status {
       text-align: center;
       padding: 15px;
@@ -180,6 +69,62 @@
       color: #666;
       background-color: #fff;
       border-bottom: 1px solid #eee;
+    }
+
+    /* ---------------- NUEVO ESTILO TIPO INVESTING ---------------- */
+
+    .section-title {
+      background: #2f2f2f;
+      color: white;
+      padding: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      margin-top: 25px;
+      text-transform: uppercase;
+      border-radius: 4px 4px 0 0;
+    }
+
+    .tabla-container {
+      background: white;
+      border: 1px solid #ccc;
+      border-top: none;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    table.tabla {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .tabla th {
+      background: #f8f9fa;
+      padding: 10px;
+      text-align: left;
+      font-weight: bold;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .tabla td {
+      padding: 10px;
+      border-bottom: 1px solid #efefef;
+    }
+
+    .tabla tr:hover {
+      background: #f5f6f8;
+    }
+
+    .var {
+      font-weight: bold;
+    }
+
+    .positive {
+      color: #0a8a0a;
+    }
+
+    .negative {
+      color: #d00000;
     }
 
     footer {
@@ -191,18 +136,22 @@
     }
   </style>
 </head>
+
 <body>
-  <!-- Header con logo -->
+
+  <!-- Header -->
   <div class="header">
-    <a href="homenoticias.html" class="header-icon" aria-label="Volver a Inicio">
+    <a href="homenoticias.html" class="header-icon">
       <svg viewBox="0 0 24 24">
         <path d="M15 18l-6-6 6-6"></path>
       </svg>
     </a>
+
     <div class="logo">
-      <img src="logo1.png" alt="IASA logo" loading="lazy">
+      <img src="logo1.png" alt="IASA logo">
     </div>
-    <a href="perfil.html" class="header-icon" aria-label="Mi Perfil">
+
+    <a href="perfil.html" class="header-icon">
       <svg viewBox="0 0 24 24">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
         <circle cx="12" cy="7" r="4"></circle>
@@ -210,199 +159,190 @@
     </a>
   </div>
 
-
   <header>
     <h1>Cotizaciones CBOT</h1>
   </header>
 
   <div class="status" id="status">Conectando...</div>
 
+  <!-- ---------------- NUEVO DISEÑO + WIDGET ---------------- -->
   <main>
-    <section class="grano">
-      <h2>Soja (CBOT)</h2>
-      <div class="precio">
-        <span id="SOY-price-ton"><span class="loading">Cargando...</span></span><span class="unit">USD/Ton</span>
-      </div>
-      <div class="dato">
-        <strong>Precio/Bushel (¢/bu):</strong> <span id="SOY-price-bushel">—</span>
-      </div>
-      <div class="dato">
-        <strong>Variación:</strong> <span id="SOY-change">—</span>
-      </div>
-      <div class="dato">
-        <strong>Rango del día (¢/bu):</strong> <span id="SOY-range">—</span>
-      </div>
-      <div class="dato">
-        <strong>Última actualización:</strong> <span id="SOY-time">—</span>
-      </div>
-    </section>
 
-    <section class="grano">
-      <h2>Maíz (CBOT)</h2>
-      <div class="precio">
-        <span id="CORN-price-ton"><span class="loading">Cargando...</span></span><span class="unit">USD/Ton</span>
-      </div>
-      <div class="dato">
-        <strong>Precio/Bushel (¢/bu):</strong> <span id="CORN-price-bushel">—</span>
-      </div>
-      <div class="dato">
-        <strong>Variación:</strong> <span id="CORN-change">—</span>
-      </div>
-      <div class="dato">
-        <strong>Rango del día (¢/bu):</strong> <span id="CORN-range">—</span>
-      </div>
-      <div class="dato">
-        <strong>Última actualización:</strong> <span id="CORN-time">—</span>
-      </div>
-    </section>
+    <!-- Bloque 1 -->
+    <div class="section-title">Cotizaciones en tiempo real</div>
 
-    <section class="grano">
-      <h2>Trigo (CBOT)</h2>
-      <div class="precio">
-        <span id="WHEAT-price-ton"><span class="loading">Cargando...</span></span><span class="unit">USD/Ton</span>
-      </div>
-      <div class="dato">
-        <strong>Precio/Bushel (¢/bu):</strong> <span id="WHEAT-price-bushel">—</span>
-      </div>
-      <div class="dato">
-        <strong>Variación:</strong> <span id="WHEAT-change">—</span>
-      </div>
-      <div class="dato">
-        <strong>Rango del día (¢/bu):</strong> <span id="WHEAT-range">—</span>
-      </div>
-      <div class="dato">
-        <strong>Última actualización:</strong> <span id="WHEAT-time">—</span>
-      </div>
-    </section>
+    <div class="tabla-container">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Contrato</th>
+            <th>Último</th>
+            <th>Var. %</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr>
+            <td>Soja (CBOT)</td>
+            <td id="SOY-price-bushel">—</td>
+            <td id="SOY-var" class="var">—</td>
+          </tr>
+
+          <tr>
+            <td>Maíz (CBOT)</td>
+            <td id="CORN-price-bushel">—</td>
+            <td id="CORN-var" class="var">—</td>
+          </tr>
+
+          <tr>
+            <td>Trigo (CBOT)</td>
+            <td id="WHEAT-price-bushel">—</td>
+            <td id="WHEAT-var" class="var">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Bloque 2 -->
+    <div class="section-title">Precios USD por tonelada</div>
+
+    <div class="tabla-container">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Contrato</th>
+            <th>Precio</th>
+            <th>Var.</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr>
+            <td>Soja</td>
+            <td id="SOY-price-ton">—</td>
+            <td id="SOY-var-2" class="var">—</td>
+          </tr>
+
+          <tr>
+            <td>Maíz</td>
+            <td id="CORN-price-ton">—</td>
+            <td id="CORN-var-2" class="var">—</td>
+          </tr>
+
+          <tr>
+            <td>Trigo</td>
+            <td id="WHEAT-price-ton">—</td>
+            <td id="WHEAT-var-2" class="var">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  <div class="section-title">Resumen Técnico (Investing.com)</div>
+
+<div class="tabla-container" style="padding: 15px; text-align:center;">
+
+    <iframe 
+        frameborder="0" 
+        scrolling="no" 
+        height="232" 
+        width="265" 
+        allowtransparency="true" 
+        marginwidth="0" 
+        marginheight="0"
+        src="https://ssltools.investing.com/technical_summary.php?pairs=8916,8917,8918,13916&curr-name-color=%230059B0&fields=5m&force_lang=4">
+    </iframe>
+
+    <div style="width:265px; margin: 0 auto;">
+        <a href="https://es.investing.com/technical/technical-summary"
+           target="_blank"
+           rel="nofollow"
+           style="font-size:11px;color:#06529D;font-weight:bold;text-decoration:underline;">
+           Resumen Técnico por Investing.com
+        </a>
+    </div>
+
+</div>
+
   </main>
 
   <footer>
-    Fuente: Yahoo Finance (CBOT) vía proxy CORS — Los datos pueden tener un retraso. 1 Tonelada ≈ 36.74 bushels.
+    Fuente: Yahoo Finance (CBOT) vía proxy — Datos con posible retraso.  
+    1 Tonelada ≈ 36.74 bushels.
   </footer>
 
+
+  <!-- ---------------------- SCRIPT ---------------------- -->
   <script>
-    // Símbolos de Yahoo Finance para futuros de CBOT
+
     const symbols = {
-      SOY: 'ZS=F',    // Soja
-      CORN: 'ZC=F',   // Maíz
-      WHEAT: 'ZW=F'   // Trigo
+      SOY: 'ZS=F',
+      CORN: 'ZC=F',
+      WHEAT: 'ZW=F'
     };
 
-    // Conversión de cents/bushel a USD/tonelada
     const conversion = {
-      SOY: 36.7437,    // 1 bushel soja = 60 lbs = 27.216 kg
-      CORN: 39.3683,   // 1 bushel maíz = 56 lbs = 25.4 kg
-      WHEAT: 36.7437   // 1 bushel trigo = 60 lbs = 27.216 kg
+      SOY: 36.7437,
+      CORN: 39.3683,
+      WHEAT: 36.7437
     };
 
     async function fetchQuote(symbol) {
       try {
-        // Usando proxy CORS gratuito
         const url = `https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        const quote = data.chart.result[0];
-        const meta = quote.meta;
-        
-        // Obtener el precio actual y el cierre anterior
-        const currentPrice = meta.regularMarketPrice || meta.previousClose;
-        const previousClose = meta.chartPreviousClose || meta.previousClose;
-        const dayLow = meta.regularMarketDayLow;
-        const dayHigh = meta.regularMarketDayHigh;
-        
-        // Verificar que los valores existen
-        if (!currentPrice || !previousClose) {
-          console.error(`Datos incompletos para ${symbol}`, meta);
-          return null;
-        }
-        
-        const change = currentPrice - previousClose;
-        const changePct = (change / previousClose) * 100;
-        
+        const res = await fetch(url);
+        const json = await res.json();
+
+        const quote = json.chart.result[0];
+        const prices = quote.indicators.quote[0];
+
+        const price = prices.close[prices.close.length - 1];
+        const open = prices.open[0] || price;
+        const pct = ((price - open) / open) * 100;
+
         return {
-          price: currentPrice,
-          previousClose: previousClose,
-          change: change,
-          changePct: changePct,
-          dayLow: dayLow,
-          dayHigh: dayHigh,
-          timestamp: meta.regularMarketTime || Math.floor(Date.now() / 1000)
+          price,
+          open,
+          pct
         };
-      } catch (error) {
-        console.error(`Error fetching ${symbol}:`, error);
+      } catch (e) {
         return null;
       }
     }
 
-    function updateGrano(id, data, conversionFactor) {
-      if (!data) {
-        document.getElementById(`${id}-price-ton`).innerHTML = '<span class="loading" style="font-size: 0.5em;">Error</span>';
-        return;
-      }
+    function updateGrano(id, data, factor) {
+      if (!data) return;
 
-      // Convertir de cents/bushel a USD/tonelada
-      const priceInTons = (data.price / 100) * conversionFactor;
-      const changeInTons = (data.change / 100) * conversionFactor;
-      
-      // Precio en USD por tonelada
-      document.getElementById(`${id}-price-ton`).textContent = `$${priceInTons.toFixed(2)} `;
-      
-      // Precio en centavos por bushel
-      document.getElementById(`${id}-price-bushel`).textContent = `${data.price.toFixed(2)}`;
-      
-      const sign = data.change >= 0 ? '+' : '';
-      const variationClass = data.change >= 0 ? 'positivo' : 'negativo';
-      
-      document.getElementById(`${id}-change`).innerHTML = 
-        `<span class="variacion ${variationClass}">${sign}${changeInTons.toFixed(2)} (${sign}${data.changePct.toFixed(2)}%)</span>`;
-      
-      // Rango del día
-      const rangeEl = document.getElementById(`${id}-range`);
-      if (data.dayLow && data.dayHigh) {
-        rangeEl.textContent = `${data.dayLow.toFixed(2)} - ${data.dayHigh.toFixed(2)}`;
-      } else {
-        rangeEl.textContent = 'No disponible';
-      }
+      const priceBushel = data.price.toFixed(2);
+      const priceTon = ((data.price / 100) * factor).toFixed(2);
 
-      const date = new Date(data.timestamp * 1000);
-      document.getElementById(`${id}-time`).textContent = date.toLocaleString('es-PY');
+      const pct = data.pct.toFixed(2);
+      const sign = pct >= 0 ? "+" : "";
+
+      document.getElementById(`${id}-price-bushel`).textContent = priceBushel;
+      document.getElementById(`${id}-var`).textContent = `${sign}${pct}%`;
+      document.getElementById(`${id}-var`).classList.add(pct >= 0 ? "positive" : "negative");
+
+      document.getElementById(`${id}-price-ton`).textContent = "$" + priceTon;
+      document.getElementById(`${id}-var-2`).textContent = `${sign}${pct}%`;
+      document.getElementById(`${id}-var-2`).classList.add(pct >= 0 ? "positive" : "negative");
     }
 
-    async function refreshAll() {
-      const statusEl = document.getElementById('status');
-      statusEl.textContent = 'Actualizando precios...';
-      
-      try {
-        let successCount = 0;
-        
-        for (const [key, symbol] of Object.entries(symbols)) {
-          const data = await fetchQuote(symbol);
-          updateGrano(key, data, conversion[key]);
-          if (data) successCount++;
-          // Pausa entre peticiones
-          await new Promise(resolve => setTimeout(resolve, 300));
-        }
-        
-        if (successCount > 0) {
-          const now = new Date().toLocaleTimeString('es-PY');
-          statusEl.textContent = `✓ Última actualización: ${now}`;
-        } else {
-          statusEl.textContent = '⚠ Error al conectar con el servidor';
-        }
-      } catch (error) {
-        console.error('Error al actualizar:', error);
-        statusEl.textContent = '⚠ Error en la actualización';
+    async function refresh() {
+      document.getElementById("status").textContent = "Actualizando...";
+
+      for (const [id, symbol] of Object.entries(symbols)) {
+        const data = await fetchQuote(symbol);
+        updateGrano(id, data, conversion[id]);
       }
+
+      document.getElementById("status").textContent =
+        "Última actualización: " + new Date().toLocaleTimeString("es-PY");
     }
 
-    // Actualizar al cargar y cada 60 segundos
-    refreshAll();
-    setInterval(refreshAll, 60000);
+    refresh();
+    setInterval(refresh, 60000);
   </script>
+
 </body>
 </html>
