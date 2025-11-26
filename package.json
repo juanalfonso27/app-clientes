@@ -9,7 +9,22 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "node-fetch": "^3.3.2",
-    "firebase-admin": "^12.0.0"
-  }
+    "axios": "^1.13.2",
+    "cheerio": "^1.1.2",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "firebase-admin": "^12.0.0",
+    "node-fetch": "^3.3.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/juanalfonso27/app-clientes.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/juanalfonso27/app-clientes/issues"
+  },
+  "homepage": "https://github.com/juanalfonso27/app-clientes#readme"
 }
