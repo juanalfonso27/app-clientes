@@ -182,35 +182,34 @@
     <!-- NUEVO WIDGET TRADINGVIEW FUNCIONAL -->
     <div class="section-title">Commodities internacionales</div>
 
-    <div class="tabla-container" style="padding: 10px;">
-      <div class="tradingview-widget-container">
-        <div id="tradingview_widget"></div>
-      </div>
+  <div class="tabla-container" style="padding:10px;">
+  <div class="tradingview-widget-container">
+    <div class="tradingview-widget-container__widget"></div>
 
-      <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-      <script>
-        new TradingView.MarketOverview({
-          container_id: "tradingview_widget",
-          width: "100%",
-          height: 450,
-          colorTheme: "light",
-          locale: "es",
-          showChart: true,
-          tabs: [
-            {
-              title: "Commodities",
-              symbols: [
-                { s: "CBOT:ZS1!", d: "Soja" },
-                { s: "CBOT:ZC1!", d: "Maíz" },
-                { s: "CBOT:ZW1!", d: "Trigo" },
-                { s: "NYMEX:CL1!", d: "Petróleo WTI" },
-                { s: "COMEX:GC1!", d: "Oro" }
-              ]
-            }
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+    {
+      "colorTheme": "light",
+      "dateRange": "12M",
+      "showChart": true,
+      "locale": "es",
+      "width": "100%",
+      "height": "450",
+      "tabs": [
+        {
+          "title": "Commodities",
+          "symbols": [
+            { "s": "CBOT:ZS1!", "d": "Soja" },
+            { "s": "CBOT:ZC1!", "d": "Maíz" },
+            { "s": "CBOT:ZW1!", "d": "Trigo" },
+            { "s": "NYMEX:CL1!", "d": "Petróleo WTI" },
+            { "s": "COMEX:GC1!", "d": "Oro" }
           ]
-        });
-      </script>
-    </div>
+        }
+      ]
+    }
+    </script>
+  </div>
+</div>
 
     <!-- TABLA DE PRECIOS (YAHOO FINANCE) -->
     <div class="section-title">Cotizaciones en Tiempo Real (Tabla)</div>
