@@ -24,17 +24,6 @@
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
-    .header-icon {
-      cursor: pointer;
-      background: none;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 4px;
-      color: #555;
-    }
-
     .header-icon svg {
       width: 22px;
       height: 22px;
@@ -70,8 +59,6 @@
       background-color: #fff;
       border-bottom: 1px solid #eee;
     }
-
-    /* ---------------- NUEVO ESTILO TIPO INVESTING ---------------- */
 
     .section-title {
       background: #2f2f2f;
@@ -165,10 +152,41 @@
 
   <div class="status" id="status">Conectando...</div>
 
-  <!-- ---------------- NUEVO DISEÑO + WIDGET ---------------- -->
+  <!-- ---------------- MAIN ---------------- -->
   <main>
 
-    <!-- Bloque 1 -->
+    <!-- ⭐⭐⭐ WIDGET INVESTING AL INICIO ⭐⭐⭐ -->
+    <div class="section-title">Resumen Técnico (Investing.com)</div>
+
+    <div class="tabla-container" style="padding: 15px; text-align:center;">
+
+      <iframe
+        frameborder="0"
+        scrolling="no"
+        height="253"
+        width="425"
+        allowtransparency="true"
+        marginwidth="0"
+        marginheight="0"
+        src="https://ssltools.investing.com/technical_summary.php?pairs=8916,8917,8918,13916,961618&curr-name-color=%230059B0&fields=5m,1h,1d&force_lang=4">
+      </iframe>
+
+      <div style="width:425px; margin: 5px auto 0 auto;">
+        <span style="font-size: 11px;color: #333;">
+          Resumen técnico proporcionado por 
+          <a href="https://es.investing.com/"
+            rel="nofollow"
+            target="_blank"
+            style="font-size: 11px;color: #06529D; font-weight: bold;">
+            Investing.com España
+          </a>.
+        </span>
+      </div>
+
+    </div>
+    <!-- FIN WIDGET -->
+
+    <!-- TABLA 1 -->
     <div class="section-title">Cotizaciones en tiempo real</div>
 
     <div class="tabla-container">
@@ -203,7 +221,7 @@
       </table>
     </div>
 
-    <!-- Bloque 2 -->
+    <!-- TABLA 2 -->
     <div class="section-title">Precios USD por tonelada</div>
 
     <div class="tabla-container">
@@ -238,32 +256,6 @@
       </table>
     </div>
 
-  <div class="section-title">Resumen Técnico (Investing.com)</div>
-
-<div class="tabla-container" style="padding: 15px; text-align:center;">
-
-    <iframe 
-        frameborder="0" 
-        scrolling="no" 
-        height="232" 
-        width="265" 
-        allowtransparency="true" 
-        marginwidth="0" 
-        marginheight="0"
-        src="https://ssltools.investing.com/technical_summary.php?pairs=8916,8917,8918,13916&curr-name-color=%230059B0&fields=5m&force_lang=4">
-    </iframe>
-
-    <div style="width:265px; margin: 0 auto;">
-        <a href="https://es.investing.com/technical/technical-summary"
-           target="_blank"
-           rel="nofollow"
-           style="font-size:11px;color:#06529D;font-weight:bold;text-decoration:underline;">
-           Resumen Técnico por Investing.com
-        </a>
-    </div>
-
-</div>
-
   </main>
 
   <footer>
@@ -271,8 +263,7 @@
     1 Tonelada ≈ 36.74 bushels.
   </footer>
 
-
-  <!-- ---------------------- SCRIPT ---------------------- -->
+  <!-- SCRIPT -->
   <script>
 
     const symbols = {
@@ -300,11 +291,8 @@
         const open = prices.open[0] || price;
         const pct = ((price - open) / open) * 100;
 
-        return {
-          price,
-          open,
-          pct
-        };
+        return { price, open, pct };
+
       } catch (e) {
         return null;
       }
@@ -342,6 +330,7 @@
 
     refresh();
     setInterval(refresh, 60000);
+
   </script>
 
 </body>
