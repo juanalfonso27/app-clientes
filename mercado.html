@@ -113,6 +113,18 @@
     .negative {
       color: #d00000;
     }
+    .widget-responsive {
+  width: 100%;
+  max-width: 425px;
+  margin: 0 auto;
+  overflow: hidden;
+  position: relative;
+}
+
+.widget-responsive iframe {
+  transform-origin: top left;
+}
+
 
     footer {
       text-align: center;
@@ -155,35 +167,53 @@
   <!-- ---------------- MAIN ---------------- -->
   <main>
 
-    <!-- ⭐⭐⭐ WIDGET INVESTING AL INICIO ⭐⭐⭐ -->
     <div class="section-title">Resumen Técnico (Investing.com)</div>
 
-    <div class="tabla-container" style="padding: 15px; text-align:center;">
+<div class="tabla-container" style="padding: 15px; text-align:center;">
 
-      <iframe
-        frameborder="0"
-        scrolling="no"
-        height="253"
-        width="425"
-        allowtransparency="true"
-        marginwidth="0"
-        marginheight="0"
-        src="https://ssltools.investing.com/technical_summary.php?pairs=8916,8917,8918,13916,961618&curr-name-color=%230059B0&fields=5m,1h,1d&force_lang=4">
-      </iframe>
+  <div class="widget-responsive">
+    <iframe
+      id="investing-frame"
+      frameborder="0"
+      scrolling="no"
+      height="253"
+      width="425"
+      allowtransparency="true"
+      src="https://ssltools.investing.com/technical_summary.php?pairs=8916,8917,8918,13916,961618&curr-name-color=%230059B0&fields=5m,1h,1d&force_lang=4">
+    </iframe>
+  </div>
 
-      <div style="width:425px; margin: 5px auto 0 auto;">
-        <span style="font-size: 11px;color: #333;">
-          Resumen técnico proporcionado por 
-          <a href="https://es.investing.com/"
-            rel="nofollow"
-            target="_blank"
-            style="font-size: 11px;color: #06529D; font-weight: bold;">
-            Investing.com España
-          </a>.
-        </span>
-      </div>
+  <script>
+    function resizeWidget() {
+      const container = document.querySelector('.widget-responsive');
+      const iframe = document.getElementById('investing-frame');
 
-    </div>
+      const originalWidth = 425;
+      const currentWidth = container.offsetWidth;
+      const scale = currentWidth / originalWidth;
+
+      iframe.style.transform = `scale(${scale})`;
+      iframe.style.width = originalWidth + "px";
+      iframe.style.height = (253 * scale) + "px";
+    }
+
+    window.addEventListener('resize', resizeWidget);
+    window.addEventListener('load', resizeWidget);
+  </script>
+
+  <div style="width:100%; margin-top: 8px;">
+    <span style="font-size: 11px;color: #333;">
+      Resumen técnico proporcionado por
+      <a href="https://es.investing.com/"
+         rel="nofollow"
+         target="_blank"
+         style="font-size: 11px;color: #06529D; font-weight: bold;">
+         Investing.com España
+      </a>.
+    </span>
+  </div>
+
+</div>
     <!-- FIN WIDGET -->
 
     <!-- TABLA 1 -->
