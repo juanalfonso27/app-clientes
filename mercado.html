@@ -1,100 +1,208 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Precios de granos en Paraguay</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f9f9f9;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background-color: #f0f2f5;
       color: #333;
       margin: 0;
       padding: 0;
     }
+
+    .header {
+      background-color: #d4d4d4;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .header-icon {
+      cursor: pointer;
+      background: none;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      color: #555;
+    }
+
+    .header-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo img {
+      height: 36px;
+      width: auto;
+    }
+
+
+    .navbar {
+      background-color: #ffffff;
+      padding: 10px 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+    }
+
+    .navbar a {
+      text-decoration: none;
+      color: #555;
+      font-weight: 500;
+      padding: 8px 15px;
+      border-radius: 6px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .navbar a:hover, .navbar a.active {
+      background-color: #e7f1ff;
+      color: #0B57D0;
+    }
+
     header {
-      background: #2e7d32;
+      background: #0B57D0;
       color: white;
-      padding: 20px;
+      padding: 25px 20px;
       text-align: center;
     }
+
+    header h1 {
+      margin: 0;
+      font-size: 2em;
+    }
+
+    header p {
+      margin: 5px 0 0;
+      opacity: 0.9;
+    }
+
     main {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 20px;
       padding: 20px;
       max-width: 1200px;
-      margin: 0 auto;
+      margin: 20px auto;
     }
+
     .grano {
       background: white;
-      border: 1px solid #ddd;
+      border: 1px solid #e0e0e0;
       border-radius: 8px;
-      padding: 16px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      transition: transform 0.2s;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      transition: transform 0.3s, box-shadow 0.3s;
     }
+
     .grano:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.08);
     }
+
     .grano h2 {
       margin-top: 0;
-      color: #2e7d32;
-      font-size: 1.3em;
+      color: #0B57D0;
+      font-size: 1.5em;
+      border-bottom: 2px solid #f0f0f0;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
     }
+
     .dato {
-      margin: 12px 0;
-      font-size: 0.95em;
+      margin: 10px 0;
+      font-size: 1em;
+      color: #555;
     }
+
     .precio {
-      font-size: 1.8em;
+      font-size: 2.2em;
       font-weight: bold;
-      color: #1b5e20;
-      margin: 16px 0;
+      color: #084298; /* Darker blue */
+      margin: 20px 0;
     }
+
     .variacion {
       padding: 4px 8px;
       border-radius: 4px;
       display: inline-block;
       font-weight: bold;
+      font-size: 0.9em;
     }
+
     .positivo {
-      background: #c8e6c9;
-      color: #1b5e20;
+      background-color: #cfe2ff; /* Light blue */
+      color: #084298; /* Dark blue */
     }
+
     .negativo {
-      background: #ffcdd2;
+      background-color: #f8d7da; /* Light red */
       color: #c62828;
     }
+
     .loading {
       color: #666;
       font-style: italic;
+      font-size: 0.8em;
     }
-    footer {
-      text-align: center;
-      padding: 12px;
-      background: #eee;
-      font-size: 12px;
-      color: #666;
-    }
-    .error-msg {
-      background: #ffebee;
-      color: #c62828;
-      padding: 12px;
-      border-radius: 4px;
-      margin: 20px;
-      text-align: center;
-    }
+
     .status {
       text-align: center;
-      padding: 8px;
+      padding: 15px;
       font-size: 0.9em;
       color: #666;
+      background-color: #fff;
+      border-bottom: 1px solid #eee;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      background: #e9ecef;
+      font-size: 0.8em;
+      color: #6c757d;
     }
   </style>
 </head>
 <body>
+  <!-- Header con logo -->
+  <div class="header">
+    <a href="homenoticias.html" class="header-icon" aria-label="Volver a Inicio">
+      <svg viewBox="0 0 24 24">
+        <path d="M15 18l-6-6 6-6"></path>
+      </svg>
+    </a>
+    <div class="logo">
+      <img src="logo1.png" alt="IASA logo" loading="lazy">
+    </div>
+    <a href="perfil.html" class="header-icon" aria-label="Mi Perfil">
+      <svg viewBox="0 0 24 24">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+    </a>
+  </div>
+
+
   <header>
     <h1>🌾 Precio de granos en Paraguay</h1>
     <p>Cotizaciones CBOT en tiempo real</p>
@@ -144,7 +252,7 @@
   </main>
 
   <footer>
-    <small>Fuente: Yahoo Finance (CBOT) vía proxy CORS — Los datos pueden tener un retraso de 15-20 minutos</small>
+    Fuente: Yahoo Finance (CBOT) vía proxy CORS — Los datos pueden tener un retraso de 15-20 minutos
   </footer>
 
   <script>
