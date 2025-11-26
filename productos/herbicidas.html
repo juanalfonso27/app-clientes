@@ -4,6 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo - Herbicidas</title>
+    <!-- Importar configuración y scripts de Firebase -->
+    <script src="../firebase-config.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, query, where, orderBy, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+        window.firebase = {
+            initializeApp,
+            getFirestore,
+            collection,
+            getDocs,
+            doc,
+            getDoc,
+            query,
+            where,
+            orderBy,
+            initializeFirestore
+        };
+    </script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -52,6 +70,7 @@
             flex-direction: column;
         }
         .catalog-item img {
+            aspect-ratio: 4 / 3;
             width: 100%;
             height: 120px;
             object-fit: cover;
@@ -163,37 +182,8 @@
         <h1 class="header-title">Herbicidas</h1>
     </div>
 
-    <main class="catalog-grid">
-        <!-- Los atributos data-product-id son cruciales para identificar el producto -->
-        <a href="#" class="catalog-item" data-product-id="certeza">
-            <img src="../imagenes/image.png" alt="CERTEZA">
-            <div class="catalog-item-content">
-                <div class="catalog-item-name">CERTEZA</div>
-                <div class="catalog-item-dose">Dosis: 2 - 3 L/ha</div>
-            </div>
-        </a>
-        <a href="#" class="catalog-item" data-product-id="otro-herbicida">
-            <img src="https://via.placeholder.com/300x240/e8dfd8/333?text=Producto+2" alt="Otro Herbicida">
-            <div class="catalog-item-content">
-                <div class="catalog-item-name">Otro Herbicida</div>
-                <div class="catalog-item-dose">Dosis: 1.5 L/ha</div>
-            </div>
-        </a>
-        <a href="#" class="catalog-item" data-product-id="herbicida-selectivo">
-            <img src="https://via.placeholder.com/300x240/8fb7a3/fff?text=Producto+3" alt="Herbicida Selectivo">
-            <div class="catalog-item-content">
-                <div class="catalog-item-name">Herbicida Selectivo</div>
-                <div class="catalog-item-dose">Dosis: 0.5 - 1 L/ha</div>
-            </div>
-        </a>
-        <a href="#" class="catalog-item" data-product-id="herbicida-total">
-            <img src="https://via.placeholder.com/300x240/f4e8d6/333?text=Producto+4" alt="Herbicida Total">
-            <div class="catalog-item-content">
-                <div class="catalog-item-name">Herbicida Total</div>
-                <div class="catalog-item-dose">Dosis: 4 L/ha</div>
-            </div>
-        </a>
-        <!-- Puedes agregar más productos aquí -->
+    <main class="catalog-grid" id="catalogGrid">
+        <!-- Los productos se cargarán aquí desde Firestore -->
     </main>
 
     <!-- Product Detail Modal -->
@@ -225,58 +215,6 @@
 
 </body>
 <script>
-    // Datos de los productos (pueden venir de una base de datos o API en un entorno real)
-    const productsData = [
-        {
-            id: 'certeza',
-            name: 'HERB. CERTEZA',
-            nombreComercial: 'HERB. CERTEZA®',
-            caracteristicas: 'Herbicida selectivo y sistémico para el control de malezas de hoja ancha en cultivos de cereales y pasturas. Actúa por contacto y residualidad.',
-            recomendacionesUso: 'Aplicar en post-emergencia temprana de las malezas, con buena cobertura. Dosis varían según cultivo y tipo de maleza. Consultar etiqueta para detalles.',
-            beneficios: 'Amplio espectro de control de malezas difíciles, alta selectividad en cultivos, persistencia en el suelo que prolonga su efecto.',
-            naturalezaFisica: 'Suspensión concentrada (SC)',
-            presentacion: 'Envases de 1 L, 5 L, 20 L',
-            principioActivo: 'Metribuzin 500 g/L',
-            dosis: '2 - 3 L/ha (variable según cultivo y maleza)'
-        },
-        {
-            id: 'otro-herbicida',
-            name: 'Otro Herbicida',
-            nombreComercial: 'Herbicida Genérico Plus',
-            caracteristicas: 'Herbicida de contacto y sistémico para el control de malezas anuales y perennes en áreas no cultivadas.',
-            recomendacionesUso: 'Aplicar sobre malezas activamente creciendo. Evitar deriva a cultivos sensibles adyacentes.',
-            beneficios: 'Rápida acción, control de amplio espectro, buena translocación en la planta.',
-            naturalezaFisica: 'Concentrado soluble (SL)',
-            presentacion: 'Envases de 1 L, 10 L',
-            principioActivo: 'Glifosato 480 g/L',
-            dosis: '1.5 - 4 L/ha (según maleza y estado de desarrollo)'
-        },
-        {
-            id: 'herbicida-selectivo',
-            name: 'Herbicida Selectivo',
-            nombreComercial: 'Selectivo Maíz',
-            caracteristicas: 'Herbicida post-emergente para el control de malezas de hoja ancha en maíz.',
-            recomendacionesUso: 'Aplicar cuando el maíz tenga entre 2 y 6 hojas. No aplicar con estrés hídrico.',
-            beneficios: 'Alta eficacia en malezas específicas de maíz, seguro para el cultivo.',
-            naturalezaFisica: 'Gránulos dispersables en agua (WG)',
-            presentacion: 'Sachets de 100 g, 500 g',
-            principioActivo: 'Mesotrione 75% + Nicosulfuron 2.5%',
-            dosis: '0.5 - 1 L/ha (o 100-200 g/ha si es WG)'
-        },
-        {
-            id: 'herbicida-total',
-            name: 'Herbicida Total',
-            nombreComercial: 'Total Control',
-            caracteristicas: 'Herbicida no selectivo de amplio espectro para el control total de vegetación.',
-            recomendacionesUso: 'Ideal para limpieza de bordes de caminos, acequias y preparación de terrenos.',
-            beneficios: 'Eliminación completa de malezas, efecto rápido y visible.',
-            naturalezaFisica: 'Concentrado emulsionable (EC)',
-            presentacion: 'Envases de 5 L, 20 L',
-            principioActivo: 'Paraquat 200 g/L',
-            dosis: '4 L/ha'
-        }
-    ];
-
     const productDetailModalOverlay = document.getElementById('productDetailModalOverlay');
     const modalProductName = document.getElementById('modalProductName');
     const modalNombreComercial = document.getElementById('modalNombreComercial');
@@ -290,15 +228,15 @@
     const closeProductModalButton = document.getElementById('closeProductModal');
 
     function openProductModal(product) {
-        modalProductName.textContent = product.name;
-        modalNombreComercial.textContent = product.nombreComercial;
-        modalCaracteristicas.textContent = product.caracteristicas;
-        modalRecomendaciones.textContent = product.recomendacionesUso;
-        modalBeneficios.textContent = product.beneficios;
-        modalNaturalezaFisica.textContent = product.naturalezaFisica;
-        modalPresentacion.textContent = product.presentacion;
-        modalPrincipioActivo.textContent = product.principioActivo;
-        modalDosis.textContent = product.dosis;
+        modalProductName.textContent = product.name || 'N/A';
+        modalNombreComercial.textContent = product.nombreComercial || 'N/A';
+        modalCaracteristicas.textContent = product.caracteristicas || 'N/A';
+        modalRecomendaciones.textContent = product.recomendacionesUso || 'N/A';
+        modalBeneficios.textContent = product.beneficios || 'N/A';
+        modalNaturalezaFisica.textContent = product.naturalezaFisica || 'N/A';
+        modalPresentacion.textContent = product.presentacion || 'N/A';
+        modalPrincipioActivo.textContent = product.principioActivo || 'N/A';
+        modalDosis.textContent = product.dosis || 'N/A';
         productDetailModalOverlay.classList.add('open');
     }
 
@@ -306,20 +244,106 @@
         productDetailModalOverlay.classList.remove('open');
     }
 
-    // Event listener para abrir el modal al hacer clic en un producto
-    document.querySelector('.catalog-grid').addEventListener('click', (event) => {
-        const clickedItem = event.target.closest('.catalog-item');
-        if (clickedItem) {
-            event.preventDefault(); // Evita que el enlace navegue
-            const productId = clickedItem.dataset.productId;
-            const product = productsData.find(p => p.id === productId);
-            if (product) {
-                openProductModal(product);
+    // --- Lógica de Firebase ---
+    let db;
+    const COLLECTION_NAME = 'productos'; // Colección principal de productos
+    const CATEGORY_FILTER = 'herbicida'; // Categoría para esta página
+
+    async function loadProducts() {
+        const grid = document.getElementById('catalogGrid');
+        grid.innerHTML = '<p style="color:#666;padding:20px 0;">Cargando productos...</p>';
+
+        try {
+            const q = window.firebase.query(
+                window.firebase.collection(db, COLLECTION_NAME),
+                window.firebase.where('category', '==', CATEGORY_FILTER),
+                window.firebase.orderBy('name')
+            );
+            const querySnapshot = await window.firebase.getDocs(q);
+
+            if (querySnapshot.empty) {
+                grid.innerHTML = '<p style="color:#666;padding:20px 0;">No hay productos en esta categoría.</p>';
+                return;
+            }
+
+            let html = '';
+            querySnapshot.forEach(doc => {
+                const product = doc.data();
+                const imageUrl = product.imageUrl || 'https://via.placeholder.com/300x240/eee/ccc?text=Sin+Imagen';
+                const dose = product.dosis || 'Consultar';
+
+                html += `
+                    <a href="#" class="catalog-item" data-product-id="${doc.id}">
+                        <img src="${imageUrl}" alt="${product.name}" loading="lazy">
+                        <div class="catalog-item-content">
+                            <div class="catalog-item-name">${product.name}</div>
+                            <div class="catalog-item-dose">Dosis: ${dose}</div>
+                        </div>
+                    </a>
+                `;
+            });
+            grid.innerHTML = html;
+
+        } catch (error) {
+            console.error("Error cargando productos:", error);
+            grid.innerHTML = '<p style="color:#d32f2f;padding:20px 0;">Error al cargar los productos.</p>';
+            // Firestore puede sugerir crear un índice en la consola de errores.
+            if (error.message.includes('indexes')) {
+                 grid.innerHTML += '<p style="font-size:12px; color:#666;">Es posible que necesite crear un índice compuesto en Firestore. Revise la consola del navegador para ver el enlace de creación.</p>';
             }
         }
+    }
+
+    async function showProductDetails(productId) {
+        try {
+            const docRef = window.firebase.doc(db, COLLECTION_NAME, productId);
+            const docSnap = await window.firebase.getDoc(docRef);
+
+            if (docSnap.exists()) {
+                openProductModal(docSnap.data());
+            } else {
+                console.error("No se encontró el producto con ID:", productId);
+                alert("No se pudo encontrar la información de este producto.");
+            }
+        } catch (error) {
+            console.error("Error obteniendo detalles del producto:", error);
+            alert("Error al obtener los detalles del producto.");
+        }
+    }
+
+    // Inicializar Firebase y cargar productos
+    document.addEventListener('DOMContentLoaded', () => {
+        try {
+            if (!window.firebaseConfig) throw new Error('firebaseConfig no encontrado');
+            const app = window.firebase.initializeApp(window.firebaseConfig);
+            // Usar la misma base de datos 'news' o una específica para productos
+            try {
+                db = window.firebase.initializeFirestore(app, { databaseId: 'news' });
+            } catch(e) {
+                db = window.firebase.getFirestore(app);
+            }
+            
+            loadProducts();
+
+        } catch (e) {
+            console.error('Error inicializando Firebase:', e);
+            document.getElementById('catalogGrid').innerHTML = '<p style="color:#d32f2f;padding:20px 0;">Error de configuración de Firebase.</p>';
+        }
+
+        // Event listener para abrir el modal (delegación de eventos)
+        document.getElementById('catalogGrid').addEventListener('click', (event) => {
+            const clickedItem = event.target.closest('.catalog-item');
+            if (clickedItem) {
+                event.preventDefault();
+                const productId = clickedItem.dataset.productId;
+                if (productId) {
+                    showProductDetails(productId);
+                }
+            }
+        });
     });
 
-    // Event listener para cerrar el modal
+    // Listeners para cerrar el modal
     closeProductModalButton.addEventListener('click', closeProductModal);
     productDetailModalOverlay.addEventListener('click', (event) => {
         if (event.target === productDetailModalOverlay) {
@@ -333,5 +357,6 @@
             closeProductModal();
         }
     });
+
 </script>
 </html>
