@@ -98,9 +98,17 @@
       border-bottom: 1px solid #efefef;
     }
 
-    .var { font-weight: bold; }
-    .positive { color: #0a8a0a; }
-    .negative { color: #d00000; }
+    .var {
+      font-weight: bold;
+    }
+
+    .positive {
+      color: #0a8a0a;
+    }
+
+    .negative {
+      color: #d00000;
+    }
 
     /* Widget Responsive Investing */
     .widget-responsive {
@@ -130,7 +138,9 @@
   <!-- Header -->
   <div class="header">
     <a href="homenoticias.html" class="header-icon">
-      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"></path></svg>
+      <svg viewBox="0 0 24 24">
+        <path d="M15 18l-6-6 6-6"></path>
+      </svg>
     </a>
 
     <div class="logo">
@@ -154,18 +164,12 @@
   <!-- MAIN -->
   <main>
 
-    <!-- WIDGET INVESTING TÉCNICO (RESPONSIVE) -->
+    <!-- WIDGET INVESTING -->
     <div class="section-title">Resumen Técnico</div>
 
     <div class="tabla-container" style="padding: 15px; text-align:center;">
       <div class="widget-responsive">
-        <iframe
-          id="investing-frame"
-          frameborder="0"
-          scrolling="no"
-          height="253"
-          width="425"
-          allowtransparency="true"
+        <iframe id="investing-frame" frameborder="0" scrolling="no" height="253" width="425" allowtransparency="true"
           src="https://ssltools.investing.com/technical_summary.php?pairs=8916,8917,8918,13916,961618&curr-name-color=%230059B0&fields=5m,1h,1d&force_lang=4">
         </iframe>
       </div>
@@ -175,63 +179,84 @@
       </div>
     </div>
 
-    <!-- WIDGET TRADINGVIEW (ALTERNATIVO, SIN CLAVE) -->
+    <!-- NUEVO WIDGET TRADINGVIEW FUNCIONAL -->
     <div class="section-title">Commodities internacionales</div>
 
     <div class="tabla-container" style="padding: 10px;">
       <div class="tradingview-widget-container">
-        <div class="tradingview-widget-container__widget"></div>
-        <script type="text/javascript"
-          src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
-        {
-          "colorTheme": "light",
-          "dateRange": "1D",
-          "showChart": true,
-          "locale": "es",
-          "width": "100%",
-          "height": "450",
-          "tabs": [
+        <div id="tradingview_widget"></div>
+      </div>
+
+      <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+      <script>
+        new TradingView.MarketOverview({
+          container_id: "tradingview_widget",
+          width: "100%",
+          height: 450,
+          colorTheme: "light",
+          locale: "es",
+          showChart: true,
+          tabs: [
             {
-              "title": "Commodities",
-              "symbols": [
-                { "s": "CBOT:ZS1!", "d": "Soja" },
-                { "s": "CBOT:ZC1!", "d": "Maíz" },
-                { "s": "CBOT:ZW1!", "d": "Trigo" },
-                { "s": "NYMEX:CL1!", "d": "Petróleo WTI" },
-                { "s": "COMEX:GC1!", "d": "Oro" }
+              title: "Commodities",
+              symbols: [
+                { s: "CBOT:ZS1!", d: "Soja" },
+                { s: "CBOT:ZC1!", d: "Maíz" },
+                { s: "CBOT:ZW1!", d: "Trigo" },
+                { s: "NYMEX:CL1!", d: "Petróleo WTI" },
+                { s: "COMEX:GC1!", d: "Oro" }
               ]
             }
           ]
-        }
-        </script>
-      </div>
+        });
+      </script>
     </div>
 
-    <!-- WIDGET CLONADO ESTILO INVESTING (TABLA) -->
+    <!-- TABLA DE PRECIOS (YAHOO FINANCE) -->
     <div class="section-title">Cotizaciones en Tiempo Real (Tabla)</div>
 
     <div class="tabla-container">
       <table class="tabla" id="widgetCommodities">
         <thead>
-          <tr><th>Contrato</th><th>Último</th><th>Var. %</th></tr>
+          <tr>
+            <th>Contrato</th>
+            <th>Último</th>
+            <th>Var. %</th>
+          </tr>
         </thead>
         <tbody>
-          <tr><td>Soja Chicago</td><td id="soy_last">Cargando...</td><td id="soy_var">—</td></tr>
-          <tr><td>Maíz Chicago</td><td id="corn_last">Cargando...</td><td id="corn_var">—</td></tr>
-          <tr><td>Trigo Chicago</td><td id="wheat_last">Cargando...</td><td id="wheat_var">—</td></tr>
-          <tr><td>Petróleo WTI</td><td id="oil_last">Cargando...</td><td id="oil_var">—</td></tr>
-          <tr><td>Oro</td><td id="gold_last">Cargando...</td><td id="gold_var">—</td></tr>
+          <tr>
+            <td>Soja Chicago</td>
+            <td id="soy_last">Cargando...</td>
+            <td id="soy_var">—</td>
+          </tr>
+          <tr>
+            <td>Maíz Chicago</td>
+            <td id="corn_last">Cargando...</td>
+            <td id="corn_var">—</td>
+          </tr>
+          <tr>
+            <td>Trigo Chicago</td>
+            <td id="wheat_last">Cargando...</td>
+            <td id="wheat_var">—</td>
+          </tr>
+          <tr>
+            <td>Petróleo WTI</td>
+            <td id="oil_last">Cargando...</td>
+            <td id="oil_var">—</td>
+          </tr>
+          <tr>
+            <td>Oro</td>
+            <td id="gold_last">Cargando...</td>
+            <td id="gold_var">—</td>
+          </tr>
         </tbody>
       </table>
     </div>
 
   </main>
 
-  <footer>
-    Fuente: Yahoo Finance (CBOT) — Datos con posible retraso
-  </footer>
-
-  <!-- SCRIPT RESIZE WIDGET INVESTING -->
+  <!-- SCRIPT RESIZE INVESTING -->
   <script>
     function resizeWidget() {
       const container = document.querySelector('.widget-responsive');
@@ -250,7 +275,7 @@
     window.addEventListener('load', resizeWidget);
   </script>
 
-  <!-- SCRIPT PARA EL WIDGET CLONADO (TABLA) -->
+  <!-- SCRIPT YAHOO FINANCE -->
   <script>
     const tickers = {
       soy: "ZS=F",
