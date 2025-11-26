@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo - Herbicidas</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+        }
+        .header {
+            background-color: #fff;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .back-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .back-button svg {
+            width: 24px;
+            height: 24px;
+            stroke: #333;
+            stroke-width: 2;
+        }
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        .catalog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+            padding: 16px;
+        }
+        .catalog-item {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+        }
+        .catalog-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            background-color: #eee;
+        }
+        .catalog-item-content {
+            padding: 12px;
+            flex-grow: 1;
+        }
+        .catalog-item-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .catalog-item-dose {
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .product-detail-modal {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-overlay.open .product-detail-modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .modal-close-button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .modal-body {
+            padding: 16px;
+            line-height: 1.6;
+            color: #444;
+        }
+
+        .modal-body h3 {
+            font-size: 16px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            color: #5a4fcf;
+        }
+
+        .modal-body p {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <button class="back-button" onclick="history.back()" aria-label="Volver">
+            <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 18l-6-6 6-6"></path>
+            </svg>
+        </button>
+        <h1 class="header-title">Herbicidas</h1>
+    </div>
+
+    <main class="catalog-grid">
+        <!-- Los atributos data-product-id son cruciales para identificar el producto -->
+        <a href="#" class="catalog-item" data-product-id="certeza">
+            <img src="../imagenes/image.png" alt="CERTEZA">
+            <div class="catalog-item-content">
+                <div class="catalog-item-name">CERTEZA</div>
+                <div class="catalog-item-dose">Dosis: 2 - 3 L/ha</div>
+            </div>
+        </a>
+        <a href="#" class="catalog-item" data-product-id="otro-herbicida">
+            <img src="https://via.placeholder.com/300x240/e8dfd8/333?text=Producto+2" alt="Otro Herbicida">
+            <div class="catalog-item-content">
+                <div class="catalog-item-name">Otro Herbicida</div>
+                <div class="catalog-item-dose">Dosis: 1.5 L/ha</div>
+            </div>
+        </a>
+        <a href="#" class="catalog-item" data-product-id="herbicida-selectivo">
+            <img src="https://via.placeholder.com/300x240/8fb7a3/fff?text=Producto+3" alt="Herbicida Selectivo">
+            <div class="catalog-item-content">
+                <div class="catalog-item-name">Herbicida Selectivo</div>
+                <div class="catalog-item-dose">Dosis: 0.5 - 1 L/ha</div>
+            </div>
+        </a>
+        <a href="#" class="catalog-item" data-product-id="herbicida-total">
+            <img src="https://via.placeholder.com/300x240/f4e8d6/333?text=Producto+4" alt="Herbicida Total">
+            <div class="catalog-item-content">
+                <div class="catalog-item-name">Herbicida Total</div>
+                <div class="catalog-item-dose">Dosis: 4 L/ha</div>
+            </div>
+        </a>
+        <!-- Puedes agregar más productos aquí -->
+    </main>
+
+    <!-- Product Detail Modal -->
+    <div class="modal-overlay" id="productDetailModalOverlay">
+        <div class="product-detail-modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalProductName"></h2>
+                <button class="modal-close-button" id="closeProductModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Nombre Comercial:</strong> <span id="modalNombreComercial"></span></p>
+                <h3>Características</h3>
+                <p id="modalCaracteristicas"></p>
+                <h3>Recomendaciones de Uso</h3>
+                <p id="modalRecomendaciones"></p>
+                <h3>Beneficios</h3>
+                <p id="modalBeneficios"></p>
+                <h3>Naturaleza Física</h3>
+                <p id="modalNaturalezaFisica"></p>
+                <h3>Presentación</h3>
+                <p id="modalPresentacion"></p>
+                <h3>Principio Activo</h3>
+                <p id="modalPrincipioActivo"></p>
+                <h3>Dosis</h3>
+                <p id="modalDosis"></p>
+            </div>
+        </div>
+    </div>
+
+</body>
+<script>
+    // Datos de los productos (pueden venir de una base de datos o API en un entorno real)
+    const productsData = [
+        {
+            id: 'certeza',
+            name: 'HERB. CERTEZA',
+            nombreComercial: 'HERB. CERTEZA®',
+            caracteristicas: 'Herbicida selectivo y sistémico para el control de malezas de hoja ancha en cultivos de cereales y pasturas. Actúa por contacto y residualidad.',
+            recomendacionesUso: 'Aplicar en post-emergencia temprana de las malezas, con buena cobertura. Dosis varían según cultivo y tipo de maleza. Consultar etiqueta para detalles.',
+            beneficios: 'Amplio espectro de control de malezas difíciles, alta selectividad en cultivos, persistencia en el suelo que prolonga su efecto.',
+            naturalezaFisica: 'Suspensión concentrada (SC)',
+            presentacion: 'Envases de 1 L, 5 L, 20 L',
+            principioActivo: 'Metribuzin 500 g/L',
+            dosis: '2 - 3 L/ha (variable según cultivo y maleza)'
+        },
+        {
+            id: 'otro-herbicida',
+            name: 'Otro Herbicida',
+            nombreComercial: 'Herbicida Genérico Plus',
+            caracteristicas: 'Herbicida de contacto y sistémico para el control de malezas anuales y perennes en áreas no cultivadas.',
+            recomendacionesUso: 'Aplicar sobre malezas activamente creciendo. Evitar deriva a cultivos sensibles adyacentes.',
+            beneficios: 'Rápida acción, control de amplio espectro, buena translocación en la planta.',
+            naturalezaFisica: 'Concentrado soluble (SL)',
+            presentacion: 'Envases de 1 L, 10 L',
+            principioActivo: 'Glifosato 480 g/L',
+            dosis: '1.5 - 4 L/ha (según maleza y estado de desarrollo)'
+        },
+        {
+            id: 'herbicida-selectivo',
+            name: 'Herbicida Selectivo',
+            nombreComercial: 'Selectivo Maíz',
+            caracteristicas: 'Herbicida post-emergente para el control de malezas de hoja ancha en maíz.',
+            recomendacionesUso: 'Aplicar cuando el maíz tenga entre 2 y 6 hojas. No aplicar con estrés hídrico.',
+            beneficios: 'Alta eficacia en malezas específicas de maíz, seguro para el cultivo.',
+            naturalezaFisica: 'Gránulos dispersables en agua (WG)',
+            presentacion: 'Sachets de 100 g, 500 g',
+            principioActivo: 'Mesotrione 75% + Nicosulfuron 2.5%',
+            dosis: '0.5 - 1 L/ha (o 100-200 g/ha si es WG)'
+        },
+        {
+            id: 'herbicida-total',
+            name: 'Herbicida Total',
+            nombreComercial: 'Total Control',
+            caracteristicas: 'Herbicida no selectivo de amplio espectro para el control total de vegetación.',
+            recomendacionesUso: 'Ideal para limpieza de bordes de caminos, acequias y preparación de terrenos.',
+            beneficios: 'Eliminación completa de malezas, efecto rápido y visible.',
+            naturalezaFisica: 'Concentrado emulsionable (EC)',
+            presentacion: 'Envases de 5 L, 20 L',
+            principioActivo: 'Paraquat 200 g/L',
+            dosis: '4 L/ha'
+        }
+    ];
+
+    const productDetailModalOverlay = document.getElementById('productDetailModalOverlay');
+    const modalProductName = document.getElementById('modalProductName');
+    const modalNombreComercial = document.getElementById('modalNombreComercial');
+    const modalCaracteristicas = document.getElementById('modalCaracteristicas');
+    const modalRecomendaciones = document.getElementById('modalRecomendaciones');
+    const modalBeneficios = document.getElementById('modalBeneficios');
+    const modalNaturalezaFisica = document.getElementById('modalNaturalezaFisica');
+    const modalPresentacion = document.getElementById('modalPresentacion');
+    const modalPrincipioActivo = document.getElementById('modalPrincipioActivo');
+    const modalDosis = document.getElementById('modalDosis');
+    const closeProductModalButton = document.getElementById('closeProductModal');
+
+    function openProductModal(product) {
+        modalProductName.textContent = product.name;
+        modalNombreComercial.textContent = product.nombreComercial;
+        modalCaracteristicas.textContent = product.caracteristicas;
+        modalRecomendaciones.textContent = product.recomendacionesUso;
+        modalBeneficios.textContent = product.beneficios;
+        modalNaturalezaFisica.textContent = product.naturalezaFisica;
+        modalPresentacion.textContent = product.presentacion;
+        modalPrincipioActivo.textContent = product.principioActivo;
+        modalDosis.textContent = product.dosis;
+        productDetailModalOverlay.classList.add('open');
+    }
+
+    function closeProductModal() {
+        productDetailModalOverlay.classList.remove('open');
+    }
+
+    // Event listener para abrir el modal al hacer clic en un producto
+    document.querySelector('.catalog-grid').addEventListener('click', (event) => {
+        const clickedItem = event.target.closest('.catalog-item');
+        if (clickedItem) {
+            event.preventDefault(); // Evita que el enlace navegue
+            const productId = clickedItem.dataset.productId;
+            const product = productsData.find(p => p.id === productId);
+            if (product) {
+                openProductModal(product);
+            }
+        }
+    });
+
+    // Event listener para cerrar el modal
+    closeProductModalButton.addEventListener('click', closeProductModal);
+    productDetailModalOverlay.addEventListener('click', (event) => {
+        if (event.target === productDetailModalOverlay) {
+            closeProductModal();
+        }
+    });
+
+    // Cerrar modal con la tecla Escape
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && productDetailModalOverlay.classList.contains('open')) {
+            closeProductModal();
+        }
+    });
+</script>
+</html>

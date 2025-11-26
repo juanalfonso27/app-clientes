@@ -726,6 +726,10 @@
             background: linear-gradient(180deg, rgba(255,255,255,0), #ffffff);
         }
 
+        .product-grid a {
+            text-decoration: none;
+        }
+
         .product-card .product-label small {
             display:block;
             margin-top:6px;
@@ -921,35 +925,42 @@
         </div>
 
         <div class="product-grid" id="productGrid">
-            <div class="product-card" data-name="Herbicidas">
-                <img src="imagenes/image.png" alt="Herbicidas">
-                <div class="product-label">Herbicidas</div>
-            </div>
-
-            <div class="product-card" data-name="Fungicidas">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%23e8dfd8' width='400' height='240'/%3E%3C/svg%3E" alt="Fungicidas">
-                <div class="product-label">Fungicidas</div>
-            </div>
-
-            <div class="product-card" data-name="Insecticidas">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%238fb7a3' width='400' height='240'/%3E%3C/svg%3E" alt="Insecticidas">
-                <div class="product-label">Insecticidas</div>
-            </div>
-
-            <div class="product-card" data-name="Semillas">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%23f4e8d6' width='400' height='240'/%3E%3C/svg%3E" alt="Semillas">
-                <div class="product-label">Semillas</div>
-            </div>
-
-            <div class="product-card" data-name="Fertilizantes">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%23dfe6f4' width='400' height='240'/%3E%3C/svg%3E" alt="Fertilizantes">
-                <div class="product-label">Fertilizantes</div>
-            </div>
-
-            <div class="product-card" data-name="Biológicos">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%23e6f4ee' width='400' height='240'/%3E%3C/svg%3E" alt="Biológicos">
-                <div class="product-label">Biológicos</div>
-            </div>
+            <a href="productos/herbicidas.html" data-name="Herbicidas">
+                <div class="product-card">
+                    <img src="imagenes/image.png" alt="Herbicidas">
+                    <div class="product-label">Herbicidas</div>
+                </div>
+            </a>
+            <a href="productos/fungicidas.html" data-name="Fungicidas">
+                <div class="product-card">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%23e8dfd8' width='400' height='240'/%3E%3C/svg%3E" alt="Fungicidas">
+                    <div class="product-label">Fungicidas</div>
+                </div>
+            </a>
+            <a href="productos/insecticidas.html" data-name="Insecticidas">
+                <div class="product-card">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%238fb7a3' width='400' height='240'/%3E%3C/svg%3E" alt="Insecticidas">
+                    <div class="product-label">Insecticidas</div>
+                </div>
+            </a>
+            <a href="productos/semillas.html" data-name="Semillas">
+                <div class="product-card">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%23f4e8d6' width='400' height='240'/%3E%3C/svg%3E" alt="Semillas">
+                    <div class="product-label">Semillas</div>
+                </div>
+            </a>
+            <a href="productos/fertilizantes.html" data-name="Fertilizantes">
+                <div class="product-card">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%23dfe6f4' width='400' height='240'/%3E%3C/svg%3E" alt="Fertilizantes">
+                    <div class="product-label">Fertilizantes</div>
+                </div>
+            </a>
+            <a href="productos/biologicos.html" data-name="Biológicos">
+                <div class="product-card">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%23e6f4ee' width='400' height='240'/%3E%3C/svg%3E" alt="Biológicos">
+                    <div class="product-label">Biológicos</div>
+                </div>
+            </a>
         </div>
     </div>
 
@@ -1046,25 +1057,15 @@
 
             input.addEventListener('input', () => {
                 const q = input.value.trim().toLowerCase();
-                const cards = grid.querySelectorAll('.product-card');
-                cards.forEach(card => {
-                    const name = (card.dataset.name || '').toLowerCase();
+                const links = grid.querySelectorAll('a');
+                links.forEach(link => {
+                    const name = (link.dataset.name || '').toLowerCase();
                     if (!q || name.includes(q)) {
-                        card.style.display = '';
+                        link.style.display = '';
                     } else {
-                        card.style.display = 'none';
+                        link.style.display = 'none';
                     }
                 });
-            });
-
-            // Click en tarjeta: por ahora solo resalta y podría navegar
-            grid.addEventListener('click', (e) => {
-                const card = e.target.closest('.product-card');
-                if (!card) return;
-                // indicar selección visual temporal
-                grid.querySelectorAll('.product-card').forEach(c => c.style.boxShadow = '0 1px 6px rgba(0,0,0,0.06)');
-                card.style.boxShadow = '0 4px 14px rgba(90,79,207,0.18)';
-                // aquí podríamos navegar a la categoría: window.location.href = 'productos.html?cat='+encodeURIComponent(card.dataset.name)
             });
         })();
 
