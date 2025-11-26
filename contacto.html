@@ -212,22 +212,47 @@
 
     <script>
         const form = document.getElementById('contactForm');
+        const submitButton = form.querySelector('button[type="submit"]');
 
-        form.addEventListener('submit', (event) => {
+        form.addEventListener('submit', async (event) => {
             event.preventDefault();
+            submitButton.disabled = true;
+            submitButton.textContent = 'Enviando...';
 
-            const name = form.name.value.trim();
-            const email = form.email.value.trim();
-            const message = form.message.value.trim();
+            const formData = new FormData(form);
+            const data = {
+                name: formData.get('name').trim(),
+                location: formData.get('location'),
+                email: formData.get('email').trim(),
+                phone: formData.get('phone')?.trim() || '',
+                message: formData.get('message').trim(),
+                submittedAt: new Date().toISOString()
+            };
 
-            if (!name || !email || !message) {
-                alert('Por favor, completá los campos obligatorios (Nombre, Correo y Mensaje).');
-                return;
+            try {
+                // Este endpoint '/api/contact' lo crearemos en el servidor (server.js)
+                const response = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Hubo un problema al enviar el mensaje.');
+                }
+
+                alert('Gracias por contactarte con nosotros. Te estaremos respondiendo a la brevedad.');
+                form.reset();
+
+            } catch (error) {
+                console.error('Error al enviar formulario:', error);
+                alert('Error: No se pudo enviar tu mensaje. Por favor, intentá de nuevo más tarde.');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Enviar mensaje';
             }
-
-            // Acá iría el envío real al servidor (fetch / AJAX)
-            alert('Gracias por contactarte con nosotros. Te estaremos respondiendo a la brevedad.');
-            form.reset();
         });
     </script>
 </body>

@@ -145,15 +145,20 @@
             width: 100%;
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             background: #4b40b0;
             transform: translateY(-1px);
             box-shadow: 0 5px 16px rgba(90,79,207,0.55);
         }
 
-        .btn-primary:active {
+        .btn-primary:active:not(:disabled) {
             transform: translateY(0);
             box-shadow: 0 2px 8px rgba(90,79,207,0.35);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .btn-secondary {
@@ -237,26 +242,63 @@
         </main>
     </div>
 
-    <script>
-        const visitForm = document.getElementById('visitForm');
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-        visitForm.addEventListener('submit', (event) => {
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBGOBLIVvJxHqBhBae-hI1vM_KrzDEdtM0",
+            authDomain: "iasa-app-bfe8b.firebaseapp.com",
+            projectId: "iasa-app-bfe8b",
+            storageBucket: "iasa-app-bfe8b.firebasestorage.app",
+            messagingSenderId: "920148045932",
+            appId: "1:920148045932:web:39e83aae9da23104eb2849",
+            measurementId: "G-E13QW4LCE2"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Manejo del formulario
+        const form = document.getElementById('visitForm');
+        const submitButton = form.querySelector('button[type="submit"]');
+
+        form.addEventListener('submit', async (event) => {
             event.preventDefault();
+            submitButton.disabled = true;
+            submitButton.textContent = 'Enviando...';
 
-            const name = visitForm.name.value.trim();
-            const farm = visitForm.farm.value.trim();
-            const contact = visitForm.contact.value.trim();
-            const date = visitForm.date.value.trim();
-            const message = visitForm.message.value.trim();
+            const formData = new FormData(form);
+            const data = {
+                name: formData.get('name').trim(),
+                farm: formData.get('farm').trim(),
+                contact: formData.get('contact').trim(),
+                date: formData.get('date'),
+                time: formData.get('time') || 'No especificado',
+                type: formData.get('type') || 'No especificado',
+                message: formData.get('message').trim(),
+                createdAt: serverTimestamp(),
+                status: 'pendiente'
+            };
 
-            if (!name || !farm || !contact || !date || !message) {
-                alert('Por favor, completá los campos obligatorios (Nombre, Establecimiento, Contacto, Fecha y Comentarios).');
-                return;
+            try {
+                // Guardar en Firestore en la colección "visitas"
+                const docRef = await addDoc(collection(db, 'visitas'), data);
+                
+                console.log('Documento creado con ID:', docRef.id);
+                alert('✅ Tu solicitud de visita fue enviada correctamente. Nos estaremos comunicando para confirmar fecha y horario.');
+                form.reset();
+
+            } catch (error) {
+                console.error('Error al guardar en Firebase:', error);
+                alert('❌ Error: No se pudo enviar tu solicitud. Por favor, intentá de nuevo más tarde.');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Enviar solicitud de visita';
             }
-
-            // Aquí podrías enviar los datos al servidor más adelante (fetch / AJAX)
-            alert('Tu solicitud de visita fue enviada. Nos estaremos comunicando para confirmar fecha y horario.');
-            visitForm.reset();
         });
     </script>
 </body>
