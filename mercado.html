@@ -75,21 +75,28 @@
       font-size:14px;
     }
 
-    th {
-      background:#f8f9fa;
-      padding:10px;
-      border-bottom:1px solid #ddd;
-      text-align:left;
-    }
-
     td {
       padding:10px;
       border-bottom:1px solid #efefef;
     }
 
-    .widget-responsive {
-      max-width:425px;
-      margin:auto;
+    /* Noticias */
+    .news-item {
+      padding:12px 0;
+      border-bottom:1px solid #eee;
+    }
+
+    .news-item a {
+      text-decoration:none;
+      color:#111;
+      font-weight:600;
+      display:block;
+    }
+
+    .news-date {
+      font-size:12px;
+      color:#666;
+      margin-top:4px;
     }
   </style>
 </head>
@@ -123,17 +130,15 @@
 <!-- RESUMEN TÉCNICO INVESTING -->
 <div class="section-title">Resumen Técnico</div>
 <div class="tabla-container" style="padding:15px;text-align:center">
-  <div class="widget-responsive">
-    <iframe id="investing-frame" width="425" height="253" frameborder="0" scrolling="no"
-      src="https://ssltools.investing.com/technical_summary.php?pairs=8916,8917,8918&force_lang=4">
-    </iframe>
-  </div>
+  <iframe width="425" height="253" frameborder="0" scrolling="no"
+    src="https://ssltools.investing.com/technical_summary.php?pairs=8916,8917,8918&force_lang=4">
+  </iframe>
   <div style="font-size:11px;margin-top:8px">
     Resumen técnico por <a href="https://es.investing.com" target="_blank">Investing.com</a>
   </div>
 </div>
 
-<!-- TABLA DE PRECIOS -->
+<!-- COTIZACIONES -->
 <div class="section-title">Cotizaciones</div>
 <div class="tabla-container">
   <table>
@@ -143,31 +148,17 @@
   </table>
 </div>
 
-<!-- ✅ TRADINGVIEW AGRO (FUNCIONA SIEMPRE) -->
-<div class="section-title">Noticias del Mercado Agrícola</div>
-<div class="tabla-container" style="padding:10px">
-  <div class="tv-widget-container">
-    <div class="tv-widget-container__widget"></div>
-    <script src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
-    {
-      "symbols": [
-        ["Soja CBOT", "CBOT:ZS1!"],
-        ["Maíz CBOT", "CBOT:ZC1!"],
-        ["Trigo CBOT", "CBOT:ZW1!"]
-      ],
-      "width": "100%",
-      "height": 520,
-      "locale": "es",
-      "colorTheme": "light",
-      "chartType": "area"
-    }
-    </script>
-  </div>
+<!-- ✅ NOTICIAS AGRÍCOLAS (RSS REUTERS) -->
+<div class="section-title">Noticias Agrícolas</div>
+<div class="tabla-container" style="padding:15px">
+  <ul id="agro-news" style="list-style:none;margin:0;padding:0">
+    <li>Cargando noticias…</li>
+  </ul>
 </div>
 
 </main>
 
-<!-- YAHOO FINANCE -->
+<!-- SCRIPT YAHOO FINANCE -->
 <script>
 const tickers={soy:"ZS=F",corn:"ZC=F",wheat:"ZW=F"};
 async function getQuote(s){
@@ -186,6 +177,43 @@ async function refresh(){
 }
 refresh(); setInterval(refresh,60000);
 </script>
+
+<!-- SCRIPT NOTICIAS AGRÍCOLAS (REUTERS RSS - AllOrigins) -->
+<script>
+const RSS_URL = "https://www.reuters.com/rssFeed/agricultureNews";
+const API_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(RSS_URL);
+
+fetch(API_URL)
+  .then(res => res.text())
+  .then(str => new window.DOMParser().parseFromString(str, "text/xml"))
+  .then(data => {
+    const items = data.querySelectorAll("item");
+    const list = document.getElementById("agro-news");
+    list.innerHTML = "";
+
+    Array.from(items).slice(0, 6).forEach(item => {
+      const title = item.querySelector("title")?.textContent;
+      const link = item.querySelector("link")?.textContent;
+      const date = item.querySelector("pubDate")?.textContent;
+
+      const li = document.createElement("li");
+      li.className = "news-item";
+      li.innerHTML = `
+        <a href="${link}" target="_blank">${title}</a>
+        <div class="news-date">
+          ${date ? new Date(date).toLocaleDateString("es-ES") : ""}
+        </div>
+      `;
+      list.appendChild(li);
+    });
+  })
+  .catch(err => {
+    console.error("Error RSS:", err);
+    document.getElementById("agro-news").innerHTML =
+      "<li>No se pudieron cargar las noticias agrícolas.</li>";
+  });
+</script>
+
 
 </body>
 </html>
