@@ -24,29 +24,6 @@
     }
 
     /* HEADER */
-    .header {
-      background: #a19d9d;
-      padding: 12px 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: var(--shadow);
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    .header-icon svg {
-      width: 26px;
-      height: 26px;
-      stroke: var(--text-dark);
-    }
-
-    .logo img {
-      height: 40px;
-    }
-
-    /* TITULO */
     header {
       text-align: center;
       padding: 26px 18px;
@@ -57,7 +34,6 @@
       box-shadow: var(--shadow);
     }
 
-    /* STATUS */
     .status {
       text-align: center;
       padding: 12px;
@@ -67,7 +43,6 @@
       border-bottom: 1px solid #eee;
     }
 
-    /* SECCIONES */
     .section-title {
       background: #2f2f2f;
       color: #fff;
@@ -77,9 +52,10 @@
       letter-spacing: 0.5px;
       text-transform: uppercase;
       border-radius: var(--radius) var(--radius) 0 0;
+      margin-left: 14px;
+      margin-right: 14px;
     }
 
-    /* CONTENEDORES */
     .card {
       background: var(--card);
       border-radius: var(--radius);
@@ -89,30 +65,21 @@
       padding: 16px;
     }
 
-    /* TABLAS */
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 15px;
     }
 
-    td {
+    th, td {
       padding: 14px 10px;
       border-bottom: 1px solid #eee;
     }
 
-    td:last-child {
-      text-align: right;
-      font-weight: 600;
-    }
-
     th {
-      padding: 12px 10px;
-      border-bottom: 2px solid #ddd;
-      text-align: left;
-      font-weight: 600;
       font-size: 0.9rem;
       color: var(--text-muted);
+      font-weight: 600;
     }
 
     th:not(:first-child),
@@ -126,10 +93,9 @@
       -webkit-overflow-scrolling: touch;
     }
 
-    /* RESPONSIVE INVESTING */
     .iframe-container {
       width: 100%;
-      overflow: auto;
+      overflow-x: auto;
       border-radius: var(--radius);
       -webkit-overflow-scrolling: touch;
     }
@@ -137,28 +103,13 @@
     iframe {
       width: 100%;
       min-width: 320px;
+      height: 280px;
       border: none;
     }
 
-    /* MOBILE OPTIMIZATION */
-    @media (max-width: 480px) {
-      header {
-        font-size: 1.2rem;
-      }
-      td {
-        font-size: 14px;
-      }
-      .iframe-container {
-        overflow-x: auto;
-      }
+    @media (min-width: 600px) {
       iframe {
-        height: 280px;
-      }
-    }
-    
-    @media (min-width: 481px) {
-      iframe {
-        height: 260px;
+        height: 300px;
       }
     }
   </style>
@@ -166,103 +117,107 @@
 
 <body>
 
-<header>Cotizaciones</header>
+<header>Cotizaciones de Granos</header>
 
 <div class="status">Datos del mercado en tiempo real</div>
 
 <main>
 
-<!-- RESUMEN TÉCNICO -->
-<div class="section-title">Resumen Técnico</div>
-<div class="card">
-  <div class="iframe-container">
-    <iframe scrolling="yes"
-    src="https://ssltools.investing.com/technical_summary.php?pairs=8916,8917,8918&force_lang=4">
-    </iframe>
+  <!-- ✅ COTIZACIONES YAHOO ARRIBA -->
+  <div class="section-title">Cotizaciones</div>
+  <div class="card">
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Último</th>
+            <th>Var %</th>
+            <th>Apertura</th>
+            <th>Máx.</th>
+            <th>Mín.</th>
+          </tr>
+        </thead>
+        <tbody id="quotes-body">
+          <!-- Datos dinámicos -->
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <div style="font-size:12px;text-align:center;margin-top:6px;color:var(--text-muted);">
-    Resumen técnico por <a href="https://es.investing.com" target="_blank">Investing.com</a>
-  </div>
-</div>
+  <!-- ✅ RESUMEN TÉCNICO ABAJO -->
+  <div class="section-title">Resumen Técnico</div>
+  <div class="card">
+    <div class="iframe-container">
+      <iframe
+        scrolling="yes"
+        src="https://ssltools.investing.com/technical_summary.php?pairs=8916,8917,8918&force_lang=4">
+      </iframe>
+    </div>
 
-<!-- COTIZACIONES -->
-<div class="section-title">Cotizaciones</div>
-<div class="card">
-  <div class="table-container">
-    <table>
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th>Último</th>
-          <th>Var %</th>
-          <th>Apertura</th>
-          <th>Máx.</th>
-          <th>Mín.</th>
-        </tr>
-      </thead>
-      <tbody id="quotes-body">
-        <!-- Los datos se cargarán aquí dinámicamente -->
-      </tbody>
-    </table>
+    <div style="font-size:12px;text-align:center;margin-top:6px;color:var(--text-muted);">
+      Resumen técnico por
+      <a href="https://es.investing.com" target="_blank">Investing.com</a>
+    </div>
   </div>
-</div>
 
 </main>
 
-<!-- SCRIPT YAHOO FINANCE -->
+<!-- ✅ SCRIPT YAHOO FINANCE -->
 <script>
-const tickers={soy:"ZS=F",corn:"ZC=F",wheat:"ZW=F"};
-const productNames = { soy: "Soja Chicago", corn: "Maíz Chicago", wheat: "Trigo Chicago" };
+const tickers = {
+  soy: "ZS=F",
+  corn: "ZC=F",
+  wheat: "ZW=F"
+};
 
-async function getQuote(s){
-  const r=await fetch(`https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${s}?interval=1d&range=1d`);
-  const j=await r.json();
-  const result = j.chart.result[0];
+const productNames = {
+  soy: "Soja Chicago",
+  corn: "Maíz Chicago",
+  wheat: "Trigo Chicago"
+};
+
+async function getQuote(symbol) {
+  const response = await fetch(
+    `https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`
+  );
+  const json = await response.json();
+
+  const result = json.chart.result[0];
   const quote = result.indicators.quote[0];
-  const lastPrice = quote.close.pop() || 0;
-  const openPrice = quote.open[0] || lastPrice;
-  const highPrice = quote.high[0] || 0;
-  const lowPrice = quote.low[0] || 0;
-  const changePercent = openPrice !== 0 ? ((lastPrice - openPrice) / openPrice) * 100 : 0;
 
-  return {
-    last: lastPrice,
-    change: changePercent,
-    open: openPrice,
-    high: highPrice,
-    low: lowPrice
-  };
+  const last = quote.close.at(-1) || 0;
+  const open = quote.open[0] || last;
+  const high = quote.high[0] || 0;
+  const low = quote.low[0] || 0;
+  const change = open ? ((last - open) / open) * 100 : 0;
+
+  return { last, open, high, low, change };
 }
 
-async function refresh(){
-  const quotesBody = document.getElementById('quotes-body');
-  quotesBody.innerHTML = ''; // Limpiar la tabla antes de refrescar
+async function refresh() {
+  const tbody = document.getElementById("quotes-body");
+  tbody.innerHTML = "";
 
-  for(const key in tickers){
+  for (const key in tickers) {
     const data = await getQuote(tickers[key]);
-    const row = document.createElement('tr');
+    const color = data.change >= 0 ? "green" : "red";
 
-    const changeColor = data.change >= 0 ? 'green' : 'red';
-
-    row.innerHTML = `
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
       <td>${productNames[key]}</td>
       <td>${data.last.toFixed(2)}</td>
-      <td style="color: ${changeColor};">${data.change.toFixed(2)}%</td>
+      <td style="color:${color}">${data.change.toFixed(2)}%</td>
       <td>${data.open.toFixed(2)}</td>
       <td>${data.high.toFixed(2)}</td>
       <td>${data.low.toFixed(2)}</td>
     `;
-    quotesBody.appendChild(row);
+    tbody.appendChild(tr);
   }
 }
 
-function init() {
-  refresh();
-  setInterval(refresh, 60000); // Refresca cada 60 segundos
-}
-
-init();
+refresh();
+setInterval(refresh, 60000);
 </script>
 
 </body>
