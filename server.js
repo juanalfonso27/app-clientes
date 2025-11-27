@@ -104,6 +104,4 @@ app.post('/api/visit', async (req, res) => {
   }
 });
 
-// Vercel se encarga de iniciar el servidor, por lo que app.listen no es necesario.
-// En su lugar, exportamos la app para que Vercel la pueda usar.
-export default app;
+
