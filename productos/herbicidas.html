@@ -12,23 +12,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/fireba
 import {
   getFirestore,
   collection,
-  getDocs,
-  doc,
-  getDoc,
-  query,
-  orderBy
+  getDocs
 } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
-window.firebase = {
-  initializeApp,
-  getFirestore,
-  collection,
-  getDocs,
-  doc,
-  getDoc,
-  query,
-  orderBy
-};
+window.firebase = { initializeApp, getFirestore, collection, getDocs };
 </script>
 
 <style>
@@ -37,7 +24,6 @@ body {
   background: #f5f5f5;
   margin: 0;
 }
-
 .header {
   background: #fff;
   padding: 12px 16px;
@@ -46,68 +32,48 @@ body {
   gap: 16px;
   box-shadow: 0 2px 4px rgba(0,0,0,.1);
 }
-
 .header-title {
   font-size: 18px;
   font-weight: 600;
 }
-
 .catalog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 16px;
   padding: 16px;
 }
-
 .catalog-item {
-  background: white;
+  background: #fff;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 1px 6px rgba(0,0,0,.08);
-  text-decoration: none;
-  color: inherit;
   cursor: pointer;
 }
-
 .catalog-item img {
   width: 100%;
   height: 130px;
   object-fit: cover;
-  background: #eee;
 }
-
 .catalog-item-content {
   padding: 12px;
 }
-
 .catalog-item-name {
   font-weight: 600;
   font-size: 14px;
 }
-
 .catalog-item-dose {
   font-size: 12px;
   color: #666;
 }
-
-/* MODAL */
 .modal-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,.6);
-  display: flex;
+  display: none;
   justify-content: center;
   align-items: center;
-  opacity: 0;
-  visibility: hidden;
-  transition: .3s;
 }
-
-.modal-overlay.open {
-  opacity: 1;
-  visibility: visible;
-}
-
+.modal-overlay.open { display: flex }
 .product-detail-modal {
   background: #fff;
   width: 90%;
@@ -116,23 +82,20 @@ body {
   overflow-y: auto;
   border-radius: 12px;
 }
-
 .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: 16px;
   border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
 }
-
+.close-btn {
+  font-size: 28px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
 .modal-body {
   padding: 16px;
-  line-height: 1.6;
-}
-
-.modal-body h3 {
-  color: #5a4fcf;
-  margin-top: 14px;
 }
 </style>
 </head>
@@ -140,64 +103,41 @@ body {
 <body>
 
 <div class="header">
-  <button onclick="history.back()" style="background:none;border:none">
-    ←
-  </button>
+  <button onclick="history.back()">←</button>
   <h1 class="header-title">Herbicidas</h1>
 </div>
 
-<main class="catalog-grid" id="catalogGrid"></main>
+<main id="catalogGrid">Cargando productos...</main>
 
-<div class="modal-overlay" id="modal">
+<div class="modal-overlay" id="modal" onclick="if(event.target===this) closeModal()">
   <div class="product-detail-modal">
     <div class="modal-header">
-      <h2 id="mName"></h2>
-      <button onclick="closeModal()" style="font-size:22px;border:none;background:none">×</button>
+      <h2 id="mNombre"></h2>
+      <button class="close-btn" onclick="closeModal()">×</button>
     </div>
     <div class="modal-body">
-      <p><strong>Nombre comercial:</strong> <span id="mComercial"></span></p>
-
+      <p><strong>Dosis:</strong> <span id="mDosis"></span></p>
       <h3>Características</h3>
       <p id="mCaracteristicas"></p>
-
-      <h3>Recomendaciones</h3>
-      <p id="mRecomendaciones"></p>
-
       <h3>Beneficios</h3>
       <p id="mBeneficios"></p>
-
-      <h3>Naturaleza física</h3>
+      <h3>Naturaleza Física</h3>
       <p id="mNaturaleza"></p>
-
-      <h3>Presentación</h3>
-      <p id="mPresentacion"></p>
-
-      <h3>Principio activo</h3>
-      <p id="mPrincipio"></p>
-
-      <h3>Dosis</h3>
-      <p id="mDosis"></p>
     </div>
   </div>
 </div>
 
 <script>
 let db;
-
 const modal = document.getElementById("modal");
-
 const el = id => document.getElementById(id);
 
 function openModal(p) {
-  el("mName").textContent = p.name || "—";
-  el("mComercial").textContent = p.nombreComercial || "—";
+  el("mNombre").textContent = p.nombre || "—";
+  el("mDosis").textContent = p.dosis || "—";
   el("mCaracteristicas").textContent = p.caracteristicas || "—";
-  el("mRecomendaciones").textContent = p.recomendacionesUso || "—";
   el("mBeneficios").textContent = p.beneficios || "—";
   el("mNaturaleza").textContent = p.naturalezaFisica || "—";
-  el("mPresentacion").textContent = p.presentacion || "—";
-  el("mPrincipio").textContent = p.principioActivo || "—";
-  el("mDosis").textContent = p.dosis || "—";
   modal.classList.add("open");
 }
 
@@ -205,30 +145,38 @@ function closeModal() {
   modal.classList.remove("open");
 }
 
-async function loadHerbicidas() {
+async function loadFungicidas() {
   const grid = document.getElementById("catalogGrid");
 
-  const q = window.firebase.query(
-     window.firebase.collection(db, "herbicidas"),
-    window.firebase.orderBy("name")
+  const itemsRef = window.firebase.collection(
+    db,
+    "productos",
+    "herbicidas",
+    "items"
   );
 
-  const snap = await window.firebase.getDocs(q);
-  grid.innerHTML = "";
+  const snap = await window.firebase.getDocs(itemsRef);
 
-  snap.forEach(d => {
-    const p = d.data();
+  if (snap.empty) {
+    grid.innerHTML = "No hay productos.";
+    return;
+  }
+
+  grid.innerHTML = "";
+  grid.className = "catalog-grid";
+
+  snap.forEach(doc => {
+    const p = doc.data();
 
     const card = document.createElement("div");
     card.className = "catalog-item";
     card.innerHTML = `
-      <img src="${p.imageUrl || "https://via.placeholder.com/400x300"}">
+      <img src="${p.imageUrl || 'https://via.placeholder.com/400x300?text=Sin+imagen'}">
       <div class="catalog-item-content">
-        <div class="catalog-item-name">${p.name || ""}</div>
-        <div class="catalog-item-dose">Dosis: ${p.dosis || "Consultar"}</div>
+        <div class="catalog-item-name">${p.nombre}</div>
+        <div class="catalog-item-dose">Dosis: ${p.dosis}</div>
       </div>
     `;
-
     card.onclick = () => openModal(p);
     grid.appendChild(card);
   });
@@ -237,7 +185,7 @@ async function loadHerbicidas() {
 document.addEventListener("DOMContentLoaded", () => {
   const app = window.firebase.initializeApp(window.firebaseConfig);
   db = window.firebase.getFirestore(app);
-  loadHerbicidas();
+  loadFungicidas();
 });
 </script>
 
