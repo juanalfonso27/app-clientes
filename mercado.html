@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,9 +9,8 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       background-color: #f0f2f5;
-      color: #333;
       margin: 0;
-      padding: 0;
+      color: #333;
     }
 
     .header {
@@ -21,7 +19,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 4px rgba(0,0,0,.1);
     }
 
     .header-icon svg {
@@ -34,311 +32,160 @@
       stroke-linejoin: round;
     }
 
-    .logo img {
-      height: 36px;
-      width: auto;
-    }
+    .logo img { height: 36px; }
 
     header {
-      background: #0B57D0;
-      color: white;
-      padding: 25px 20px;
-      text-align: center;
-    }
-
-    header h1 {
-      margin: 0;
-      font-size: 2em;
+      background:#0B57D0;
+      color:#fff;
+      padding:25px 20px;
+      text-align:center;
     }
 
     .status {
-      text-align: center;
-      padding: 15px;
-      font-size: 0.9em;
-      color: #666;
-      background-color: #fff;
-      border-bottom: 1px solid #eee;
+      text-align:center;
+      padding:15px;
+      font-size:.9em;
+      background:#fff;
+      border-bottom:1px solid #eee;
+      color:#666;
     }
 
     .section-title {
-      background: #2f2f2f;
-      color: white;
-      padding: 10px;
-      font-size: 14px;
-      font-weight: bold;
-      margin-top: 25px;
-      text-transform: uppercase;
-      border-radius: 4px 4px 0 0;
+      background:#2f2f2f;
+      color:#fff;
+      padding:10px;
+      font-size:14px;
+      font-weight:bold;
+      margin-top:25px;
+      text-transform:uppercase;
+      border-radius:4px 4px 0 0;
     }
 
     .tabla-container {
-      background: white;
-      border: 1px solid #ccc;
-      border-top: none;
-      margin-bottom: 20px;
-      overflow: hidden;
+      background:#fff;
+      border:1px solid #ccc;
+      border-top:none;
+      margin-bottom:20px;
+      overflow:hidden;
     }
 
-    table.tabla {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
+    table {
+      width:100%;
+      border-collapse:collapse;
+      font-size:14px;
     }
 
-    .tabla th {
-      background: #f8f9fa;
-      padding: 10px;
-      text-align: left;
-      font-weight: bold;
-      border-bottom: 1px solid #ddd;
+    th {
+      background:#f8f9fa;
+      padding:10px;
+      border-bottom:1px solid #ddd;
+      text-align:left;
     }
 
-    .tabla td {
-      padding: 10px;
-      border-bottom: 1px solid #efefef;
+    td {
+      padding:10px;
+      border-bottom:1px solid #efefef;
     }
 
-    .var {
-      font-weight: bold;
-    }
-
-    .positive {
-      color: #0a8a0a;
-    }
-
-    .negative {
-      color: #d00000;
-    }
-
-    /* Widget Responsive Investing */
     .widget-responsive {
-      width: 100%;
-      max-width: 425px;
-      margin: 0 auto;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .widget-responsive iframe {
-      transform-origin: top left;
-    }
-
-    footer {
-      text-align: center;
-      padding: 20px;
-      background: #e9ecef;
-      font-size: 0.8em;
-      color: #6c757d;
+      max-width:425px;
+      margin:auto;
     }
   </style>
 </head>
 
 <body>
 
-  <!-- Header -->
-  <div class="header">
-    <a href="homenoticias.html" class="header-icon">
-      <svg viewBox="0 0 24 24">
-        <path d="M15 18l-6-6 6-6"></path>
-      </svg>
-    </a>
+<!-- HEADER -->
+<div class="header">
+  <a href="homenoticias.html" class="header-icon">
+    <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+  </a>
 
-    <div class="logo">
-      <img src="logo1.png" alt="IASA logo">
-    </div>
+  <div class="logo"><img src="logo1.png" alt="IASA"></div>
 
-    <a href="perfil.html" class="header-icon">
-      <svg viewBox="0 0 24 24">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-        <circle cx="12" cy="7" r="4"></circle>
-      </svg>
-    </a>
+  <a href="perfil.html" class="header-icon">
+    <svg viewBox="0 0 24 24">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+  </a>
+</div>
+
+<header>
+  <h1>Cotizaciones CBOT</h1>
+</header>
+
+<div class="status">Datos del mercado en tiempo real</div>
+
+<main>
+
+<!-- RESUMEN TÉCNICO INVESTING -->
+<div class="section-title">Resumen Técnico</div>
+<div class="tabla-container" style="padding:15px;text-align:center">
+  <div class="widget-responsive">
+    <iframe id="investing-frame" width="425" height="253" frameborder="0" scrolling="no"
+      src="https://ssltools.investing.com/technical_summary.php?pairs=8916,8917,8918&force_lang=4">
+    </iframe>
   </div>
-
-  <header>
-    <h1>Cotizaciones CBOT</h1>
-  </header>
-
-  <div class="status" id="status">Conectando...</div>
-
-  <!-- MAIN -->
-  <main>
-
-    <!-- WIDGET INVESTING -->
-    <div class="section-title">Resumen Técnico</div>
-
-    <div class="tabla-container" style="padding: 15px; text-align:center;">
-      <div class="widget-responsive">
-        <iframe id="investing-frame" frameborder="0" scrolling="no" height="253" width="425" allowtransparency="true"
-          src="https://ssltools.investing.com/technical_summary.php?pairs=8916,8917,8918,13916,961618&curr-name-color=%230059B0&fields=5m,1h,1d&force_lang=4">
-        </iframe>
-      </div>
-
-      <div style="font-size:11px;margin-top:8px;">
-        Resumen técnico por <a href="https://es.investing.com" target="_blank">Investing.com</a>
-      </div>
-    </div>
-
-    
-
-    <!-- TABLA DE PRECIOS (YAHOO FINANCE) -->
-    <div class="section-title">Cotizaciones</div>
-
-    <div class="tabla-container">
-      <table class="tabla" id="widgetCommodities">
-        <thead>
-          <tr>
-            <th>Contrato</th>
-            <th>Último</th>
-            <th>Var. %</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Soja Chicago</td>
-            <td id="soy_last">Cargando...</td>
-            <td id="soy_var">—</td>
-          </tr>
-          <tr>
-            <td>Maíz Chicago</td>
-            <td id="corn_last">Cargando...</td>
-            <td id="corn_var">—</td>
-          </tr>
-          <tr>
-            <td>Trigo Chicago</td>
-            <td id="wheat_last">Cargando...</td>
-            <td id="wheat_var">—</td>
-          </tr>
-          <tr>
-            <td>Petróleo WTI</td>
-            <td id="oil_last">Cargando...</td>
-            <td id="oil_var">—</td>
-          </tr>
-          <tr>
-            <td>Oro</td>
-            <td id="gold_last">Cargando...</td>
-            <td id="gold_var">—</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-  </main>
-  <!-- TradingView News Widget -->
-<div class="tv-widget-container">
-  <div class="tv-widget-container__widget"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
-  {
-    "feedMode": "market",
-    "market": "commodities",
-    "colorTheme": "light",
-    "isTransparent": false,
-    "displayMode": "regular",
-    "width": "100%",
-    "height": 480,
-    "locale": "es"
-  }
-  </script>
+  <div style="font-size:11px;margin-top:8px">
+    Resumen técnico por <a href="https://es.investing.com" target="_blank">Investing.com</a>
+  </div>
 </div>
 
-<!-- TradingView - Noticias Agro (Soja, Maíz, Trigo) -->
-<div class="tv-widget-container" style="margin:20px auto; max-width:900px;">
-  <div class="tv-widget-container__widget"></div>
-  <script
-    type="text/javascript"
-    src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js"
-    async>
-  {
-    "feedMode": "symbol",
-    "symbol": "CBOT:ZS1!",
-    "symbols": [
-      "CBOT:ZS1!",
-      "CBOT:ZC1!",
-      "CBOT:ZW1!"
-    ],
-    "colorTheme": "light",
-    "isTransparent": false,
-    "displayMode": "regular",
-    "width": "100%",
-    "height": 480,
-    "locale": "es"
-  }
-  </script>
+<!-- TABLA DE PRECIOS -->
+<div class="section-title">Cotizaciones</div>
+<div class="tabla-container">
+  <table>
+    <tr><td>Soja Chicago</td><td id="soy_last">Cargando...</td><td id="soy_var"></td></tr>
+    <tr><td>Maíz Chicago</td><td id="corn_last">Cargando...</td><td id="corn_var"></td></tr>
+    <tr><td>Trigo Chicago</td><td id="wheat_last">Cargando...</td><td id="wheat_var"></td></tr>
+  </table>
 </div>
 
-  <!-- SCRIPT RESIZE INVESTING -->
-  <script>
-    function resizeWidget() {
-      const container = document.querySelector('.widget-responsive');
-      const iframe = document.getElementById('investing-frame');
-
-      const originalWidth = 425;
-      const currentWidth = container.offsetWidth || originalWidth;
-      const scale = currentWidth / originalWidth;
-
-      iframe.style.transform = `scale(${scale})`;
-      iframe.style.width = originalWidth + "px";
-      iframe.style.height = (253 * scale) + "px";
+<!-- ✅ TRADINGVIEW AGRO (FUNCIONA SIEMPRE) -->
+<div class="section-title">Noticias del Mercado Agrícola</div>
+<div class="tabla-container" style="padding:10px">
+  <div class="tv-widget-container">
+    <div class="tv-widget-container__widget"></div>
+    <script src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+    {
+      "symbols": [
+        ["Soja CBOT", "CBOT:ZS1!"],
+        ["Maíz CBOT", "CBOT:ZC1!"],
+        ["Trigo CBOT", "CBOT:ZW1!"]
+      ],
+      "width": "100%",
+      "height": 520,
+      "locale": "es",
+      "colorTheme": "light",
+      "chartType": "area"
     }
+    </script>
+  </div>
+</div>
 
-    window.addEventListener('resize', resizeWidget);
-    window.addEventListener('load', resizeWidget);
-  </script>
+</main>
 
-  <!-- SCRIPT YAHOO FINANCE -->
-  <script>
-    const tickers = {
-      soy: "ZS=F",
-      corn: "ZC=F",
-      wheat: "ZW=F",
-      oil: "CL=F",
-      gold: "GC=F"
-    };
-
-    async function getQuote(symbol) {
-      try {
-        const url = `https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
-        const res = await fetch(url);
-        const json = await res.json();
-
-        const quote = json.chart.result[0];
-        const prices = quote.indicators.quote[0];
-
-        const price = prices.close[prices.close.length - 1];
-        const open = prices.open[0] || price;
-        const pct = ((price - open) / open) * 100;
-
-        return { price, pct };
-      } catch {
-        return null;
-      }
-    }
-
-    function updateRow(id, data) {
-      const lastEl = document.getElementById(id + "_last");
-      const varEl = document.getElementById(id + "_var");
-
-      if (!data) {
-        lastEl.textContent = "—";
-        varEl.textContent = "—";
-        return;
-      }
-
-      lastEl.textContent = data.price.toFixed(2);
-      varEl.textContent = (data.pct >= 0 ? "+" : "") + data.pct.toFixed(2) + "%";
-      varEl.style.color = data.pct >= 0 ? "green" : "red";
-    }
-
-    async function refreshWidgetClone() {
-      for (const id in tickers) {
-        const data = await getQuote(tickers[id]);
-        updateRow(id, data);
-      }
-    }
-
-    refreshWidgetClone();
-    setInterval(refreshWidgetClone, 60000);
-  </script>
+<!-- YAHOO FINANCE -->
+<script>
+const tickers={soy:"ZS=F",corn:"ZC=F",wheat:"ZW=F"};
+async function getQuote(s){
+  const r=await fetch(`https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${s}?interval=1d&range=1d`);
+  const j=await r.json();
+  const q=j.chart.result[0].indicators.quote[0];
+  const p=q.close.pop(),o=q.open[0]||p;
+  return {p,pc:((p-o)/o)*100};
+}
+async function refresh(){
+  for(const k in tickers){
+    const d=await getQuote(tickers[k]);
+    document.getElementById(k+"_last").textContent=d.p.toFixed(2);
+    document.getElementById(k+"_var").textContent=d.pc.toFixed(2)+"%";
+  }
+}
+refresh(); setInterval(refresh,60000);
+</script>
 
 </body>
 </html>
