@@ -209,7 +209,7 @@ async function loadHerbicidas() {
   const grid = document.getElementById("catalogGrid");
 
   const q = window.firebase.query(
-    window.firebase.collection(db, "productos", "herbicidas", "items"),
+     window.firebase.collection(db, "herbicidas"),
     window.firebase.orderBy("name")
   );
 
