@@ -106,6 +106,26 @@
       font-weight: 600;
     }
 
+    th {
+      padding: 12px 10px;
+      border-bottom: 2px solid #ddd;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    th:not(:first-child),
+    td:not(:first-child) {
+      text-align: right;
+    }
+
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
     /* RESPONSIVE INVESTING */
     .iframe-container {
       width: 100%;
@@ -187,11 +207,23 @@
 <!-- COTIZACIONES -->
 <div class="section-title">Cotizaciones</div>
 <div class="card">
-  <table>
-    <tr><td>Soja Chicago</td><td id="soy_last">Cargando...</td><td id="soy_var"></td></tr>
-    <tr><td>Maíz Chicago</td><td id="corn_last">Cargando...</td><td id="corn_var"></td></tr>
-    <tr><td>Trigo Chicago</td><td id="wheat_last">Cargando...</td><td id="wheat_var"></td></tr>
-  </table>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Último</th>
+          <th>Var %</th>
+          <th>Apertura</th>
+          <th>Máx.</th>
+          <th>Mín.</th>
+        </tr>
+      </thead>
+      <tbody id="quotes-body">
+        <!-- Los datos se cargarán aquí dinámicamente -->
+      </tbody>
+    </table>
+  </div>
 </div>
 
 </main>
@@ -199,26 +231,56 @@
 <!-- SCRIPT YAHOO FINANCE -->
 <script>
 const tickers={soy:"ZS=F",corn:"ZC=F",wheat:"ZW=F"};
+const productNames = { soy: "Soja Chicago", corn: "Maíz Chicago", wheat: "Trigo Chicago" };
 
 async function getQuote(s){
   const r=await fetch(`https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${s}?interval=1d&range=1d`);
   const j=await r.json();
-  const q=j.chart.result[0].indicators.quote[0];
-  const p=q.close.pop(),o=q.open[0]||p;
-  return {p,pc:((p-o)/o)*100};
+  const result = j.chart.result[0];
+  const quote = result.indicators.quote[0];
+  const lastPrice = quote.close.pop() || 0;
+  const openPrice = quote.open[0] || lastPrice;
+  const highPrice = quote.high[0] || 0;
+  const lowPrice = quote.low[0] || 0;
+  const changePercent = openPrice !== 0 ? ((lastPrice - openPrice) / openPrice) * 100 : 0;
+
+  return {
+    last: lastPrice,
+    change: changePercent,
+    open: openPrice,
+    high: highPrice,
+    low: lowPrice
+  };
 }
 
 async function refresh(){
-  for(const k in tickers){
-    const d=await getQuote(tickers[k]);
-    document.getElementById(k+"_last").textContent=d.p.toFixed(2);
-    document.getElementById(k+"_var").textContent=d.pc.toFixed(2)+"%";
-    document.getElementById(k+"_var").style.color = d.pc>=0 ? "green" : "red";
+  const quotesBody = document.getElementById('quotes-body');
+  quotesBody.innerHTML = ''; // Limpiar la tabla antes de refrescar
+
+  for(const key in tickers){
+    const data = await getQuote(tickers[key]);
+    const row = document.createElement('tr');
+
+    const changeColor = data.change >= 0 ? 'green' : 'red';
+
+    row.innerHTML = `
+      <td>${productNames[key]}</td>
+      <td>${data.last.toFixed(2)}</td>
+      <td style="color: ${changeColor};">${data.change.toFixed(2)}%</td>
+      <td>${data.open.toFixed(2)}</td>
+      <td>${data.high.toFixed(2)}</td>
+      <td>${data.low.toFixed(2)}</td>
+    `;
+    quotesBody.appendChild(row);
   }
 }
 
-refresh();
-setInterval(refresh,60000);
+function init() {
+  refresh();
+  setInterval(refresh, 60000); // Refresca cada 60 segundos
+}
+
+init();
 </script>
 
 </body>
