@@ -1,213 +1,244 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catálogo - Herbicidas</title>
-    <script src="../firebase-config.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catálogo - Herbicidas</title>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, query, orderBy, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
-        window.firebase = {
-            initializeApp,
-            getFirestore,
-            collection,
-            getDocs,
-            doc,
-            getDoc,
-            query,
-            orderBy,
-            initializeFirestore
-        };
-    </script>
+<script src="../firebase-config.js"></script>
 
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
-            background: #f5f5f5;
-            margin: 0;
-        }
-        .header {
-            background: #fff;
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .header-title { font-size: 18px; font-weight: 600; }
-        .catalog-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 16px;
-            padding: 16px;
-        }
-        .catalog-item {
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 1px 6px rgba(0,0,0,0.08);
-            text-decoration: none;
-            color: inherit;
-            display: flex;
-            flex-direction: column;
-        }
-        .catalog-item img {
-            width: 100%; height: 120px; object-fit: cover; background: #eee;
-        }
-        .catalog-item-content { padding: 12px; }
-        .catalog-item-name { font-weight: 600; font-size: 14px; }
-        .catalog-item-dose { color: #666; font-size: 12px; }
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  query,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
-        .modal-overlay {
-            position: fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.6);
-            display:flex; justify-content:center; align-items:center;
-            opacity:0; visibility:hidden; transition:.3s;
-        }
-        .modal-overlay.open { opacity:1; visibility:visible; }
-        .product-detail-modal {
-            background:white; border-radius:12px;
-            width:90%; max-width:500px; max-height:90vh;
-            overflow-y:auto; transform:translateY(20px);
-            transition:.3s;
-        }
-        .modal-overlay.open .product-detail-modal { transform:translateY(0); }
-        .modal-header {
-            padding:16px; border-bottom:1px solid #eee;
-            display:flex; justify-content:space-between; align-items:center;
-        }
-        .modal-title { font-size:20px; font-weight:700; }
-        .modal-body { padding:16px; line-height:1.6; }
-        .modal-body h3 { margin-top:15px; color:#5a4fcf; }
-    </style>
+window.firebase = {
+  initializeApp,
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  query,
+  orderBy
+};
+</script>
+
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
+  background: #f5f5f5;
+  margin: 0;
+}
+
+.header {
+  background: #fff;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+
+.catalog-item {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0,0,0,.08);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.catalog-item img {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  background: #eee;
+}
+
+.catalog-item-content {
+  padding: 12px;
+}
+
+.catalog-item-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.catalog-item-dose {
+  font-size: 12px;
+  color: #666;
+}
+
+/* MODAL */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: .3s;
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.product-detail-modal {
+  background: #fff;
+  width: 90%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 12px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-body {
+  padding: 16px;
+  line-height: 1.6;
+}
+
+.modal-body h3 {
+  color: #5a4fcf;
+  margin-top: 14px;
+}
+</style>
 </head>
+
 <body>
 
-    <div class="header">
-        <button onclick="history.back()" style="background:none;border:none">
-            <svg width="24" height="24" viewBox="0 0 24 24">
-                <path d="M15 18l-6-6 6-6" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
-            </svg>
-        </button>
-        <h1 class="header-title">Herbicidas</h1>
+<div class="header">
+  <button onclick="history.back()" style="background:none;border:none">
+    ←
+  </button>
+  <h1 class="header-title">Herbicidas</h1>
+</div>
+
+<main class="catalog-grid" id="catalogGrid"></main>
+
+<div class="modal-overlay" id="modal">
+  <div class="product-detail-modal">
+    <div class="modal-header">
+      <h2 id="mName"></h2>
+      <button onclick="closeModal()" style="font-size:22px;border:none;background:none">×</button>
     </div>
+    <div class="modal-body">
+      <p><strong>Nombre comercial:</strong> <span id="mComercial"></span></p>
 
-    <main class="catalog-grid" id="catalogGrid"></main>
+      <h3>Características</h3>
+      <p id="mCaracteristicas"></p>
 
-    <div class="modal-overlay" id="productDetailModalOverlay">
-        <div class="product-detail-modal">
-            <div class="modal-header">
-                <h2 class="modal-title" id="modalProductName"></h2>
-                <button id="closeProductModal" style="font-size:24px;background:none;border:none">×</button>
-            </div>
-            <div class="modal-body">
-                <p><strong>Nombre Comercial:</strong> <span id="modalNombreComercial"></span></p>
+      <h3>Recomendaciones</h3>
+      <p id="mRecomendaciones"></p>
 
-                <h3>Características</h3>
-                <p id="modalCaracteristicas"></p>
+      <h3>Beneficios</h3>
+      <p id="mBeneficios"></p>
 
-                <h3>Recomendaciones de Uso</h3>
-                <p id="modalRecomendaciones"></p>
+      <h3>Naturaleza física</h3>
+      <p id="mNaturaleza"></p>
 
-                <h3>Beneficios</h3>
-                <p id="modalBeneficios"></p>
+      <h3>Presentación</h3>
+      <p id="mPresentacion"></p>
 
-                <h3>Naturaleza Física</h3>
-                <p id="modalNaturalezaFisica"></p>
+      <h3>Principio activo</h3>
+      <p id="mPrincipio"></p>
 
-                <h3>Presentación</h3>
-                <p id="modalPresentacion"></p>
-
-                <h3>Principio Activo</h3>
-                <p id="modalPrincipioActivo"></p>
-
-                <h3>Dosis</h3>
-                <p id="modalDosis"></p>
-            </div>
-        </div>
+      <h3>Dosis</h3>
+      <p id="mDosis"></p>
     </div>
+  </div>
+</div>
 
 <script>
-    const modalOverlay = document.getElementById("productDetailModalOverlay");
+let db;
 
-    const modalProductName = document.getElementById("modalProductName");
-    const modalNombreComercial = document.getElementById("modalNombreComercial");
-    const modalCaracteristicas = document.getElementById("modalCaracteristicas");
-    const modalRecomendaciones = document.getElementById("modalRecomendaciones");
-    const modalBeneficios = document.getElementById("modalBeneficios");
-    const modalNaturalezaFisica = document.getElementById("modalNaturalezaFisica");
-    const modalPresentacion = document.getElementById("modalPresentacion");
-    const modalPrincipioActivo = document.getElementById("modalPrincipioActivo");
-    const modalDosis = document.getElementById("modalDosis");
+const modal = document.getElementById("modal");
 
-    function openProductModal(product) {
-        modalProductName.textContent = product.name || "N/A";
-        modalNombreComercial.textContent = product.nombreComercial || "N/A";
-        modalCaracteristicas.textContent = product.caracteristicas || "N/A";
-        modalRecomendaciones.textContent = product.recomendacionesUso || "N/A";
-        modalBeneficios.textContent = product.beneficios || "N/A";
-        modalNaturalezaFisica.textContent = product.naturalezaFisica || "N/A";
-        modalPresentacion.textContent = product.presentacion || "N/A";
-        modalPrincipioActivo.textContent = product.principioActivo || "N/A";
-        modalDosis.textContent = product.dosis || "N/A";
+const el = id => document.getElementById(id);
 
-        modalOverlay.classList.add("open");
-    }
+function openModal(p) {
+  el("mName").textContent = p.name || "—";
+  el("mComercial").textContent = p.nombreComercial || "—";
+  el("mCaracteristicas").textContent = p.caracteristicas || "—";
+  el("mRecomendaciones").textContent = p.recomendacionesUso || "—";
+  el("mBeneficios").textContent = p.beneficios || "—";
+  el("mNaturaleza").textContent = p.naturalezaFisica || "—";
+  el("mPresentacion").textContent = p.presentacion || "—";
+  el("mPrincipio").textContent = p.principioActivo || "—";
+  el("mDosis").textContent = p.dosis || "—";
+  modal.classList.add("open");
+}
 
-    document.getElementById("closeProductModal").onclick = () => {
-        modalOverlay.classList.remove("open");
-    };
+function closeModal() {
+  modal.classList.remove("open");
+}
 
-    // FIREBASE
-    let db;
-    const COLLECTION_NAME = "productos";
+async function loadHerbicidas() {
+  const grid = document.getElementById("catalogGrid");
 
-    async function loadProducts() {
-        const grid = document.getElementById("catalogGrid");
+  const q = window.firebase.query(
+    window.firebase.collection(db, "productos", "herbicidas", "items"),
+    window.firebase.orderBy("name")
+  );
 
-        const q = window.firebase.query(
-            window.firebase.collection(db, COLLECTION_NAME),
-            window.firebase.orderBy('name')
-        );
+  const snap = await window.firebase.getDocs(q);
+  grid.innerHTML = "";
 
-        const snap = await window.firebase.getDocs(q);
+  snap.forEach(d => {
+    const p = d.data();
 
-        let html = "";
-        snap.forEach(doc => {
-            const p = doc.data();
+    const card = document.createElement("div");
+    card.className = "catalog-item";
+    card.innerHTML = `
+      <img src="${p.imageUrl || "https://via.placeholder.com/400x300"}">
+      <div class="catalog-item-content">
+        <div class="catalog-item-name">${p.name || ""}</div>
+        <div class="catalog-item-dose">Dosis: ${p.dosis || "Consultar"}</div>
+      </div>
+    `;
 
-            html += `
-                <a href="#" class="catalog-item" data-id="${doc.id}">
-                    <img src="${p.imageUrl || "https://via.placeholder.com/400x300"}">
-                    <div class="catalog-item-content">
-                        <div class="catalog-item-name">${p.name}</div>
-                        <div class="catalog-item-dose">Dosis: ${p.dosis || "Consultar"}</div>
-                    </div>
-                </a>
-            `;
-        });
+    card.onclick = () => openModal(p);
+    grid.appendChild(card);
+  });
+}
 
-        grid.innerHTML = html;
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-        const app = window.firebase.initializeApp(window.firebaseConfig);
-        try { db = window.firebase.initializeFirestore(app, { databaseId: "news" }); }
-        catch { db = window.firebase.getFirestore(app); }
-
-        loadProducts();
-
-        document.getElementById("catalogGrid").addEventListener("click", async (e) => {
-            const item = e.target.closest(".catalog-item");
-            if (!item) return;
-
-            const id = item.dataset.id;
-            const snap = await window.firebase.getDoc(window.firebase.doc(db, COLLECTION_NAME, id));
-            openProductModal(snap.data());
-        });
-    });
+document.addEventListener("DOMContentLoaded", () => {
+  const app = window.firebase.initializeApp(window.firebaseConfig);
+  db = window.firebase.getFirestore(app);
+  loadHerbicidas();
+});
 </script>
 
 </body>
