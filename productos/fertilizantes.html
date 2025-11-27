@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Catálogo - Herbicidas</title>
+<title>Catálogo - Fertilizantes</title>
 
 <script src="../firebase-config.js"></script>
 
@@ -104,7 +104,7 @@ body {
 
 <div class="header">
   <button onclick="history.back()">←</button>
-  <h1 class="header-title">Herbicidas</h1>
+  <h1 class="header-title">Fertilizantes</h1>
 </div>
 
 <main id="catalogGrid">Cargando productos...</main>
@@ -117,12 +117,18 @@ body {
     </div>
     <div class="modal-body">
       <p><strong>Dosis:</strong> <span id="mDosis"></span></p>
+      <p><strong>Principio Activo:</strong> <span id="mPrincipioActivo"></span></p>
+      <p><strong>Presentación:</strong> <span id="mPresentacion"></span></p>
       <h3>Características</h3>
       <p id="mCaracteristicas"></p>
       <h3>Beneficios</h3>
       <p id="mBeneficios"></p>
       <h3>Naturaleza Física</h3>
       <p id="mNaturaleza"></p>
+      <h3>Recomendaciones de Uso</h3>
+      <p id="mRecomendacionesUso"></p>
+      <h3>Nombre Comercial</h3>
+      <p id="mNombreComercial"></p>
     </div>
   </div>
 </div>
@@ -133,11 +139,15 @@ const modal = document.getElementById("modal");
 const el = id => document.getElementById(id);
 
 function openModal(p) {
-  el("mNombre").textContent = p.nombre || "—";
+  el("mNombre").textContent = p.nombre || p.nombreComercial || "—";
   el("mDosis").textContent = p.dosis || "—";
   el("mCaracteristicas").textContent = p.caracteristicas || "—";
   el("mBeneficios").textContent = p.beneficios || "—";
   el("mNaturaleza").textContent = p.naturalezaFisica || "—";
+  el("mPrincipioActivo").textContent = p.principioActivo || "—";
+  el("mPresentacion").textContent = p.presentacion || "—";
+  el("mRecomendacionesUso").textContent = p.recomendacionesUso || "—";
+  el("mNombreComercial").textContent = p.nombreComercial || "—";
   modal.classList.add("open");
 }
 
@@ -145,7 +155,7 @@ function closeModal() {
   modal.classList.remove("open");
 }
 
-async function loadFungicidas() {
+async function loadFertilizantes() {
   const grid = document.getElementById("catalogGrid");
 
   const itemsRef = window.firebase.collection(
@@ -173,7 +183,7 @@ async function loadFungicidas() {
     card.innerHTML = `
       <img src="${p.imageUrl || 'https://via.placeholder.com/400x300?text=Sin+imagen'}">
       <div class="catalog-item-content">
-        <div class="catalog-item-name">${p.nombre}</div>
+        <div class="catalog-item-name">${p.nombre || p.nombreComercial}</div>
         <div class="catalog-item-dose">Dosis: ${p.dosis}</div>
       </div>
     `;
@@ -185,7 +195,7 @@ async function loadFungicidas() {
 document.addEventListener("DOMContentLoaded", () => {
   const app = window.firebase.initializeApp(window.firebaseConfig);
   db = window.firebase.getFirestore(app);
-  loadFungicidas();
+  loadFertilizantes();
 });
 </script>
 
