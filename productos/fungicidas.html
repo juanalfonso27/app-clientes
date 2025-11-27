@@ -12,10 +12,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/fireba
 import {
   getFirestore,
   collection,
-  getDocs
+  getDocsFromCache,
+  getDocsFromServer,
+  enableIndexedDbPersistence
 } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
-window.firebase = { initializeApp, getFirestore, collection, getDocs };
+window.firebase = { initializeApp, getFirestore, collection, getDocsFromCache, getDocsFromServer, enableIndexedDbPersistence };
 </script>
 
 <style>
@@ -148,43 +150,60 @@ function closeModal() {
 async function loadFungicidas() {
   const grid = document.getElementById("catalogGrid");
 
-  const itemsRef = window.firebase.collection(
-    db,
-    "productos",
-    "fungicidas",
-    "items"
-  );
+  const itemsRef = window.firebase.collection(db, "productos", "fungicidas", "items");
 
-  const snap = await window.firebase.getDocs(itemsRef);
+  const renderSnap = snap => {
+    if (!snap || snap.empty) {
+      grid.innerHTML = "No hay productos.";
+      return;
+    }
+    grid.innerHTML = "";
+    grid.className = "catalog-grid";
+    snap.forEach(doc => {
+      const p = doc.data();
+      const card = document.createElement("div");
+      card.className = "catalog-item";
+      card.innerHTML = `
+        <img src="${p.imageUrl || 'https://via.placeholder.com/400x300?text=Sin+imagen'}">
+        <div class="catalog-item-content">
+          <div class="catalog-item-name">${p.nombre}</div>
+          <div class="catalog-item-dose">Dosis: ${p.dosis}</div>
+        </div>
+      `;
+      card.onclick = () => openModal(p);
+      grid.appendChild(card);
+    });
+  };
 
-  if (snap.empty) {
-    grid.innerHTML = "No hay productos.";
-    return;
+  let showedFromCache = false;
+
+  try {
+    const cachedSnap = await window.firebase.getDocsFromCache(itemsRef);
+    if (cachedSnap && !cachedSnap.empty) {
+      renderSnap(cachedSnap);
+      showedFromCache = true;
+    }
+  } catch (err) {
+    console.warn("No se pudo leer del cachǸ de Firestore", err);
   }
 
-  grid.innerHTML = "";
-  grid.className = "catalog-grid";
-
-  snap.forEach(doc => {
-    const p = doc.data();
-
-    const card = document.createElement("div");
-    card.className = "catalog-item";
-    card.innerHTML = `
-      <img src="${p.imageUrl || 'https://via.placeholder.com/400x300?text=Sin+imagen'}">
-      <div class="catalog-item-content">
-        <div class="catalog-item-name">${p.nombre}</div>
-        <div class="catalog-item-dose">Dosis: ${p.dosis}</div>
-      </div>
-    `;
-    card.onclick = () => openModal(p);
-    grid.appendChild(card);
-  });
+  try {
+    const freshSnap = await window.firebase.getDocsFromServer(itemsRef);
+    renderSnap(freshSnap);
+  } catch (err) {
+    console.error("No se pudo obtener el catǭlogo desde el servidor", err);
+    if (!showedFromCache) {
+      grid.innerHTML = "No se pudo cargar el catǭlogo.";
+    }
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   const app = window.firebase.initializeApp(window.firebaseConfig);
   db = window.firebase.getFirestore(app);
+  window.firebase.enableIndexedDbPersistence(db).catch(err => {
+    console.warn("Persistencia offline no disponible", err?.code || err);
+  });
   loadFungicidas();
 });
 </script>
