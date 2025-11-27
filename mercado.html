@@ -109,12 +109,14 @@
     /* RESPONSIVE INVESTING */
     .iframe-container {
       width: 100%;
-      overflow: hidden;
+      overflow: auto;
       border-radius: var(--radius);
+      -webkit-overflow-scrolling: touch;
     }
 
     iframe {
       width: 100%;
+      min-width: 320px;
       border: none;
     }
 
@@ -125,6 +127,18 @@
       }
       td {
         font-size: 14px;
+      }
+      .iframe-container {
+        overflow-x: auto;
+      }
+      iframe {
+        height: 280px;
+      }
+    }
+    
+    @media (min-width: 481px) {
+      iframe {
+        height: 260px;
       }
     }
   </style>
@@ -160,7 +174,7 @@
 <div class="section-title">Resumen Técnico</div>
 <div class="card">
   <div class="iframe-container">
-    <iframe height="260" scrolling="no"
+    <iframe scrolling="yes"
     src="https://ssltools.investing.com/technical_summary.php?pairs=8916,8917,8918&force_lang=4">
     </iframe>
   </div>
