@@ -6,97 +6,126 @@
   <title>Precios de granos en Paraguay</title>
 
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background-color: #f0f2f5;
-      margin: 0;
-      color: #333;
+    :root {
+      --primary: #0B57D0;
+      --text-dark: #222;
+      --text-muted: #666;
+      --bg: #f0f2f5;
+      --card: #fff;
+      --radius: 14px;
+      --shadow: 0 4px 14px rgba(0,0,0,.08);
     }
 
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text-dark);
+    }
+
+    /* HEADER */
     .header {
-      background-color: #d4d4d4;
-      padding: 12px 16px;
+      background: #fff;
+      padding: 12px 18px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 2px 4px rgba(0,0,0,.1);
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
 
     .header-icon svg {
-      width: 22px;
-      height: 22px;
-      stroke: currentColor;
-      stroke-width: 1.8;
-      fill: none;
-      stroke-linecap: round;
-      stroke-linejoin: round;
+      width: 26px;
+      height: 26px;
+      stroke: var(--text-dark);
     }
 
-    .logo img { height: 36px; }
+    .logo img {
+      height: 40px;
+    }
 
+    /* TITULO */
     header {
-      background:#0B57D0;
-      color:#fff;
-      padding:25px 20px;
-      text-align:center;
+      text-align: center;
+      padding: 26px 18px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 1.4rem;
+      font-weight: 600;
+      box-shadow: var(--shadow);
     }
 
+    /* STATUS */
     .status {
-      text-align:center;
-      padding:15px;
-      font-size:.9em;
-      background:#fff;
-      border-bottom:1px solid #eee;
-      color:#666;
+      text-align: center;
+      padding: 12px;
+      background: #fff;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      border-bottom: 1px solid #eee;
     }
 
+    /* SECCIONES */
     .section-title {
-      background:#2f2f2f;
-      color:#fff;
-      padding:10px;
-      font-size:14px;
-      font-weight:bold;
-      margin-top:25px;
-      text-transform:uppercase;
-      border-radius:4px 4px 0 0;
+      background: #2f2f2f;
+      color: #fff;
+      padding: 12px;
+      margin-top: 28px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border-radius: var(--radius) var(--radius) 0 0;
     }
 
-    .tabla-container {
-      background:#fff;
-      border:1px solid #ccc;
-      border-top:none;
-      margin-bottom:20px;
-      overflow:hidden;
+    /* CONTENEDORES */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin: 0 14px 26px;
+      overflow: hidden;
+      padding: 16px;
     }
 
+    /* TABLAS */
     table {
-      width:100%;
-      border-collapse:collapse;
-      font-size:14px;
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
     }
 
     td {
-      padding:10px;
-      border-bottom:1px solid #efefef;
+      padding: 14px 10px;
+      border-bottom: 1px solid #eee;
     }
 
-    /* Noticias */
-    .news-item {
-      padding:12px 0;
-      border-bottom:1px solid #eee;
+    td:last-child {
+      text-align: right;
+      font-weight: 600;
     }
 
-    .news-item a {
-      text-decoration:none;
-      color:#111;
-      font-weight:600;
-      display:block;
+    /* RESPONSIVE INVESTING */
+    .iframe-container {
+      width: 100%;
+      overflow: hidden;
+      border-radius: var(--radius);
     }
 
-    .news-date {
-      font-size:12px;
-      color:#666;
-      margin-top:4px;
+    iframe {
+      width: 100%;
+      border: none;
+    }
+
+    /* MOBILE OPTIMIZATION */
+    @media (max-width: 480px) {
+      header {
+        font-size: 1.2rem;
+      }
+      td {
+        font-size: 14px;
+      }
     }
   </style>
 </head>
@@ -109,7 +138,9 @@
     <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
   </a>
 
-  <div class="logo"><img src="logo1.png" alt="IASA"></div>
+  <div class="logo">
+    <img src="logo1.png" alt="IASA logo">
+  </div>
 
   <a href="perfil.html" class="header-icon">
     <svg viewBox="0 0 24 24">
@@ -119,28 +150,29 @@
   </a>
 </div>
 
-<header>
-  <h1>Cotizaciones CBOT</h1>
-</header>
+<header>Cotizaciones CBOT</header>
 
 <div class="status">Datos del mercado en tiempo real</div>
 
 <main>
 
-<!-- RESUMEN TÉCNICO INVESTING -->
+<!-- RESUMEN TÉCNICO -->
 <div class="section-title">Resumen Técnico</div>
-<div class="tabla-container" style="padding:15px;text-align:center">
-  <iframe width="425" height="253" frameborder="0" scrolling="no"
+<div class="card">
+  <div class="iframe-container">
+    <iframe height="260" scrolling="no"
     src="https://ssltools.investing.com/technical_summary.php?pairs=8916,8917,8918&force_lang=4">
-  </iframe>
-  <div style="font-size:11px;margin-top:8px">
+    </iframe>
+  </div>
+
+  <div style="font-size:12px;text-align:center;margin-top:6px;color:var(--text-muted);">
     Resumen técnico por <a href="https://es.investing.com" target="_blank">Investing.com</a>
   </div>
 </div>
 
 <!-- COTIZACIONES -->
 <div class="section-title">Cotizaciones</div>
-<div class="tabla-container">
+<div class="card">
   <table>
     <tr><td>Soja Chicago</td><td id="soy_last">Cargando...</td><td id="soy_var"></td></tr>
     <tr><td>Maíz Chicago</td><td id="corn_last">Cargando...</td><td id="corn_var"></td></tr>
@@ -148,19 +180,12 @@
   </table>
 </div>
 
-<!-- ✅ NOTICIAS AGRÍCOLAS (RSS REUTERS) -->
-<div class="section-title">Noticias Agrícolas</div>
-<div class="tabla-container" style="padding:15px">
-  <ul id="agro-news" style="list-style:none;margin:0;padding:0">
-    <li>Cargando noticias…</li>
-  </ul>
-</div>
-
 </main>
 
 <!-- SCRIPT YAHOO FINANCE -->
 <script>
 const tickers={soy:"ZS=F",corn:"ZC=F",wheat:"ZW=F"};
+
 async function getQuote(s){
   const r=await fetch(`https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${s}?interval=1d&range=1d`);
   const j=await r.json();
@@ -168,52 +193,19 @@ async function getQuote(s){
   const p=q.close.pop(),o=q.open[0]||p;
   return {p,pc:((p-o)/o)*100};
 }
+
 async function refresh(){
   for(const k in tickers){
     const d=await getQuote(tickers[k]);
     document.getElementById(k+"_last").textContent=d.p.toFixed(2);
     document.getElementById(k+"_var").textContent=d.pc.toFixed(2)+"%";
+    document.getElementById(k+"_var").style.color = d.pc>=0 ? "green" : "red";
   }
 }
-refresh(); setInterval(refresh,60000);
+
+refresh();
+setInterval(refresh,60000);
 </script>
-
-<!-- SCRIPT NOTICIAS AGRÍCOLAS (REUTERS RSS - AllOrigins) -->
-<script>
-const RSS_URL = "https://www.reuters.com/rssFeed/agricultureNews";
-const API_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(RSS_URL);
-
-fetch(API_URL)
-  .then(res => res.text())
-  .then(str => new window.DOMParser().parseFromString(str, "text/xml"))
-  .then(data => {
-    const items = data.querySelectorAll("item");
-    const list = document.getElementById("agro-news");
-    list.innerHTML = "";
-
-    Array.from(items).slice(0, 6).forEach(item => {
-      const title = item.querySelector("title")?.textContent;
-      const link = item.querySelector("link")?.textContent;
-      const date = item.querySelector("pubDate")?.textContent;
-
-      const li = document.createElement("li");
-      li.className = "news-item";
-      li.innerHTML = `
-        <a href="${link}" target="_blank">${title}</a>
-        <div class="news-date">
-          ${date ? new Date(date).toLocaleDateString("es-ES") : ""}
-        </div>
-      `;
-      list.appendChild(li);
-    });
-  })
-  .catch(err => {
-    console.error("Error RSS:", err);
-    document.getElementById("agro-news").innerHTML =
-      "<li>No se pudieron cargar las noticias agrícolas.</li>";
-  });
-</script>
-
 
 </body>
 </html>
