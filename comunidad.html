@@ -1096,7 +1096,7 @@ onAuthStateChanged(auth, async (user) => {
 // --- Registro del Service Worker para PWA ---
 // TEMPORALMENTE DESHABILITADO para evitar problemas de caché durante desarrollo
 // Descomentar después de confirmar que los cambios funcionan correctamente
-/*
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
@@ -1108,7 +1108,7 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
-*/
+
 console.log(PFX, 'Service Worker deshabilitado temporalmente (para desarrollo)');
 
 // Script para limpiar caches y SW (ejecutar en consola si hay problemas)
