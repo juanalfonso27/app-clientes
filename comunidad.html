@@ -636,27 +636,9 @@ const PFX = '[Comunidad]';
 const __COMM_VERSION = 'v4-FIXED-' + new Date().toISOString();
 console.log(PFX, '✅ script cargado', __COMM_VERSION);
 
-// FUERZA limpieza de SW y caches INMEDIATAMENTE
-(async () => {
-  if ('serviceWorker' in navigator) {
-    try {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      for (let reg of regs) {
-        await reg.unregister();
-        console.log(PFX, '🗑️ SW unregistered:', reg.scope);
-      }
-    } catch (e) { console.warn(PFX, 'Error al limpiar SW:', e); }
-  }
-  if ('caches' in window) {
-    try {
-      const keys = await caches.keys();
-      for (let key of keys) {
-        await caches.delete(key);
-        console.log(PFX, '🗑️ Cache eliminado:', key);
-      }
-    } catch (e) { console.warn(PFX, 'Error al limpiar caches:', e); }
-  }
-})();
+// Nota: ya no forzamos limpieza de Service Worker ni caches aquí.
+// El Service Worker se gestionará por su ciclo de vida normal y por mensajes
+// desde el cliente cuando sea necesario purgar recursos específicos.
 const app = initializeApp(window.firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -710,6 +692,22 @@ async function deletePost(button, id) {
 
         await deleteDoc(postRef);
         postElement.remove(); // Eliminar el elemento del DOM directamente
+
+        // Informar al Service Worker para purgar la imagen y cachés de Firestore
+        try {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(reg => {
+              if (reg && reg.active) {
+                reg.active.postMessage({
+                  action: 'purge-cache',
+                  urls: postData && postData.image ? [postData.image] : [],
+                  purgeFirestore: true
+                });
+              }
+            }).catch(e => console.warn(PFX, 'No se pudo notificar al SW:', e));
+          }
+        } catch (e) { console.warn(PFX, 'Error al notificar SW:', e); }
+
         showToast('✓ Publicación eliminada');
     } catch (error) {
         console.error(PFX, 'Error al eliminar:', error);
@@ -1094,22 +1092,19 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 // --- Registro del Service Worker para PWA ---
-// TEMPORALMENTE DESHABILITADO para evitar problemas de caché durante desarrollo
-// Descomentar después de confirmar que los cambios funcionan correctamente
-/*
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then(registration => {
-        console.log('ServiceWorker registrado con éxito:', registration.scope);
+        console.log(PFX, 'ServiceWorker registrado con éxito:', registration.scope);
       })
       .catch(err => {
-        console.error('Fallo en el registro de ServiceWorker:', err);
+        console.error(PFX, 'Fallo en el registro de ServiceWorker:', err);
       });
   });
+} else {
+  console.log(PFX, 'Service Worker no soportado en este navegador');
 }
-*/
-console.log(PFX, 'Service Worker deshabilitado temporalmente (para desarrollo)');
 
 // Script para limpiar caches y SW (ejecutar en consola si hay problemas)
 window.__cleanCache = async function() {

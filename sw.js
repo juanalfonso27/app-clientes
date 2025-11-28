@@ -81,3 +81,47 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+// Escucha mensajes desde los clientes para purgar entradas del caché
+self.addEventListener('message', (event) => {
+  const data = event.data || {};
+  if (!data || !data.action) return;
+
+  if (data.action === 'purge-cache') {
+    const urls = Array.isArray(data.urls) ? data.urls.filter(Boolean) : [];
+    const purgeFirestore = !!data.purgeFirestore;
+
+    // Borrar URLs específicas de todos los caches abiertos
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          return caches.open(cacheName).then((cache) => {
+            // Primero borrar las URLs solicitadas
+            const deletes = urls.map(u => cache.delete(u, { ignoreSearch: true }));
+
+            // Si se pidió purgar Firestore, borrar entradas que apunten a firestore.googleapis.com
+            let purgeFirestorePromise = Promise.resolve();
+            if (purgeFirestore) {
+              purgeFirestorePromise = cache.keys().then((requests) => {
+                return Promise.all(requests.map((req) => {
+                  try {
+                    if (req.url && req.url.includes('firestore.googleapis.com')) {
+                      return cache.delete(req);
+                    }
+                  } catch (e) { /* ignore */ }
+                  return Promise.resolve(false);
+                }));
+              });
+            }
+
+            return Promise.all([Promise.all(deletes), purgeFirestorePromise]);
+          });
+        })
+      );
+    }).then(() => {
+      console.log('[Service Worker] Caché purgado (mensaje client).', { urls, purgeFirestore });
+    }).catch((err) => {
+      console.warn('[Service Worker] Error purgando caché:', err);
+    });
+  }
+});
