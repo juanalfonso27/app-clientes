@@ -792,8 +792,8 @@ async function fetchPosts() {
 
   // Mostrar estado de carga inicial
   feed.innerHTML = ''; // Limpiar publicaciones
-  emptyState?.classList.remove('hidden');
-  const emptyP = emptyState ? emptyState.querySelector('p') : null;
+  emptyState.classList.remove('hidden');
+  const emptyP = emptyState.querySelector('p');
   if (emptyP) emptyP.textContent = 'Cargando publicaciones...';
 
     try {
@@ -805,12 +805,12 @@ async function fetchPosts() {
 
         if (posts.length === 0) {
           // Estado vacío: no hay publicaciones
-          emptyState?.classList.remove('hidden');
-          const p = emptyState ? emptyState.querySelector('p') : null;
+          emptyState.classList.remove('hidden');
+          const p = emptyState.querySelector('p');
           if (p) p.textContent = 'Sé el primero en compartir';
         } else {
           // Hay publicaciones, ocultamos el estado vacío y las renderizamos
-          emptyState?.classList.add('hidden');
+          emptyState.classList.add('hidden');
           posts.forEach(doc => {
             const postEl = renderSinglePost(doc.data(), doc.id);
             if (postEl) feed.appendChild(postEl);
@@ -819,8 +819,8 @@ async function fetchPosts() {
 
     } catch (err) {
       console.error(PFX, "Error al cargar posts:", err);
-      emptyState?.classList.remove('hidden');
-      const p = emptyState ? emptyState.querySelector('p') : null;
+      emptyState.classList.remove('hidden');
+      const p = emptyState.querySelector('p');
       if (p) p.textContent = 'Error al cargar publicaciones.';
     }
   }
@@ -859,6 +859,17 @@ function renderSinglePost(p, id) {
         `;
 
     return post;
+}
+
+// --- Funciones del Modal de Éxito ---
+function showSuccessModal() {
+  const successModal = document.getElementById('successModal');
+  if (successModal) successModal.classList.remove('hidden');
+}
+
+function hideSuccessModal() {
+  const successModal = document.getElementById('successModal');
+  if (successModal) successModal.classList.add('hidden');
 }
 
 // Inicialización
@@ -1070,6 +1081,13 @@ onAuthStateChanged(auth, async (user) => {
       charCount.textContent = '0 / 500';
       charCount.className = 'char-count';
       showToast('Formulario limpiado');
+  });
+
+  // Cierra el modal de éxito y recarga los posts
+  document.getElementById('closeSuccessModal').addEventListener('click', () => {
+    hideSuccessModal();
+    // Recargamos los posts DESPUÉS de cerrar el modal para evitar conflictos.
+    fetchPosts();
   });
 
   fetchPosts(); // Carga inicial de publicaciones
