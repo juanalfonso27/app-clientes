@@ -1094,12 +1094,17 @@ onAuthStateChanged(auth, async (user) => {
 // --- Registro del Service Worker para PWA ---
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    // Usar ruta relativa para evitar 404 en entornos como GitHub Pages
+    const swScript = 'sw.js';
+    console.log(PFX, 'Intentando registrar ServiceWorker desde:', swScript);
+    navigator.serviceWorker.register(swScript)
       .then(registration => {
         console.log(PFX, 'ServiceWorker registrado con éxito:', registration.scope);
       })
       .catch(err => {
         console.error(PFX, 'Fallo en el registro de ServiceWorker:', err);
+        // Mensaje adicional para ayudar en despliegues (GitHub Pages):
+        console.info(PFX, 'Asegúrate de que "sw.js" esté publicado en la misma carpeta que "comunidad.html" o en la raíz del sitio según el scope esperado.');
       });
   });
 } else {
