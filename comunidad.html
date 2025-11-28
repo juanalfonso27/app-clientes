@@ -596,11 +596,11 @@
     <div class="feed-section">
       <div id="feed" class="feed">
         <!-- Las publicaciones se insertarán aquí dinámicamente -->
-        <div class="empty-state hidden" id="emptyState">
-          <div class="empty-icon">🌱</div>
-          <h3>No hay publicaciones</h3>
-          <p>Sé el primero en compartir</p>
-        </div>
+      </div>
+      <div class="empty-state hidden" id="emptyState">
+        <div class="empty-icon">🌱</div>
+        <h3>No hay publicaciones</h3>
+        <p>Sé el primero en compartir</p>
       </div>
     </div>
   </div>
@@ -616,6 +616,15 @@
     </div>
   </div>
 
+  <div id="successModal" class="modal hidden">
+    <div class="modal-content" style="text-align: center;">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">✨</div>
+      <div class="modal-title" style="font-size: 1.25rem; margin-bottom: 0.5rem;">¡Gracias por publicar!</div>
+      <p style="color: var(--muted); margin-bottom: 1.5rem;">Tu publicación ha sido guardada correctamente.</p>
+      <button id="closeSuccessModal" class="btn btn-primary" type="button">Cerrar</button>
+    </div>
+  </div>
+
 <script type="module">
 // --- Integración con Firebase ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -624,6 +633,30 @@ import { getFirestore, collection, query, orderBy, getDocs, addDoc, deleteDoc, d
 import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const PFX = '[Comunidad]';
+const __COMM_VERSION = 'v4-FIXED-' + new Date().toISOString();
+console.log(PFX, '✅ script cargado', __COMM_VERSION);
+
+// FUERZA limpieza de SW y caches INMEDIATAMENTE
+(async () => {
+  if ('serviceWorker' in navigator) {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (let reg of regs) {
+        await reg.unregister();
+        console.log(PFX, '🗑️ SW unregistered:', reg.scope);
+      }
+    } catch (e) { console.warn(PFX, 'Error al limpiar SW:', e); }
+  }
+  if ('caches' in window) {
+    try {
+      const keys = await caches.keys();
+      for (let key of keys) {
+        await caches.delete(key);
+        console.log(PFX, '🗑️ Cache eliminado:', key);
+      }
+    } catch (e) { console.warn(PFX, 'Error al limpiar caches:', e); }
+  }
+})();
 const app = initializeApp(window.firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -742,13 +775,26 @@ window.deletePost = deletePost; // Exponer la función globalmente para el `oncl
     }
 
 async function fetchPosts() {
-    const emptyState = document.getElementById('emptyState');
-    const feed = document.getElementById('feed');
+  console.log(PFX, 'fetchPosts() iniciada');
+  const emptyState = document.getElementById('emptyState');
+  const feed = document.getElementById('feed');
 
-    // Mostrar estado de carga inicial
-    feed.innerHTML = ''; // Limpiar el feed
-    emptyState.classList.remove('hidden');
-    emptyState.querySelector('p').textContent = 'Cargando publicaciones...';
+  // Validación defensiva con logs claros
+  if (!feed) {
+    console.error(PFX, '❌ CRÍTICO: #feed NO ENCONTRADO');
+    return;
+  }
+  if (!emptyState) {
+    console.error(PFX, '❌ CRÍTICO: #emptyState NO ENCONTRADO');
+    return;
+  }
+  console.log(PFX, '✓ DOM validado correctamente');
+
+  // Mostrar estado de carga inicial
+  feed.innerHTML = ''; // Limpiar publicaciones
+  emptyState?.classList.remove('hidden');
+  const emptyP = emptyState ? emptyState.querySelector('p') : null;
+  if (emptyP) emptyP.textContent = 'Cargando publicaciones...';
 
     try {
         const postsRef = collection(db, 'community_posts');
@@ -757,25 +803,27 @@ async function fetchPosts() {
         const snapshot = await getDocs(q);
         const posts = snapshot.docs;
 
-        emptyState.classList.add('hidden'); // Ocultar el estado de carga/vacío por defecto
-
         if (posts.length === 0) {
-            // Estado vacío: no hay publicaciones en la base de datos
-            emptyState.classList.remove('hidden');
-            emptyState.querySelector('p').textContent = 'Sé el primero en compartir';
+          // Estado vacío: no hay publicaciones
+          emptyState?.classList.remove('hidden');
+          const p = emptyState ? emptyState.querySelector('p') : null;
+          if (p) p.textContent = 'Sé el primero en compartir';
         } else {
-            // Hay publicaciones, las renderizamos
-            posts.forEach(doc => {
-                renderSinglePost(doc.data(), doc.id);
-            });
+          // Hay publicaciones, ocultamos el estado vacío y las renderizamos
+          emptyState?.classList.add('hidden');
+          posts.forEach(doc => {
+            const postEl = renderSinglePost(doc.data(), doc.id);
+            if (postEl) feed.appendChild(postEl);
+          });
         }
 
     } catch (err) {
-        console.error(PFX, "Error al cargar posts:", err);
-        emptyState.classList.remove('hidden');
-        emptyState.querySelector('p').textContent = 'Error al cargar publicaciones.';
+      console.error(PFX, "Error al cargar posts:", err);
+      emptyState?.classList.remove('hidden');
+      const p = emptyState ? emptyState.querySelector('p') : null;
+      if (p) p.textContent = 'Error al cargar publicaciones.';
     }
-}
+  }
 
 function renderSinglePost(p, id) {
     const feed = document.getElementById('feed');
@@ -810,9 +858,7 @@ function renderSinglePost(p, id) {
           <div class="post-time">${formatDate(p.createdAt)}</div>
         `;
 
-    // Insertar el nuevo post. El loader y el estado vacío ya están al final en el HTML.
-    // Usamos append porque fetchPosts ahora los trae todos ordenados.
-    feed.appendChild(post);
+    return post;
 }
 
 // Inicialización
@@ -989,17 +1035,21 @@ onAuthStateChanged(auth, async (user) => {
           createdAt: serverTimestamp()
         };
 
-        await addDoc(collection(db, 'community_posts'), post);
-        
-        // Resetear y recargar para ver la nueva publicación al principio
-        fetchPosts();
-        showToast('✓ Publicación creada');
+        const docRef = await addDoc(collection(db, 'community_posts'), post);
+
+        // Mostrar modal de éxito en lugar de renderizar localmente
+        showSuccessModal();
+
+        // Cerrar cámara/modal si estaba abierto y esconder formulario
+        try { stopCamera(); } catch(e){}
+        try { setFieldsVisible(false); } catch(e){}
 
         // Scroll al feed
         setTimeout(() => {
-          document.getElementById('feed').scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const feedNode = document.getElementById('feed');
+          if (feedNode) feedNode.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
-        
+
         document.getElementById('clearForm').click(); // Simula click en limpiar
 
     } catch (error) {
@@ -1026,6 +1076,9 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 // --- Registro del Service Worker para PWA ---
+// TEMPORALMENTE DESHABILITADO para evitar problemas de caché durante desarrollo
+// Descomentar después de confirmar que los cambios funcionan correctamente
+/*
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
@@ -1037,6 +1090,29 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
+*/
+console.log(PFX, 'Service Worker deshabilitado temporalmente (para desarrollo)');
+
+// Script para limpiar caches y SW (ejecutar en consola si hay problemas)
+window.__cleanCache = async function() {
+  console.log(PFX, 'Limpiando caches...');
+  if ('serviceWorker' in navigator) {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for (let reg of regs) {
+      await reg.unregister();
+      console.log(PFX, 'SW unregistered:', reg.scope);
+    }
+  }
+  if ('caches' in window) {
+    const keys = await caches.keys();
+    for (let key of keys) {
+      await caches.delete(key);
+      console.log(PFX, 'Cache deleted:', key);
+    }
+  }
+  console.log(PFX, '✓ Limpieza completada. Recarga la página.');
+};
+
 </script>
 </body>
 </html>
