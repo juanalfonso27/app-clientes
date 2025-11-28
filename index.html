@@ -347,6 +347,16 @@
             </div>
         </div>
     </div>
+    <div id="installOverlay" class="overlay" role="dialog" aria-modal="true">
+        <div class="modal">
+            <h3>Instalar aplicación</h3>
+            <p class="sub">¿Deseas instalar la app para acceder más rápido desde tu dispositivo?</p>
+            <div class="modal-actions">
+                <button id="installCancel" class="btn secondary">No, gracias</button>
+                <button id="installButton" class="btn primary">Instalar</button>
+            </div>
+        </div>
+    </div>
     <div id="recoverOverlay" class="overlay" role="dialog" aria-modal="true">
         <div class="modal">
             <h3>Recuperar acceso</h3>
@@ -444,6 +454,60 @@
             }
         });
     }
+
+    // --- Lógica para mostrar aviso de instalación de PWA ---
+    // guardamos el evento `beforeinstallprompt` para mostrar el prompt más tarde
+    let deferredInstallPrompt = null;
+    const installOverlayEl = document.getElementById('installOverlay');
+    const installButtonEl = document.getElementById('installButton');
+    const installCancelEl = document.getElementById('installCancel');
+
+    // Si el navegador dispara beforeinstallprompt, lo guardamos y mostramos la UI
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        // solo mostramos si no está ya instalada en modo standalone
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        if (!isStandalone && installOverlayEl) installOverlayEl.classList.add('open');
+    });
+
+    // Mostrar un aviso al entrar (petición del usuario): si no está en modo standalone, abrir modal al cargar
+    document.addEventListener('DOMContentLoaded', () => {
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        if (!isStandalone && installOverlayEl) {
+            // retraso corto para que el usuario vea la pantalla primero
+            setTimeout(() => installOverlayEl.classList.add('open'), 400);
+        }
+    });
+
+    if (installCancelEl) installCancelEl.addEventListener('click', () => installOverlayEl.classList.remove('open'));
+
+    if (installButtonEl) installButtonEl.addEventListener('click', async () => {
+        if (deferredInstallPrompt) {
+            // mostramos la UI nativa
+            deferredInstallPrompt.prompt();
+            try {
+                const choice = await deferredInstallPrompt.userChoice;
+                if (choice && choice.outcome === 'accepted') showToast('Gracias por instalar la app ✅', 'success');
+                else showToast('Instalación cancelada', 'error');
+            } catch (err) {
+                showToast('No se pudo completar la instalación: ' + (err && err.message ? err.message : String(err)), 'error');
+            }
+            deferredInstallPrompt = null;
+            installOverlayEl.classList.remove('open');
+        } else {
+            // fallback: instrucciones manuales si no hay prompt disponible
+            showToast('Para instalar: abre el menú del navegador y elige "Añadir a la pantalla de inicio".', 'success');
+            installOverlayEl.classList.remove('open');
+        }
+    });
+
+    // Evento cuando la app se instala
+    window.addEventListener('appinstalled', () => {
+        deferredInstallPrompt = null;
+        showToast('App instalada correctamente ✅', 'success');
+        if (installOverlayEl) installOverlayEl.classList.remove('open');
+    });
 </script>
 <script>
     // --- Registro del Service Worker para PWA ---
