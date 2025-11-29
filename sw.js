@@ -5,19 +5,39 @@ const DATA_CACHE_NAME = 'iasa-app-data-cache-v1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
+  '/offline.html',
   '/comunidad.html',
+  '/styles.css',
   '/firebase-config.js',
+  '/firebase.js',
   '/manifest.json',
   '/descargaLOGO.jpg',
+  '/logo1.png',
+  '/logo2.png',
+  '/logoservice.png',
+  '/iconos/calendario.png'
   // Agrega aquí otros assets estáticos importantes (CSS, otros JS, imágenes de la UI).
 ];
 
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Instalando...');
+  // Cachear archivos uno por uno para evitar que un 404 bloquee la instalación
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Cacheando assets estáticos');
-      return cache.addAll(STATIC_ASSETS);
+    caches.open(CACHE_NAME).then(async (cache) => {
+      console.log('[Service Worker] Cacheando assets estáticos (safe add)');
+      try {
+        await Promise.all(STATIC_ASSETS.map(async (p) => {
+          try {
+            const resp = await fetch(p, { cache: 'no-cache' });
+            if (resp && resp.ok) await cache.put(p, resp.clone());
+          } catch (e) {
+            // no hacer fallar toda la instalación por un archivo faltante
+            console.warn('[Service Worker] No se pudo cachear', p, e && e.message);
+          }
+        }));
+      } catch (e) {
+        console.warn('[Service Worker] Error genérico cache add:', e && e.message);
+      }
     })
   );
   self.skipWaiting();
@@ -73,11 +93,45 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Estrategia "Cache First" para todos los demás assets estáticos.
+  // --- Navegación (páginas HTML) : network-first con fallback offline ---
+  const acceptsHtml = request.headers.get('accept') && request.headers.get('accept').includes('text/html');
+  if (request.mode === 'navigate' || acceptsHtml) {
+    event.respondWith(
+      fetch(request)
+        .then(networkResponse => {
+          // Almacenar una copia de la página en caché para la próxima vez
+          caches.open(CACHE_NAME).then(cache => {
+            try { cache.put(request, networkResponse.clone()); } catch (e) { /* ignore */ }
+          });
+          return networkResponse;
+        })
+        .catch(() => {
+          // Si no hay red, devolver la página de fallback cached
+          return caches.match('/offline.html');
+        })
+    );
+    return;
+  }
+
+  // Estrategia "Cache First" para otros assets estáticos (imagenes, css, js)
   event.respondWith(
-    caches.match(request).then((response) => {
-      // Si está en caché, lo devuelve. Si no, lo busca en la red.
-      return response || fetch(request);
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+      return fetch(request)
+        .then((networkResp) => {
+          // Opcional: cachear respuestas exitosas para futuras peticiones
+          if (networkResp && networkResp.ok && request.method === 'GET') {
+            caches.open(CACHE_NAME).then(cache => {
+              try { cache.put(request, networkResp.clone()); } catch (e) { /* ignore */ }
+            });
+          }
+          return networkResp;
+        })
+        .catch(() => {
+          // Si no hay cache ni red para recursos críticos, devolvemos offline fallback para HTML
+          if (request.destination === 'document' || acceptsHtml) return caches.match('/offline.html');
+          return new Response(null, { status: 504, statusText: 'Gateway Timeout' });
+        });
     })
   );
 });
