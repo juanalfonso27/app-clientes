@@ -8,7 +8,7 @@ const STATIC_ASSETS = [
   '/comunidad.html',
   '/firebase-config.js',
   '/manifest.json',
-  '/descargaLOGO.png',
+  '/descargaLOGO.jpg',
   // Agrega aquí otros assets estáticos importantes (CSS, otros JS, imágenes de la UI).
 ];
 
