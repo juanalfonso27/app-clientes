@@ -15,12 +15,7 @@ const STATIC_ASSETS = [
   'logo2.png',
   'logoservice.png',
   'iconos/calendario.png',
-  'android/android-launchericon-48-48.png',
-  'android/android-launchericon-72-72.png',
-  'android/android-launchericon-96-96.png',
-  'android/android-launchericon-144-144.png',
   'descarga.png',
-  'android/android-launchericon-512-512.png'
   // Agrega aquí otros assets estáticos importantes (CSS, otros JS, imágenes de la UI).
 ];
 
