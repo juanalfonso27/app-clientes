@@ -11,7 +11,6 @@ const STATIC_ASSETS = [
   '/firebase-config.js',
   '/firebase.js',
   '/manifest.json',
-  '/descargaLOGO.png',
   '/logo1.png',
   '/logo2.png',
   '/logoservice.png',
