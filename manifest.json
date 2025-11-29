@@ -11,9 +11,9 @@
   "theme_color": "#0B57D0",
   "icons": [
     {
-      "src": "/descarga.png",
+      "src": "/descargaLOGO.jpg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/jpg",
       "purpose": "any maskable"
     },
     {
