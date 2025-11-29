@@ -3,6 +3,9 @@
   "short_name": "IASA",
   "description": "Plataforma comunitaria para agricultores. Comparte experiencias, aprende de otros y conecta con la comunidad agrícola local.",
   "start_url": "/index.html",
+  "scope": "/",
+  "lang": "es",
+  "orientation": "portrait",
   "display": "standalone",
   "background_color": "#fff",
   "theme_color": "#0B57D0",
@@ -14,9 +17,9 @@
       "purpose": "any"
     },
     {
-      "src": "iconos/calendario.png",
+      "src": "descargaLOGO.jpg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpg",
       "purpose": "any"
     }
   ]

@@ -1,0 +1,17 @@
+{
+  "packageId": "com.example.yourapp",
+  "host": "yourdomain.com",
+  "name": "IASA App",
+  "launcherName": "IASA",
+  "startUrl": "/index.html",
+  "displayMode": "standalone",
+  "icons": {
+    "512": "iconos/calendario.png"
+  },
+  "signing": {
+    "keystorePath": "# path to your keystore file #",
+    "keyAlias": "# alias #",
+    "keyPassword": "# secret #",
+    "storePassword": "# secret #"
+  }
+}
