@@ -11,7 +11,7 @@ const STATIC_ASSETS = [
   '/firebase-config.js',
   '/firebase.js',
   '/manifest.json',
-  '/descargaLOGO.jpg',
+  '/descargaLOGO.png',
   '/logo1.png',
   '/logo2.png',
   '/logoservice.png',
@@ -20,7 +20,7 @@ const STATIC_ASSETS = [
   '/android/android-launchericon-72-72.png',
   '/android/android-launchericon-96-96.png',
   '/android/android-launchericon-144-144.png',
-  '/android/android-launchericon-192-192.png',
+  '/descarga.png',
   '/android/android-launchericon-512-512.png'
   // Agrega aquí otros assets estáticos importantes (CSS, otros JS, imágenes de la UI).
 ];
