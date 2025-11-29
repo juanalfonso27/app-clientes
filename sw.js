@@ -3,24 +3,24 @@ const DATA_CACHE_NAME = 'iasa-app-data-cache-v1';
 
 // Lista de archivos estáticos para cachear en la instalación.
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/offline.html',
-  '/comunidad.html',
-  '/styles.css',
-  '/firebase-config.js',
-  '/firebase.js',
-  '/manifest.json',
-  '/logo1.png',
-  '/logo2.png',
-  '/logoservice.png',
-  '/iconos/calendario.png',
-  '/android/android-launchericon-48-48.png',
-  '/android/android-launchericon-72-72.png',
-  '/android/android-launchericon-96-96.png',
-  '/android/android-launchericon-144-144.png',
-  '/descarga.png',
-  '/android/android-launchericon-512-512.png'
+  './',
+  'index.html',
+  'offline.html',
+  'comunidad.html',
+  'styles.css',
+  'firebase-config.js',
+  'firebase.js',
+  'manifest.json',
+  'logo1.png',
+  'logo2.png',
+  'logoservice.png',
+  'iconos/calendario.png',
+  'android/android-launchericon-48-48.png',
+  'android/android-launchericon-72-72.png',
+  'android/android-launchericon-96-96.png',
+  'android/android-launchericon-144-144.png',
+  'descarga.png',
+  'android/android-launchericon-512-512.png'
   // Agrega aquí otros assets estáticos importantes (CSS, otros JS, imágenes de la UI).
 ];
 
