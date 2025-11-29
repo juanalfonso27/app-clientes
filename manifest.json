@@ -21,12 +21,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    },
-    {
-      "src": "/android/android-launchericon-144-144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
     }
   ]
 }
