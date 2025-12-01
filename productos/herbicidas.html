@@ -109,6 +109,10 @@ body {
   <h1 class="header-title">Herbicidas</h1>
 </div>
 
+<div style="padding: 16px 16px 0; background-color: #f5f5f5;">
+  <input type="search" id="searchInput" placeholder="Buscar herbicidas..." style="width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box;">
+</div>
+
 <main id="catalogGrid">Cargando productos...</main>
 
 <div class="modal-overlay" id="modal" onclick="if(event.target===this) closeModal()">
@@ -131,6 +135,7 @@ body {
 
 <script>
 let db;
+let allProducts = []; // Almacenará todos los productos cargados
 const modal = document.getElementById("modal");
 const el = id => document.getElementById(id);
 
@@ -147,40 +152,42 @@ function closeModal() {
   modal.classList.remove("open");
 }
 
-async function loadFungicidas() {
+function renderProducts(products) {
   const grid = document.getElementById("catalogGrid");
+  grid.innerHTML = "";
+  grid.className = "catalog-grid";
 
+  if (products.length === 0) {
+    grid.innerHTML = "No se encontraron productos.";
+    return;
+  }
+
+  products.forEach(p => {
+    const card = document.createElement("div");
+    card.className = "catalog-item";
+    card.innerHTML = `
+      <img src="${p.imageUrl || 'https://via.placeholder.com/400x300?text=Sin+imagen'}">
+      <div class="catalog-item-content">
+        <div class="catalog-item-name">${p.nombre}</div>
+        <div class="catalog-item-dose">Dosis: ${p.dosis}</div>
+      </div>
+    `;
+    card.onclick = () => openModal(p);
+    grid.appendChild(card);
+  });
+}
+
+async function loadHerbicidas() {
+  const grid = document.getElementById("catalogGrid");
   const itemsRef = window.firebase.collection(db, "productos", "herbicidas", "items");
-
-  const renderSnap = snap => {
-    if (!snap || snap.empty) {
-      grid.innerHTML = "No hay productos.";
-      return;
-    }
-    grid.innerHTML = "";
-    grid.className = "catalog-grid";
-    snap.forEach(doc => {
-      const p = doc.data();
-      const card = document.createElement("div");
-      card.className = "catalog-item";
-      card.innerHTML = `
-        <img src="${p.imageUrl || 'https://via.placeholder.com/400x300?text=Sin+imagen'}">
-        <div class="catalog-item-content">
-          <div class="catalog-item-name">${p.nombre}</div>
-          <div class="catalog-item-dose">Dosis: ${p.dosis}</div>
-        </div>
-      `;
-      card.onclick = () => openModal(p);
-      grid.appendChild(card);
-    });
-  };
 
   let showedFromCache = false;
 
   try {
     const cachedSnap = await window.firebase.getDocsFromCache(itemsRef);
     if (cachedSnap && !cachedSnap.empty) {
-      renderSnap(cachedSnap);
+      allProducts = cachedSnap.docs.map(doc => doc.data());
+      renderProducts(allProducts);
       showedFromCache = true;
     }
   } catch (err) {
@@ -189,7 +196,8 @@ async function loadFungicidas() {
 
   try {
     const freshSnap = await window.firebase.getDocsFromServer(itemsRef);
-    renderSnap(freshSnap);
+    allProducts = freshSnap.docs.map(doc => doc.data());
+    renderProducts(allProducts);
   } catch (err) {
     console.error("No se pudo obtener el catǭlogo desde el servidor", err);
     if (!showedFromCache) {
@@ -204,7 +212,16 @@ document.addEventListener("DOMContentLoaded", () => {
   window.firebase.enableIndexedDbPersistence(db).catch(err => {
     console.warn("Persistencia offline no disponible", err?.code || err);
   });
-  loadFungicidas();
+  loadHerbicidas();
+
+  const searchInput = document.getElementById("searchInput");
+  searchInput.addEventListener("input", (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    const filteredProducts = allProducts.filter(p => 
+      (p.nombre || "").toLowerCase().includes(searchTerm)
+    );
+    renderProducts(filteredProducts);
+  });
 });
 </script>
 
