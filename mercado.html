@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Precios de granos en Paraguay</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Precios de granos en Paraguay</title>
+    <!-- Configuración de Firebase -->
+    <script src="firebase-config.js"></script>
 
-  <style>
+    <style>
     :root {
       --primary: #0B57D0;
       --text-dark: #222;
@@ -107,6 +109,38 @@
       border: none;
     }
 
+    /* Estilos para las noticias */
+    .news-list { display: flex; flex-direction: column; gap: 16px; }
+    .news-item { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+    .news-image { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background-color: #eee; }
+    .news-content { flex: 1; }
+    .news-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; color: var(--text-dark); text-decoration: none; display: block; }
+    .news-title:hover { color: var(--primary); }
+    .news-description { font-size: 13px; color: var(--text-muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    /* Estilos para "Ver todas" */
+    .view-all { text-align: center; padding: 16px; background-color: var(--bg); }
+    .view-all a { color: #5a4fcf; text-decoration: none; font-size: 14px; font-weight: 500; }
+
+    /* Estilos para Modales */
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+    .overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,0.12); width: 100%; max-width: 640px; padding: 24px; max-height: 80vh; overflow: auto; }
+    .modal h3 { font-size: 20px; color: #1a1a1a; margin-bottom: 8px; font-weight: 600; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 12px; }
+    .btn { padding: 10px 14px; border-radius: 10px; border: 1.5px solid #e0e0e0; font-size: 14px; cursor: pointer; transition: all 0.2s ease; }
+    .btn:hover { transform: translateY(-1px); }
+    .btn.secondary { background: #fff; color: #1a1a1a; }
+    .btn.primary { background: #3c318f; color: #fff; border-color: #3c318f; }
+    .image-full { max-width: 92vw; max-height: 92vh; border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.25); }
+
+    /* Ajuste para el modal de noticias */
+    #newsModalList .news-item {
+        padding: 12px;
+        background: #f9f9f9;
+        border-radius: 8px;
+    }
+
     @media (min-width: 600px) {
       iframe {
         height: 300px;
@@ -161,7 +195,42 @@
     </div>
   </div>
 
+  <!-- ✅ SECCIÓN DE NOTICIAS -->
+  <div class="section-title">Noticias del Sector</div>
+  <div class="card">
+    <div class="news-list" id="newsList">
+      <p>Cargando noticias...</p>
+    </div>
+  </div>
+  <div class="view-all">
+      <a href="#" id="viewAllNewsLink">Ver todas las novedades ></a>
+  </div>
+
 </main>
+
+<!-- ✅ MODALES PARA NOTICIAS -->
+<div id="newsOverlay" class="overlay" role="dialog" aria-modal="true">
+    <div class="modal">
+        <h3>Noticias</h3>
+        <div id="newsModalList"></div>
+        <div class="modal-actions">
+            <button id="closeNews" class="btn secondary">Cerrar</button>
+        </div>
+    </div>
+</div>
+<div id="imageOverlay" class="overlay" role="dialog" aria-modal="true">
+    <img id="imageOverlayImg" class="image-full" alt="">
+</div>
+<div id="itemOverlay" class="overlay" role="dialog" aria-modal="true">
+    <div class="modal">
+        <h3 id="itemOverlayTitle"></h3>
+        <div id="itemOverlayBody"></div>
+        <div class="modal-actions">
+            <button id="itemOverlayOpenLink" class="btn primary">Abrir enlace</button>
+            <button id="closeItem" class="btn secondary">Cerrar</button>
+        </div>
+    </div>
+</div>
 
 <!-- ✅ SCRIPT YAHOO FINANCE -->
 <script>
@@ -218,6 +287,153 @@ async function refresh() {
 
 refresh();
 setInterval(refresh, 60000);
+</script>
+
+<!-- ✅ SCRIPT NOTICIAS (COPIADO DE HOMENOTICIAS) -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, orderBy, limit, addDoc, serverTimestamp, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+
+    const PFX = '[MercadoNoticias]';
+    let db;
+
+    try {
+        if (!window.firebaseConfig) throw new Error('firebaseConfig no encontrado');
+        const app = initializeApp(window.firebaseConfig);
+        try {
+            db = initializeFirestore(app, { databaseId: 'news' });
+        } catch (e) {
+            db = getFirestore(app);
+        }
+        loadNewsFromApi(); // Cargar noticias al iniciar
+    } catch (e) {
+        console.error(PFX, 'Firebase init error', e);
+        const newsListContainer = document.querySelector('.news-list');
+        if(newsListContainer) newsListContainer.innerHTML = '<p>Error al conectar con el servicio de noticias.</p>';
+    }
+
+    let LATEST_NEWS_ITEMS = [];
+
+    function escapeHtml(str){ return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function buildNewsHTML(items){
+        return items.map(item => {
+            const title = item.title || 'Sin título';
+            const summary = item.description || '';
+            const image = item.image || '';
+            const url = item.url || '#';
+            return `
+            <div class="news-item">
+                <img loading="lazy" onerror="this.remove()" src="${image || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'90\' height=\'90\'%3E%3Crect fill=\'%23eaeaea\' width=\'90\' height=\'90\'/%3E%3C/svg%3E'}" alt="" class="news-image">
+                <div class="news-content">
+                    <a href="${url}" class="news-title" style="text-decoration:none;color:inherit;display:block" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>
+                    <div class="news-description">${escapeHtml(summary)}</div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function renderNewsItems(items) {
+        const list = document.querySelector('.news-list');
+        if (!items || items.length === 0) {
+            list.innerHTML = '<p>No hay noticias disponibles.</p>';
+            return;
+        }
+        list.innerHTML = buildNewsHTML(items.slice(0, 5));
+        LATEST_NEWS_ITEMS = items.slice();
+    }
+
+    async function fbListNews() {
+        const q = query(collection(db,'news'), orderBy('createdAt','desc'));
+        const snap = await getDocs(q);
+        const list = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+        return list;
+    };
+
+    async function loadNewsFromApi() {
+        const newsListContainer = document.querySelector('.news-list');
+        if (!newsListContainer) return;
+        newsListContainer.innerHTML = '<p>Cargando noticias...</p>';
+        try {
+            const news = await fbListNews();
+            renderNewsItems(news);
+        } catch (error) {
+            console.error(PFX, 'Error loading news:', error);
+            newsListContainer.innerHTML = '<p>Error al cargar las noticias.</p>';
+        }
+    }
+
+    // --- Lógica de Modales ---
+    const viewAllNewsLink = document.getElementById('viewAllNewsLink');
+    const newsOverlay = document.getElementById('newsOverlay');
+    const newsModalList = document.getElementById('newsModalList');
+    const closeNews = document.getElementById('closeNews');
+    const imageOverlay = document.getElementById('imageOverlay');
+    const imageOverlayImg = document.getElementById('imageOverlayImg');
+    const newsListEl = document.getElementById('newsList');
+    const itemOverlay = document.getElementById('itemOverlay');
+    const itemOverlayTitle = document.getElementById('itemOverlayTitle');
+    const itemOverlayBody = document.getElementById('itemOverlayBody');
+    const itemOverlayOpenLink = document.getElementById('itemOverlayOpenLink');
+    const closeItem = document.getElementById('closeItem');
+
+    function openImageModal(src){
+        if (!imageOverlay || !imageOverlayImg) return;
+        imageOverlayImg.src = src;
+        imageOverlay.classList.add('open');
+    }
+
+    function handleNewsItemClick(e) {
+        const item = e.target.closest('.news-item');
+        if (!item) return;
+        const img = item.querySelector('.news-image');
+        const titleEl = item.querySelector('.news-title');
+        const descEl = item.querySelector('.news-description'); // Cambiado de activity-description a news-description
+        const linkHref = titleEl && titleEl.getAttribute('href') ? titleEl.getAttribute('href') : '#';
+
+        if (e.target.closest('.news-image')) {
+            e.preventDefault();
+            openImageModal(img && img.src ? img.src : '');
+            return;
+        }
+        if (e.target.closest('.news-title')) {
+            e.preventDefault();
+        }
+
+        itemOverlayTitle.textContent = titleEl ? titleEl.textContent : '';
+        itemOverlayBody.innerHTML = `${img && img.src ? `<img src="${img.src}" alt="" style="width:100%;border-radius:8px;margin-bottom:12px">` : ''}${descEl ? descEl.textContent : ''}`;
+        if (linkHref && linkHref !== '#') {
+            itemOverlayOpenLink.style.display = '';
+            itemOverlayOpenLink.onclick = () => { window.open(linkHref, '_blank', 'noopener'); };
+        } else {
+            itemOverlayOpenLink.style.display = 'none';
+            itemOverlayOpenLink.onclick = null;
+        }
+        itemOverlay.classList.add('open');
+    }
+
+    function openNewsModal(){
+        if (!newsOverlay || !newsModalList) return;
+        newsModalList.innerHTML = buildNewsHTML(LATEST_NEWS_ITEMS);
+        newsOverlay.classList.add('open');
+    }
+
+    if (viewAllNewsLink) viewAllNewsLink.addEventListener('click', e => { e.preventDefault(); openNewsModal(); });
+    if (newsOverlay) newsOverlay.addEventListener('click', e => { if (e.target === newsOverlay) newsOverlay.classList.remove('open'); });
+    if (closeNews) closeNews.addEventListener('click', () => newsOverlay.classList.remove('open'));
+    if (newsListEl) newsListEl.addEventListener('click', handleNewsItemClick);
+    if (newsModalList) newsModalList.addEventListener('click', handleNewsItemClick);
+    if (imageOverlay) imageOverlay.addEventListener('click', e => { if (e.target === imageOverlay) imageOverlay.classList.remove('open'); });
+    if (itemOverlay) itemOverlay.addEventListener('click', e => { if (e.target === itemOverlay) itemOverlay.classList.remove('open'); });
+    if (closeItem) closeItem.addEventListener('click', () => itemOverlay.classList.remove('open'));    
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && imageOverlay && imageOverlay.classList.contains('open')) {
+            imageOverlay.classList.remove('open');
+        }
+        if (event.key === 'Escape' && itemOverlay && itemOverlay.classList.contains('open')) {
+            itemOverlay.classList.remove('open');
+        }
+    });
 </script>
 
 </body>
