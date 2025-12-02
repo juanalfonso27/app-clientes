@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Home - Noticias</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%233c318f'/%3E%3Ctext x='16' y='21' font-size='14' text-anchor='middle' fill='white' font-family='Segoe UI, Roboto'%3EN%3C/text%3E%3C/svg%3E">
@@ -9,8 +9,8 @@
     <script src="firebase-config.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, query, orderBy, limit, addDoc, serverTimestamp, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+        import { getFirestore, collection, query, orderBy, limit, onSnapshot, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
         const PFX = '[HomeNoticias]';
         function updateStatus(type, message) {
             const el = document.getElementById('firebaseStatus');
@@ -20,17 +20,11 @@
             if (type === 'success') { setTimeout(() => el.style.display = 'none', 3000); }
         }
 
-        let app, db, auth;
+        let app, db, auth, newsUnsubscribe = null;
         try {
             if (!window.firebaseConfig) throw new Error('firebaseConfig no encontrado');
             app = initializeApp(window.firebaseConfig);
-            try {
-                db = initializeFirestore(app, { databaseId: 'news' });
-                console.log(PFX, 'Firestore inicializado con databaseId', 'news');
-            } catch (e) {
-                console.warn(PFX, 'initializeFirestore falló, usando default', e);
-                db = getFirestore(app);
-            }
+            db = getFirestore(app);
             updateStatus('success', '✅ Conectado a Firebase');
             auth = getAuth(app);
 
@@ -39,7 +33,7 @@
                 if (user) {
                     // El usuario está logueado. Podemos cargar el contenido.
                     console.log(PFX, 'Usuario autenticado:', user.uid);
-                    setTimeout(loadNewsFromApi, 50); // Cargar noticias
+                    loadAndListenForNews();
                 } else {
                     // El usuario no está logueado. Redirigir a la página de login.
                     console.log(PFX, 'Usuario no autenticado. Redirigiendo a index.html');
@@ -51,22 +45,58 @@
             updateStatus('error', '❌ Error conectando a Firebase: ' + e.message);
         }
 
-        async function loadNewsFromApi() {
-            console.log(PFX, 'loadNewsFromApi called');
+        const NEWS_CACHE_KEY = 'news_cache';
+        const CACHE_EXPIRATION = 15 * 60 * 1000; // 15 minutos
+
+        function loadAndListenForNews() {
+            console.log(PFX, 'Iniciando carga y escucha de noticias.');
             const newsListContainer = document.querySelector('.news-list');
             if (!newsListContainer) return;
 
-            newsListContainer.innerHTML = '<p>Cargando noticias...</p>';
-
-            // Cargar noticias directamente desde Firebase
+            // 1. Cargar desde caché si es posible
             try {
-                console.log(PFX, 'Descargando lista de noticias desde Firebase.');
-                const news = await window.fbListNews();
-                renderNewsItems(news); // renderNewsItems ya maneja el caso de lista vacía
-            } catch (error) {
-                console.error(PFX, 'Error loading news:', error);
-                newsListContainer.innerHTML = '<p>Error al cargar las noticias.</p>';
+                const cached = JSON.parse(localStorage.getItem(NEWS_CACHE_KEY));
+                if (cached && (Date.now() - cached.timestamp < CACHE_EXPIRATION)) {
+                    console.log(PFX, 'Renderizando noticias desde caché.');
+                    renderNewsItems(cached.data);
+                } else {
+                    newsListContainer.innerHTML = '<p>Cargando noticias...</p>';
+                }
+            } catch (e) {
+                newsListContainer.innerHTML = '<p>Cargando noticias...</p>';
             }
+
+            // 2. Establecer listener en tiempo real
+            if (newsUnsubscribe) newsUnsubscribe(); // Detener listener anterior si existe
+
+            const q = query(collection(db, 'news'), orderBy('createdAt', 'desc'), limit(15));
+
+            newsUnsubscribe = onSnapshot(q, (snapshot) => {
+                console.log(PFX, 'Nuevos datos recibidos desde Firestore.');
+                const news = snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
+                
+                // Ordenar por si acaso, ya que createdAt puede ser nulo al principio
+                news.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+
+                // Actualizar UI y caché
+                renderNewsItems(news);
+                try {
+                    const cachePayload = { timestamp: Date.now(), data: news };
+                    localStorage.setItem(NEWS_CACHE_KEY, JSON.stringify(cachePayload));
+                    console.log(PFX, 'Caché de noticias actualizado.');
+                } catch (e) {
+                    console.warn(PFX, 'No se pudo guardar en caché:', e);
+                }
+            }, (error) => {
+                console.error(PFX, "Error en el listener de noticias:", error);
+                newsListContainer.innerHTML = '<p>Error al conectar con el servicio de noticias.</p>';
+            });
+        }
+
+        // Dejamos de usar la función `loadNewsFromApi` y `fbListNews`
+        // porque `onSnapshot` se encarga de todo el ciclo de vida.
+        window.onbeforeunload = () => {
+            if (newsUnsubscribe) newsUnsubscribe(); // Limpiar el listener al salir de la página
         }
 
         async function seedNewsIfEmpty(){
@@ -93,35 +123,6 @@
                 console.warn(PFX, 'Seed failed', e);
             }
         }
-
-        window.fbListNews = async () => {
-            console.log(PFX, 'fbListNews start');
-
-            await seedNewsIfEmpty();
-            let snap = { docs: [] }; // Inicializar con un array vacío para evitar errores si todo falla
-            try {
-                const q = query(collection(db,'news'), orderBy('createdAt','desc'));
-                snap = await getDocs(q);
-                console.log(PFX, 'Consulta con orderBy exitosa.');
-            } catch(e) {
-                console.error(PFX, 'Error en consulta con orderBy:', e.message);
-                try {
-                    snap = await getDocs(collection(db,'news'));
-                    console.log(PFX, 'Consulta sin orderBy exitosa.');
-                } catch (e2) {
-                    console.error(PFX, 'Error en consulta sin orderBy:', e2.message);
-                }
-            }
-            const list = snap.docs.map(d => ({ ...d.data(), id: d.id }));
-            list.sort((a,b) => {
-                const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
-                const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
-                return tb - ta;
-            });
-
-            console.log(PFX, 'fbListNews count', list.length);
-            return list;
-        };
     </script>
   
 </head>
@@ -720,16 +721,7 @@
         // Cargar noticias inicialmente y cuando se active la pestaña Noticias
         // Llamada inicial para poblar la sección al cargar la página
         (function initNews(){
-            const newsSection = document.getElementById('newsSection');
-            // La carga inicial de noticias se maneja en el onAuthStateChanged para asegurar que Firebase Auth esté listo.
-            // Aquí solo se maneja la lógica de las pestañas.
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', function(){
-                    if (this.getAttribute('data-tab') === 'news') {
-                        setTimeout(loadNewsFromApi, 80);
-                    }
-                });
-            });
+            // La lógica de carga ahora está centralizada en onAuthStateChanged -> loadAndListenForNews
         })();
 
         // Navegación desde el menú lateral hacia las secciones
