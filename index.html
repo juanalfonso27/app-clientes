@@ -462,19 +462,39 @@
     const installButtonEl = document.getElementById('installButton');
     const installCancelEl = document.getElementById('installCancel');
 
+    // Función para detectar entornos embebidos (WebView / APK) donde no queremos
+    // mostrar el prompt de instalación de PWA.
+    function isEmbeddedWebView() {
+        const ua = navigator.userAgent || '';
+        // 'wv' es habitual en Android WebView (ej: 'Version/4.0 Chrome/xx wv')
+        if (/\bwv\b/i.test(ua)) return true;
+        // Algunos WebView incluyen 'Version/X' junto a Android
+        if (/Android.*Version\//i.test(ua)) return true;
+        // Si la app nativa inyecta un objeto global (ej. Cordova/Android bridge)
+        if (typeof window.Android !== 'undefined') return true;
+        return false;
+    }
+
     // Si el navegador dispara beforeinstallprompt, lo guardamos y mostramos la UI
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredInstallPrompt = e;
-        // solo mostramos si no está ya instalada en modo standalone
+        // solo mostramos si no está ya instalada en modo standalone y si
+        // estamos en un navegador 'browser' (no en un WebView empaquetado)
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-        if (!isStandalone && installOverlayEl) installOverlayEl.classList.add('open');
+        const isBrowserDisplay = window.matchMedia('(display-mode: browser)').matches;
+        if (!isStandalone && isBrowserDisplay && !isEmbeddedWebView() && installOverlayEl) {
+            installOverlayEl.classList.add('open');
+        }
     });
 
-    // Mostrar un aviso al entrar (petición del usuario): si no está en modo standalone, abrir modal al cargar
+    // Mostrar un aviso al entrar: solo en modo navegador (display-mode: browser)
+    // y si no estamos en un WebView/APK empaquetado. Evita que el modal aparezca
+    // dentro de la APK/webview donde el prompt no tiene sentido.
     document.addEventListener('DOMContentLoaded', () => {
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-        if (!isStandalone && installOverlayEl) {
+        const isBrowserDisplay = window.matchMedia('(display-mode: browser)').matches;
+        if (!isStandalone && isBrowserDisplay && !isEmbeddedWebView() && installOverlayEl) {
             // retraso corto para que el usuario vea la pantalla primero
             setTimeout(() => installOverlayEl.classList.add('open'), 400);
         }
