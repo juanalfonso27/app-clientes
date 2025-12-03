@@ -625,6 +625,18 @@
     </div>
   </div>
 
+  <!-- Confirmación global para acciones (reemplaza confirm()) -->
+  <div id="confirmModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-title" id="confirmTitle">¿Confirmar acción?</div>
+      <p id="confirmMessage" style="color:var(--muted); margin-top:0.5rem;"></p>
+      <div class="modal-actions" style="margin-top:1rem;">
+        <button id="confirmCancel" class="btn btn-secondary" type="button">Cancelar</button>
+        <button id="confirmOk" class="btn btn-primary" type="button">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
 <script type="module">
 // --- Integración con Firebase ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -653,8 +665,9 @@ async function deletePost(button, id) {
         return;
     }
 
-    // Usamos un confirm del navegador, es simple y efectivo.
-    if (!confirm('¿Estás seguro de que deseas eliminar esta publicación? Esta acción no se puede deshacer.')) return;
+    // Reemplazamos el confirm() nativo por el modal de confirmación (compatible con APK/WebView)
+    const confirmed = await showConfirm('¿Estás seguro de que deseas eliminar esta publicación? Esta acción no se puede deshacer.', { okText: 'Eliminar', cancelText: 'Cancelar', title: 'Eliminar publicación' });
+    if (!confirmed) return;
 
     const postElement = button.closest('.post');
     const originalButtonText = button.textContent;
@@ -730,6 +743,52 @@ window.deletePost = deletePost; // Exponer la función globalmente para el `oncl
       toast.textContent = msg;
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Modal de confirmación reutilizable (devuelve una Promise<boolean>)
+    function showConfirm(message, opts = {}) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('confirmModal');
+        const msgEl = document.getElementById('confirmMessage');
+        const titleEl = document.getElementById('confirmTitle');
+        const cancelBtn = document.getElementById('confirmCancel');
+        const okBtn = document.getElementById('confirmOk');
+
+        if (!modal || !msgEl || !cancelBtn || !okBtn) {
+          // Fallback a confirm si algo falla
+          try {
+            const r = confirm(message);
+            resolve(!!r);
+          } catch (e) {
+            resolve(false);
+          }
+          return;
+        }
+
+        msgEl.textContent = message;
+        titleEl.textContent = opts.title || 'Confirmar acción';
+        okBtn.textContent = opts.okText || 'Aceptar';
+        cancelBtn.textContent = opts.cancelText || 'Cancelar';
+
+        function cleanup() {
+          modal.classList.add('hidden');
+          modal.setAttribute('aria-hidden', 'true');
+          okBtn.removeEventListener('click', onOk);
+          cancelBtn.removeEventListener('click', onCancel);
+        }
+
+        function onOk() { cleanup(); resolve(true); }
+        function onCancel() { cleanup(); resolve(false); }
+
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+
+        // mostrar modal
+        modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+        // foco en botón cancelar por accesibilidad
+        cancelBtn.focus();
+      });
     }
 
     function escapeHtml(s) {
