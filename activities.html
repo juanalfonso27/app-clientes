@@ -246,7 +246,7 @@
                 // Convertir Timestamps de Firestore a objetos Date si es necesario
                 // y luego a strings para mantener la compatibilidad con el renderizado.
                 return {
-                    id: doc.id, // Guardamos el ID para poder borrarlo
+                    id: doc.id, // Guardar el ID para poder borrarlo
                     ...data,
                     // El formato de fecha y hora ya debería estar como string al guardar
                 };
