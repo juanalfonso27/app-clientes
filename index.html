@@ -387,7 +387,7 @@
             const email = emailInput ? emailInput.value.trim() : '';
             const password = passwordInput ? passwordInput.value : '';
             if (!email || !password) {
-                alert('Ingresa correo y contraseña');
+                showToast('Ingresa correo y contraseña', 'error');
                 return;
             }
 
@@ -398,7 +398,24 @@
                 await signInWithEmailAndPassword(auth, email, password);
                 window.location.href = 'homenoticias.html';
             } catch (err) {
-                alert('Error al iniciar sesión: ' + (err && err.message ? err.message : String(err)));
+                // Mapear códigos de error de Firebase a mensajes amigables
+                let msg = 'Error al iniciar sesión. Intenta nuevamente.';
+                const code = err && err.code ? err.code : '';
+                if (code === 'auth/wrong-password') msg = 'Contraseña incorrecta.';
+                else if (code === 'auth/user-not-found') msg = 'No existe una cuenta con ese correo.';
+                else if (code === 'auth/invalid-email') msg = 'El correo ingresado no es válido.';
+                else if (code === 'auth/too-many-requests') msg = 'Demasiados intentos. Intenta más tarde.';
+                else if (code === 'auth/network-request-failed') msg = 'No se pudo verificar tus credenciales. Verifica tu conexión o la contraseña.';
+                else if (err && err.message) {
+                    // Evitar mostrar el mensaje crudo de Firebase en la UI; usar genérico y loggear detalle
+                    const m = String(err.message || '');
+                    if (/network/i.test(m)) msg = 'Error de red. Verifica tu conexión.';
+                    else msg = 'Error al iniciar sesión. ' + (m.length > 0 ? m : '');
+                    console.warn('Auth error:', code, err);
+                } else if (err) {
+                    console.warn('Auth error:', err);
+                }
+                showToast(msg, 'error');
             } finally {
                 loginButton.disabled = false;
                 loginSpinner.style.display = 'none';
@@ -548,4 +565,3 @@
         }
 </script>
 </html>
-
