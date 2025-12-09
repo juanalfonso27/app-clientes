@@ -145,7 +145,7 @@
         </a>
     </div>
     <div class="menu-overlay" id="menuOverlay"></div>
-    <nav class="side-menu" id="sideMenu" aria-hidden="true">
+    <nav class="side-menu" id="sideMenu" inert>
         <div class="side-menu__header">
             <span class="side-menu__title">Menú</span>
             <button class="close-menu" id="closeMenu" aria-label="Cerrar menú">
@@ -156,13 +156,14 @@
             </button>
         </div>
             <ul class="side-menu__list">
-            <li><a class="side-menu__item" href="#">Novedades</a></li>
-            <li><a class="side-menu__item" href="#">Mercado</a></li>
+            <li><a class="side-menu__item" href="homenoticias.html">Novedades</a></li>
+            <li><a class="side-menu__item" href="mercado.html">Mercado</a></li>
             <li><a class="side-menu__item" href="#">Tiempo</a></li>
-            <li><a class="side-menu__item" href="#">Cuaderno de actividades</a></li>
-            <li><a class="side-menu__item" href="#">Comunidad</a></li>
-            <li><a class="side-menu__item" href="#">Agendar visita</a></li>
-            <li><a class="side-menu__item" href="#">Contacto</a></li>
+            <li><a class="side-menu__item" href="activities.html">Cuaderno de actividades</a></li>
+            <li><a class="side-menu__item" href="comunidad.html">Comunidad</a></li>
+            <li><a class="side-menu__item" href="visitas.html">Agendar visita</a></li>
+            <li><a class="side-menu__item" href="contacto.html">Contacto</a></li>
+            <li><a class="side-menu__item" href="soporte.html">Soporte</a></li>
         </ul>
     </nav>
 
@@ -665,13 +666,13 @@
         function openMenu() {
             sideMenu.classList.add('open');
             menuOverlay.classList.add('visible');
-            sideMenu.setAttribute('aria-hidden', 'false');
+            sideMenu.removeAttribute('inert');
         }
 
         function closeMenu() {
             sideMenu.classList.remove('open');
             menuOverlay.classList.remove('visible');
-            sideMenu.setAttribute('aria-hidden', 'true');
+            sideMenu.setAttribute('inert', 'true');
         }
 
         menuButton.addEventListener('click', openMenu);
@@ -808,6 +809,20 @@
                 if (text === 'Comunidad') {
                     closeMenu();
                     window.location.href = 'comunidad.html';
+                    return;
+                }
+
+                // Navegar a Soporte
+                if (text === 'Soporte') {
+                    closeMenu();
+                    window.location.href = 'soporte.html';
+                    return;
+                }
+
+                // Navegar a Novedades
+                if (text === 'Novedades') {
+                    closeMenu();
+                    window.location.href = 'homenoticias.html';
                     return;
                 }
 

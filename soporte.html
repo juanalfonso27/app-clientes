@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Soporte - IASA</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%233c318f'/%3E%3Ctext x='16' y='21' font-size='14' text-anchor='middle' fill='white' font-family='Segoe UI, Roboto'%3EN%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            background: #f5f5f5;
+            padding-bottom: 80px;
+        }
+
+        .main-content {
+            padding: 24px 16px;
+            background: #f5f5f5;
+        }
+
+        .support-header {
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .support-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin: 0 0 8px 0;
+        }
+
+        .support-header p {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+        }
+
+        .support-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .support-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .support-card:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        .support-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .support-card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: #f0f2f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .support-card-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke: #3c318f;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .support-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0;
+        }
+
+        .support-card-description {
+            font-size: 14px;
+            color: #555;
+            margin: 0 0 12px 0;
+            line-height: 1.5;
+        }
+
+        .support-card-link {
+            display: inline-block;
+            color: #3c318f;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            padding: 8px 0;
+            border-bottom: 2px solid #3c318f;
+            transition: all 0.2s ease;
+        }
+
+        .support-card-link:active {
+            opacity: 0.7;
+        }
+
+        .support-faq {
+            margin-top: 24px;
+        }
+
+        .faq-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0 0 12px 0;
+        }
+
+        .faq-item {
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .faq-question {
+            padding: 14px 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            border: none;
+            width: 100%;
+            text-align: left;
+            font-weight: 500;
+            color: #1a1a1a;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .faq-question:active {
+            background: #f9f9f9;
+        }
+
+        .faq-question::after {
+            content: '▼';
+            font-size: 12px;
+            color: #999;
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .faq-question.open::after {
+            transform: rotate(180deg);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: #fafafa;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .faq-answer.open {
+            max-height: 500px;
+        }
+
+        .faq-answer-content {
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .support-info {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 24px;
+            border-left: 4px solid #3c318f;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .support-info h3 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .support-info p {
+            margin: 0;
+            font-size: 13px;
+            color: #666;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <button class="menu-icon" aria-label="Abrir menú">
+            <svg class="icon" viewBox="0 0 24 24">
+                <path d="M4 7h16M4 12h16M4 17h16"></path>
+            </svg>
+        </button>
+        <div class="logo">
+            <img src="logo1.png" alt="IASA logo" loading="lazy">
+        </div>
+        <a href="perfil.html" class="notification-icon" aria-label="Mi Perfil">
+            <svg class="icon" viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        </a>
+    </div>
+    <div class="menu-overlay" id="menuOverlay"></div>
+    <nav class="side-menu" id="sideMenu" aria-hidden="true">
+        <div class="side-menu__header">
+            <span class="side-menu__title">Menú</span>
+            <button class="close-menu" id="closeMenu" aria-label="Cerrar menú">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M6 6l12 12"></path>
+                    <path d="M18 6l-12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <ul class="side-menu__list">
+            <li><a class="side-menu__item" href="homenoticias.html">Novedades</a></li>
+            <li><a class="side-menu__item" href="mercado.html">Mercado</a></li>
+            <li><a class="side-menu__item" href="#">Tiempo</a></li>
+            <li><a class="side-menu__item" href="activities.html">Cuaderno de actividades</a></li>
+            <li><a class="side-menu__item" href="comunidad.html">Comunidad</a></li>
+            <li><a class="side-menu__item" href="visitas.html">Agendar visita</a></li>
+            <li><a class="side-menu__item" href="contacto.html">Contacto</a></li>
+            <li><a class="side-menu__item" href="soporte.html">Soporte</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="support-header">
+            <h1>Centro de Soporte</h1>
+            <p>¿Necesitas ayuda? Estamos aquí para asistirte</p>
+        </div>
+
+        <div class="support-container">
+            <!-- Correo -->
+            <div class="support-card">
+                <div class="support-card-header">
+                    <div class="support-card-icon">
+                        <svg viewBox="0 0 24 24">
+                            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                            <path d="M2 6l10 7 10-7"></path>
+                        </svg>
+                    </div>
+                    <h2 class="support-card-title">Enviar un correo</h2>
+                </div>
+                <p class="support-card-description">
+                    Escríbenos tus preguntas, sugerencias o reporta cualquier problema que encuentres.
+                </p>
+                <a href="mailto:inovacion.iasa@inversionesagricolas.com.py" class="support-card-link">
+                    inovacion.iasa@inversionesagricolas.com.py
+                </a>
+            </div>
+
+            <!-- Teléfono -->
+            <div class="support-card">
+                <div class="support-card-header">
+                    <div class="support-card-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="support-card-title">Llamar o WhatsApp</h2>
+                </div>
+                <p class="support-card-description">
+                    Comunícate con nosotros por teléfono o WhatsApp para una respuesta más rápida.
+                </p>
+                <a href="https://wa.me/0985649091" class="support-card-link" target="_blank">
+                    Contactar por WhatsApp
+                </a>
+            </div>
+
+
+        <!-- FAQ Section -->
+        <div class="support-faq">
+            <h3 class="faq-title">Preguntas frecuentes</h3>
+            
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFAQ(event)">
+                    ¿Cómo inicio sesión en la aplicación?
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Para iniciar sesión, ingresa tu usuario y contraseña en la pantalla de login. Si olvidaste tu contraseña, contacta con nosotros.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFAQ(event)">
+                    ¿Qué información puedo encontrar en Mercado?
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        En la sección Mercado encontrarás cotizaciones de granos, análisis de precios y tendencias del mercado agrícola en tiempo real.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFAQ(event)">
+                    ¿Cómo registro una actividad en el cuaderno?
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Dirígete al Cuaderno de Actividades, haz clic en "Agregar Actividad" y completa los datos solicitados (tipo, fecha, descripción, etc).
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFAQ(event)">
+                    ¿Puedo compartir información en la Comunidad?
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Sí, la Comunidad es un espacio para compartir experiencias y aprender de otros productores. Puedes crear posts, comentar y conectar con otros miembros.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Additional -->
+        <div class="support-info">
+            <h3>Tiempo de respuesta</h3>
+            <p>Nos comprometemos a responder todos los mensajes en un plazo máximo de 24 horas hábiles. Gracias por tu paciencia.</p>
+        </div>
+    </div>
+
+    <script>
+        function toggleFAQ(event) {
+            const question = event.target;
+            const answer = question.nextElementSibling;
+            
+            question.classList.toggle('open');
+            answer.classList.toggle('open');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuButton = document.querySelector('.menu-icon');
+            const sideMenu = document.getElementById('sideMenu');
+            const menuOverlay = document.getElementById('menuOverlay');
+            const closeMenuButton = document.getElementById('closeMenu');
+
+            if (!menuButton || !sideMenu || !menuOverlay || !closeMenuButton) {
+                console.error('Elementos del menú no encontrados');
+                return;
+            }
+
+            function openMenu() {
+                sideMenu.classList.add('open');
+                menuOverlay.classList.add('visible');
+                sideMenu.setAttribute('aria-hidden', 'false');
+            }
+
+            function closeMenu() {
+                sideMenu.classList.remove('open');
+                menuOverlay.classList.remove('visible');
+                sideMenu.setAttribute('aria-hidden', 'true');
+            }
+
+            menuButton.addEventListener('click', openMenu);
+            closeMenuButton.addEventListener('click', closeMenu);
+            menuOverlay.addEventListener('click', closeMenu);
+            
+            // Manejar navegación al hacer clic en un enlace del menú
+            document.querySelectorAll('.side-menu__item').forEach(item => {
+                item.addEventListener('click', function(event) {
+                    const href = this.getAttribute('href');
+                    // Si tiene un href válido, permitir la navegación normal
+                    if (href && href !== '#') {
+                        closeMenu();
+                        // Dejar que el navegador maneje la navegación normal
+                        return;
+                    }
+                    // Si no tiene href, solo cerrar el menú
+                    closeMenu();
+                    event.preventDefault();
+                });
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && sideMenu.classList.contains('open')) {
+                    closeMenu();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
