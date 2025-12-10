@@ -6,6 +6,8 @@
     <title>Home - Noticias</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%233c318f'/%3E%3Ctext x='16' y='21' font-size='14' text-anchor='middle' fill='white' font-family='Segoe UI, Roboto'%3EN%3C/text%3E%3C/svg%3E">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="firebase-config.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
@@ -156,7 +158,7 @@
             </button>
         </div>
             <ul class="side-menu__list">
-            <li><a class="side-menu__item" href="homenoticias.html">Novedades</a></li>
+            <li><a class="side-menu__item" href="homenoticias.html">Sucursales</a></li>
             <li><a class="side-menu__item" href="mercado.html">Mercado</a></li>
             <li><a class="side-menu__item" href="#">Tiempo</a></li>
             <li><a class="side-menu__item" href="activities.html">Cuaderno de actividades</a></li>
@@ -181,14 +183,14 @@
 
     <!-- Tabs -->
     <div class="tabs">
-        <button class="tab active" data-tab="news">
+        <button class="tab active" data-tab="branches">
             <span class="tab-icon" aria-hidden="true">
                 <svg class="icon" viewBox="0 0 24 24">
-                    <path d="M8 3h6l4 4v14H8z"></path>
-                    <path d="M14 3v5h5"></path>
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
                 </svg>
             </span>
-            Novedades
+            Sucursales
         </button>
         <button class="tab" data-tab="products">
             <span class="tab-icon" aria-hidden="true">
@@ -209,19 +211,24 @@
         </button>
     </div>
 
-    <!-- News List -->
-    <div class="content-section active" id="newsSection">
-        <div class="news-list" id="newsList">
-            <div class="news-item">
-                <div class="news-content">
-                    <div class="news-title">Cargando novedades del agro...</div>
+    <!-- Branches Map Section -->
+    <div class="content-section active" id="branchesSection">
+        <div class="branches-container">
+            <div class="branches-list" id="branchesList" style="margin-bottom: 16px;">
+                <h3 style="margin-bottom: 12px; color: #333;">Nuestras Sucursales</h3>
+                <div style="margin-bottom:10px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                    <label for="branchesSelect" style="font-size:14px;color:#555;margin:0;">Ver sucursal:</label>
+                    <select id="branchesSelect" aria-label="Seleccionar sucursal" style="padding:8px 10px;border-radius:6px;border:1px solid #ddd;">
+                    </select>
+                    <a id="branchesOpenNewTab" href="#" target="_blank" style="margin-left:auto;color:#3c318f;text-decoration:none;font-size:14px;">Abrir en Google Maps</a>
                 </div>
+                <div id="branchesListItems" style="display:none"></div>
             </div>
-        </div>
-
-        <!-- View All Link -->
-        <div class="view-all">
-            <a href="#" id="viewAllNewsLink">Ver todas las novedades ></a>
+            <div id="branchesMap" style="width: 100%; height: 500px; border-radius: 12px; overflow: hidden;">
+                <iframe id="branchIframe" src="" 
+                        style="display:none; border:0; width:100%; height:100%;" 
+                        allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
         </div>
     </div>
 
@@ -367,11 +374,8 @@
                 });
                 
                 // Mostrar la sección correspondiente
-                if (tabType === 'news') {
-                    document.getElementById('newsSection').classList.add('active');
-                    if (typeof loadNewsFromApi === 'function') {
-                        loadNewsFromApi();
-                    }
+                if (tabType === 'branches') {
+                    document.getElementById('branchesSection').classList.add('active');
                 } else if (tabType === 'products') {
                     document.getElementById('productsSection').classList.add('active');
                 } else if (tabType === 'weather') {
@@ -400,6 +404,203 @@
                 });
             });
         })();
+
+        // Mapa de Sucursales
+        let branchesMap = null;
+        let branchesMarkers = []; // quedará vacío cuando usemos iframe
+
+        const branches = [
+            {
+                name: "Casa Central",
+                address: "Itapúa, Paraguay",
+                phone: "+595 XXX XXXX",
+                email: "info@iasa.com.py",
+                lat: -24.9799664,
+                lng: -54.9113394,
+                hours: "Lun-Vie: 8:00-18:00, Sáb: 9:00-13:00",
+                embedSrc: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1024.8206157787336!2d-54.91191832354434!3d-24.979718458562427!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94f5b10075e17273%3A0x504e54907328599b!2sIasa!5e1!3m2!1ses!2spy!4v1765375324725!5m2!1ses!2spy"
+            },
+            {
+                name: "Itakyry",
+                address: "Itakyry",
+                phone: "",
+                email: "",
+                lat: -24.96338147868354,
+                lng: -55.25542300071265,
+                embedSrc: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1378.2204152513136!2d-55.25542300071265!3d-24.96338147868354!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94f59b95546fffff%3A0xe6c9e1b2166a569e!2sIASA%20-%20Inversiones%20Agr%C3%ADcolas%20SA!5e1!3m2!1ses!2spy!4v1765374639367!5m2!1ses!2spy"
+            },
+            {
+                name: "Mbaracayú",
+                address: "Mbaracayú",
+                phone: "",
+                email: "",
+                lat: -25.026370509862502,
+                lng: -54.815900433120945,
+                embedSrc: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d724.382481106149!2d-54.815900433120945!3d-25.026370509862502!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94f5b4e48f296ed7%3A0x9653333056a21aa5!2sINVERSIONES%20AGR%C3%8DCOLAS%20SA!5e1!3m2!1ses!2spy!4v1765374717026!5m2!1ses!2spy"
+            },
+            {
+                name: "Gleba 8",
+                address: "Gleba 8",
+                phone: "",
+                email: "",
+                lat: -24.867397472307896,
+                lng: -55.03378799074861,
+                embedSrc: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1725.1067418166904!2d-55.03378799074861!3d-24.867397472307896!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94f5a79bd55c0d6d%3A0x19b93fd8f410cae0!2sIASA%20-%20INVERSIONES%20AGRICOLAS%20S.A.%20-%20GLEBA%208!5e1!3m2!1ses!2spy!4v1765374832305!5m2!1ses!2spy"
+            },
+            {
+                name: "Santa Fe",
+                address: "Santa Fe",
+                phone: "",
+                email: "",
+                lat: -25.21838630007443,
+                lng: -54.697545468807185,
+                embedSrc: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1635.5774448638485!2d-54.697545468807185!3d-25.21838630007443!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94f42e09adbecf6f%3A0xdc4fd4fabe0fe3a!2sIASA%20Santa%20Fe%20-%20Inversiones%20Agricolas%20S.A.!5e1!3m2!1ses!2spy!4v1765374937497!5m2!1ses!2spy"
+            }
+        ];
+
+        function initBranchesMap() {
+            if (branchesMap) {
+                branchesMap.invalidateSize();
+                return;
+            }
+
+            // Inicializar el mapa centrado en IASA Itapúa, Paraguay
+            branchesMap = L.map('branchesMap').setView([-24.9799664, -54.9113394], 17);
+
+            // Agregar capas base: Satélite (por defecto) y Calles
+            const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            });
+
+            const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '© Esri — Fuente: Esri, Maxar, Earthstar Geographics',
+                maxZoom: 19
+            });
+
+            // Añadir la capa satelital por defecto
+            satLayer.addTo(branchesMap);
+
+            // Añadir control para alternar entre Satélite y Calles
+            const baseLayers = {
+                "Satelital": satLayer,
+                "Calles": streetLayer
+            };
+            L.control.layers(baseLayers, null, { collapsed: false }).addTo(branchesMap);
+
+            // Agregar marcadores para cada sucursal
+            branches.forEach((branch, index) => {
+                const marker = L.marker([branch.lat, branch.lng]).addTo(branchesMap);
+                
+                const popupContent = `
+                    <div style="font-family: 'Segoe UI', Roboto, sans-serif;">
+                        <h4 style="margin: 0 0 10px 0; color: #3c318f;">${branch.name}</h4>
+                        <p style="margin: 5px 0;"><strong>📍</strong> ${branch.address}</p>
+                        <p style="margin: 5px 0;"><strong>📞</strong> ${branch.phone}</p>
+                        <p style="margin: 5px 0;"><strong>✉️</strong> ${branch.email}</p>
+                        <p style="margin: 5px 0;"><strong>🕒</strong> ${branch.hours}</p>
+                        <a href="https://www.google.com/maps/dir/?api=1&destination=${branch.lat},${branch.lng}" 
+                           target="_blank" 
+                           style="display: inline-block; margin-top: 10px; padding: 8px 12px; background: #3c318f; color: white; text-decoration: none; border-radius: 5px;">
+                            Cómo llegar
+                        </a>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent);
+                branchesMarkers.push(marker);
+            });
+
+            // Renderizar la lista de sucursales
+            renderBranchesList();
+        }
+
+        function renderBranchesList() {
+            const listContainer = document.getElementById('branchesListItems');
+            if (!listContainer) return;
+
+            const html = branches.map((branch, index) => `
+                <div class="news-item" style="cursor: pointer; transition: transform 0.2s;" 
+                     onmouseover="this.style.transform='scale(1.02)'" 
+                     onmouseout="this.style.transform='scale(1)'"
+                     onclick="showBranchMap(${index})">
+                    <div class="news-content">
+                        <div class="news-title">${branch.name}</div>
+                        <div class="activity-description">
+                            <p style="margin: 5px 0;">📍 ${branch.address}</p>
+                            <p style="margin: 5px 0;">📞 ${branch.phone}</p>
+                            <p style="margin: 5px 0;">🕒 ${branch.hours}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            listContainer.innerHTML = html;
+        }
+
+        function showBranchMap(index) {
+            const branch = branches[index];
+            if (!branch) return;
+            const iframe = document.getElementById('branchIframe');
+            if (!iframe) return;
+            // Usar embed específico si está disponible, sino construir uno genérico
+            if (branch.embedSrc) {
+                iframe.src = branch.embedSrc;
+            } else {
+                const url = `https://www.google.com/maps?q=${branch.lat},${branch.lng}&z=17&output=embed`;
+                iframe.src = url;
+            }
+            iframe.style.display = '';
+
+            // Desplazar suavemente hacia el mapa
+            const container = document.getElementById('branchesMap');
+            container?.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Inicializar controles al cargar la página (la lista visual está oculta)
+        document.addEventListener('DOMContentLoaded', () => {
+            renderBranchesSelect();
+            setupBranchControls();
+            // Mostrar mapa de la sucursal por defecto (primera)
+            if (branches && branches.length > 0) {
+                showBranchMap(0);
+            }
+        });
+
+        function renderBranchesSelect(){
+            const sel = document.getElementById('branchesSelect');
+            if (!sel) return;
+            // Poblar opciones y seleccionar la primera sucursal por defecto
+            sel.innerHTML = branches.map((b, i) => `<option value="${i}">${escapeHtml(b.name)}</option>`).join('');
+            sel.value = '0';
+            // Actualizar enlace de abrir en nueva pestaña con la primera sucursal
+            const openNew = document.getElementById('branchesOpenNewTab');
+            if (openNew && branches[0]) openNew.href = `https://www.google.com/maps?q=${branches[0].lat},${branches[0].lng}`;
+        }
+
+        function setupBranchControls(){
+            const sel = document.getElementById('branchesSelect');
+            const openNew = document.getElementById('branchesOpenNewTab');
+            if (sel) sel.addEventListener('change', (e) => {
+                const idx = e.target.value;
+                if (idx !== '') {
+                    // Actualizar link externo
+                    const branch = branches[Number(idx)];
+                    if (openNew && branch) openNew.href = `https://www.google.com/maps?q=${branch.lat},${branch.lng}`;
+                    // Mostrar mapa automáticamente al cambiar la selección
+                    showBranchMap(Number(idx));
+                } else {
+                    if (openNew) openNew.href = '#';
+                }
+            });
+            if (openNew) openNew.addEventListener('click', (e) => {
+                const idx = sel ? sel.value : '';
+                if (idx === '') { e.preventDefault(); return; }
+            });
+        }
+
+        // Inicializar el mapa cuando la página carga
+        // Ya usamos iframe para el mapa; no se inicializa Leaflet al cargar.
     
 
         // Open-Meteo API
@@ -651,8 +852,8 @@
 
                     // Mostrar las pestañas principales
                     document.querySelector('.tabs').style.display = '';
-                    // Activar la primera pestaña por defecto (Noticias)
-                    document.querySelector('.tab[data-tab="news"]').click();
+                    // Activar la primera pestaña por defecto (Sucursales)
+                    document.querySelector('.tab[data-tab="branches"]').click();
                 }
 
             });
@@ -765,6 +966,17 @@
                     return;
                 }
 
+                // Pestaña Sucursales
+                if (text === 'Sucursales') {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    const branchesTab = document.querySelector('.tab[data-tab="branches"]');
+                    if (branchesTab) branchesTab.classList.add('active');
+
+                    document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+                    const branchesSection = document.getElementById('branchesSection');
+                    if (branchesSection) branchesSection.classList.add('active');
+                }
+
                 // Pestaña Noticias
                 if (text === 'Noticias') {
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -816,6 +1028,13 @@
                 if (text === 'Soporte') {
                     closeMenu();
                     window.location.href = 'soporte.html';
+                    return;
+                }
+
+                // Navegar a Sucursales
+                if (text === 'Sucursales') {
+                    closeMenu();
+                    window.location.href = 'homenoticias.html';
                     return;
                 }
 
