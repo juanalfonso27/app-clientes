@@ -268,12 +268,15 @@
 
         .tab-icon svg { width: 18px; height: 18px; }
 
-        /* Mostrar solo iconos en las tabs: ocultar etiquetas de texto */
-        .tabs .tab-label { display: none; }
-        .tabs .tab { padding: 10px 12px; justify-content: center; }
+        /* Mostrar etiquetas y colocar icono encima del texto */
+        .tabs .tab-label { display: block; font-size: 13px; color: #666; margin-top: 4px; }
+        .tabs .tab { padding: 8px 10px; justify-content: center; flex-direction: column; }
         .tabs .tab .tab-icon { display: block; }
         /* ajustar tamaño de iconos para mejor centrado */
         .tab-icon svg { width: 20px; height: 20px; }
+
+        /* Hacer que la etiqueta active herede color */
+        .tab.active .tab-label { color: #5a4fcf; font-weight: 600; }
 
         /* Content Sections */
         .content-section {
