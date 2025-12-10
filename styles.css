@@ -268,15 +268,16 @@
 
         .tab-icon svg { width: 18px; height: 18px; }
 
-        /* Mostrar etiquetas y colocar icono encima del texto */
-        .tabs .tab-label { display: block; font-size: 13px; color: #666; margin-top: 4px; }
-        .tabs .tab { padding: 8px 10px; justify-content: center; flex-direction: column; }
+        /* Mostrar solo iconos en las tabs: ocultar etiquetas de texto */
+        .tabs .tab-label { display: none; }
+        .tabs .tab { padding: 10px 12px; justify-content: center; }
         .tabs .tab .tab-icon { display: block; }
         /* ajustar tamaño de iconos para mejor centrado */
         .tab-icon svg { width: 20px; height: 20px; }
 
-        /* Hacer que la etiqueta active herede color */
-        .tab.active .tab-label { color: #5a4fcf; font-weight: 600; }
+        /* Iconos rellenos (utilizar cuando quieras un icono sólido) */
+        .icon-filled { fill: currentColor; stroke: none; }
+        .tab-icon .icon-filled { width: 22px; height: 22px; display: block; }
 
         /* Content Sections */
         .content-section {
@@ -692,7 +693,8 @@
 
         /* Tamaño en pantallas grandes */
         @media (min-width: 720px) {
-            .bottom-nav { max-width: 720px; margin: 0 auto; left: 0; right: 0; }
+            /* En pantallas grandes dejar la barra inferior ocupando todo el ancho */
+            .bottom-nav { max-width: none; width: 100%; margin: 0; left: 0; right: 0; }
         }
 
         /* Iconos rellenos al activar: aplica fill cuando el item está activo */
