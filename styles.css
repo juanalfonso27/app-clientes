@@ -230,24 +230,30 @@
             border-bottom: 1px solid #ddd;
             background-color: #f5f5f5;
             gap: 24px;
+            justify-content: center;
         }
 
         .tab {
-            padding: 12px 0;
+            padding: 10px 12px;
             font-size: 15px;
             color: #666;
             background: none;
             border: none;
             cursor: pointer;
             position: relative;
-            display: flex;
+            display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
+            min-width: 44px;
+            height: 44px;
+            border-radius: 8px;
         }
 
         .tab.active {
             color: #5a4fcf;
             font-weight: 600;
+            background: rgba(90,79,207,0.06);
         }
 
         .tab.active::after {
@@ -261,6 +267,13 @@
         }
 
         .tab-icon svg { width: 18px; height: 18px; }
+
+        /* Mostrar solo iconos en las tabs: ocultar etiquetas de texto */
+        .tabs .tab-label { display: none; }
+        .tabs .tab { padding: 10px 12px; justify-content: center; }
+        .tabs .tab .tab-icon { display: block; }
+        /* ajustar tamaño de iconos para mejor centrado */
+        .tab-icon svg { width: 20px; height: 20px; }
 
         /* Content Sections */
         .content-section {
@@ -594,7 +607,9 @@
             font-size:13px;
         }
 
-        /* Bottom Navigation */
+        /* Bottom Navigation - mejorada */
+        :root { --primary: #5a4fcf; --muted: #666; }
+
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -603,47 +618,101 @@
             background: white;
             display: flex;
             justify-content: space-around;
-            padding: 8px 0;
-            box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+            padding: 8px 6px;
+            box-shadow: 0 -6px 20px rgba(16,16,24,0.06);
+            border-top: 1px solid rgba(0,0,0,0.04);
+            z-index: 40;
         }
 
         .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
             cursor: pointer;
             background: none;
             border: none;
-            padding: 8px 16px;
-            flex: 1;
+            padding: 6px 6px 10px;
+            flex: 1 1 auto;
+            min-width: 64px;
+            min-height: 56px; /* buen tamaño táctil */
+            transition: color 160ms ease;
+            color: var(--muted);
         }
 
-        .nav-item.active {
-            color: #5a4fcf;
-        }
-
+        /* círculo detrás del icono para mejor legibilidad y consistencia */
         .nav-icon {
-            color: #666;
-            display: flex;
+            color: inherit;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            transition: background-color 160ms ease, transform 160ms ease, color 160ms ease;
         }
 
         .nav-icon svg {
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
+            display: block;
+            stroke: currentColor;
+            fill: none;
+            transition: fill 160ms ease, stroke 160ms ease, transform 160ms ease;
+        }
+
+        /* estado activo: color primario y fondo sutil redondeado */
+        .nav-item.active {
+            color: var(--primary);
         }
 
         .nav-item.active .nav-icon {
-            color: #5a4fcf;
+            background: rgba(90,79,207,0.10);
+            transform: translateY(-2px);
+            color: var(--primary);
+            box-shadow: 0 6px 14px rgba(60,49,143,0.06);
         }
 
         .nav-label {
             font-size: 12px;
-            color: #666;
+            color: inherit;
+            transition: color 160ms ease, opacity 160ms ease;
+            opacity: 0.95;
+            line-height: 1;
         }
 
-        .nav-item.active .nav-label {
-            color: #5a4fcf;
+        /* reducir ruido en estados inactivos */
+        .nav-item:not(.active):hover .nav-icon {
+            background: rgba(0,0,0,0.03);
+            transform: translateY(-1px);
         }
+
+        /* Tamaño en pantallas grandes */
+        @media (min-width: 720px) {
+            .bottom-nav { max-width: 720px; margin: 0 auto; left: 0; right: 0; }
+        }
+
+        /* Iconos rellenos al activar: aplica fill cuando el item está activo */
+        .nav-item.active .nav-icon svg { fill: currentColor; stroke: none; }
+
+        /* Mejor interacción para iconos en el header */
+        .menu-icon, .notification-icon {
+            border-radius: 10px;
+            transition: background-color 160ms ease, transform 160ms ease, color 160ms ease;
+            padding: 6px;
+        }
+
+        .menu-icon:hover, .notification-icon:hover {
+            background: rgba(0,0,0,0.03);
+            transform: translateY(-1px);
+            color: var(--primary);
+        }
+
+        .menu-icon .icon svg, .notification-icon .icon svg {
+            width: 20px;
+            height: 20px;
+            transition: fill 160ms ease, stroke 160ms ease, transform 160ms ease;
+        }
+
+        /* Si en el futuro deseas que los iconos del header también se rellenen al activarlos, usa:
+           .menu-icon.active .icon svg { fill: currentColor; stroke: none; } */

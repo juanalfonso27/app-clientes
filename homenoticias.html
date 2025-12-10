@@ -190,7 +190,7 @@
                     <circle cx="12" cy="10" r="3"></circle>
                 </svg>
             </span>
-            Sucursales
+            <span class="tab-label">Sucursales</span>
         </button>
         <button class="tab" data-tab="products">
             <span class="tab-icon" aria-hidden="true">
@@ -198,7 +198,7 @@
                     <path d="M12 2l8 4v8l-8 4-8-4V6l8-4z"></path>
                 </svg>
             </span>
-            Productos
+            <span class="tab-label">Productos</span>
         </button>
         <button class="tab" data-tab="weather">
             <span class="tab-icon" aria-hidden="true">
@@ -207,7 +207,7 @@
                     <path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path>
                 </svg>
             </span>
-            Tiempo
+            <span class="tab-label">Tiempo</span>
         </button>
     </div>
 
@@ -220,7 +220,6 @@
                     <label for="branchesSelect" style="font-size:14px;color:#555;margin:0;">Ver sucursal:</label>
                     <select id="branchesSelect" aria-label="Seleccionar sucursal" style="padding:8px 10px;border-radius:6px;border:1px solid #ddd;">
                     </select>
-                    <a id="branchesOpenNewTab" href="#" target="_blank" style="margin-left:auto;color:#3c318f;text-decoration:none;font-size:14px;">Abrir en Google Maps</a>
                 </div>
                 <div id="branchesListItems" style="display:none"></div>
             </div>
@@ -571,13 +570,12 @@
             if (!branch) return;
             const iframe = document.getElementById('branchIframe');
             if (!iframe) return;
-            // Usar embed específico si está disponible, sino construir uno genérico
-            if (branch.embedSrc) {
-                iframe.src = branch.embedSrc;
-            } else {
-                const url = `https://www.google.com/maps?q=${branch.lat},${branch.lng}&z=17&output=embed`;
-                iframe.src = url;
-            }
+            // Construir URL por coordenadas para evitar el cuadro de información (info window)
+            const lat = encodeURIComponent(branch.lat);
+            const lng = encodeURIComponent(branch.lng);
+            // Usar coordenadas en la query y solicitar vista satelital con `t=k` (si está disponible)
+            const url = `https://maps.google.com/maps?q=loc:${lat},${lng}&z=18&t=k&output=embed&hl=es`;
+            iframe.src = url;
             iframe.style.display = '';
 
             // Desplazar suavemente hacia el mapa
@@ -601,29 +599,16 @@
             // Poblar opciones y seleccionar la primera sucursal por defecto
             sel.innerHTML = branches.map((b, i) => `<option value="${i}">${escapeHtml(b.name)}</option>`).join('');
             sel.value = '0';
-            // Actualizar enlace de abrir en nueva pestaña con la primera sucursal
-            const openNew = document.getElementById('branchesOpenNewTab');
-            if (openNew && branches[0]) openNew.href = `https://www.google.com/maps?q=${branches[0].lat},${branches[0].lng}`;
         }
 
         function setupBranchControls(){
             const sel = document.getElementById('branchesSelect');
-            const openNew = document.getElementById('branchesOpenNewTab');
             if (sel) sel.addEventListener('change', (e) => {
                 const idx = e.target.value;
                 if (idx !== '') {
-                    // Actualizar link externo
-                    const branch = branches[Number(idx)];
-                    if (openNew && branch) openNew.href = `https://www.google.com/maps?q=${branch.lat},${branch.lng}`;
                     // Mostrar mapa automáticamente al cambiar la selección
                     showBranchMap(Number(idx));
-                } else {
-                    if (openNew) openNew.href = '#';
                 }
-            });
-            if (openNew) openNew.addEventListener('click', (e) => {
-                const idx = sel ? sel.value : '';
-                if (idx === '') { e.preventDefault(); return; }
             });
         }
 
